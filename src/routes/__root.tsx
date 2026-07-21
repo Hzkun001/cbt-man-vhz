@@ -97,11 +97,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="id" className="overscroll-none">
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body className="overscroll-none">
         {children}
         <Scripts />
       </body>
