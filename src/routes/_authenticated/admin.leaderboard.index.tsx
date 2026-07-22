@@ -13,7 +13,8 @@ function LeaderboardIndex() {
   const sesi = sesiRepo.all();
 
   return (
-    <AdminPage className="max-w-4xl pb-20">
+    <AdminPage>
+      <div className="max-w-4xl pb-20 w-full">
       <AdminPageHeader
         title="Leaderboard"
         description="Pilih paket ujian untuk melihat peringkat."
@@ -58,6 +59,7 @@ function LeaderboardIndex() {
             })}
           </div>
         )}
+      </div>
       </div>
     </AdminPage>
   );
