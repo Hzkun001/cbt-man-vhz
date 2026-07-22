@@ -128,7 +128,7 @@ function DaftarPesertaTab({ ujian, sesis, refresh }: { ujian: Ujian, sesis: Sesi
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-semibold border-b">
+              <thead className="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-semibold">
                 <tr>
                   <th className="p-4 font-semibold text-slate-700 dark:text-slate-300 text-center border-r border-slate-200 dark:border-slate-800">Peserta</th>
                   <th className="p-4 font-semibold text-slate-700 dark:text-slate-300 text-center border-r border-slate-200 dark:border-slate-800">Status</th>
@@ -143,9 +143,9 @@ function DaftarPesertaTab({ ujian, sesis, refresh }: { ujian: Ujian, sesis: Sesi
                   const u = users.find((x) => x.id === s.pesertaId);
                   const isOpen = openId === s.id;
                   return (
-                    <tr key={s.id} className={`border-b last:border-0 transition-colors ${isOpen ? 'bg-primary/5' : 'hover:bg-muted/30'}`}>
-                      <td className="p-4 font-medium">{u?.namaLengkap ?? s.pesertaId}</td>
-                      <td className="p-4">
+                    <tr key={s.id} className={`transition-colors ${isOpen ? 'bg-primary/5' : 'hover:bg-muted/30'}`}>
+                      <td className="p-4 font-medium text-center border-r border-slate-200 dark:border-slate-800">{u?.namaLengkap ?? s.pesertaId}</td>
+                      <td className="p-4 text-center border-r border-slate-200 dark:border-slate-800">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
                           s.status === 'selesai' ? 'bg-success/15 text-success' :
                           s.status === 'sedang' ? 'bg-primary/15 text-primary' :
@@ -154,15 +154,19 @@ function DaftarPesertaTab({ ujian, sesis, refresh }: { ujian: Ujian, sesis: Sesi
                           {s.status}
                         </span>
                       </td>
-                      <td className="p-4 text-muted-foreground">
-                        {s.mulaiAt ? new Date(s.mulaiAt).toLocaleString("id-ID") : "-"}
+                      <td className="p-4 text-muted-foreground text-center border-r border-slate-200 dark:border-slate-800">
+                        {s.mulaiAt ? (
+                          <span suppressHydrationWarning>
+                            {new Date(s.mulaiAt).toLocaleString("id-ID")}
+                          </span>
+                        ) : "-"}
                       </td>
-                      <td className="p-4">
+                      <td className="p-4 text-center border-r border-slate-200 dark:border-slate-800">
                         {s.status === "selesai" ? (
                           <span className="font-bold text-base">{s.skorTotal ?? 0} <span className="text-xs text-muted-foreground font-normal">/ {s.maxSkor ?? 0}</span></span>
                         ) : "-"}
                       </td>
-                      <td className="p-4">
+                      <td className="p-4 text-center border-r border-slate-200 dark:border-slate-800">
                         {s.pelanggaran > 0 ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-destructive/15 text-destructive">
                             {s.pelanggaran} peringatan
@@ -171,7 +175,7 @@ function DaftarPesertaTab({ ujian, sesis, refresh }: { ujian: Ujian, sesis: Sesi
                           <span className="text-muted-foreground">-</span>
                         )}
                       </td>
-                      <td className="p-4 text-right space-x-2">
+                      <td className="p-4 text-center space-x-2">
                         <Button size="sm" variant={isOpen ? "default" : "outline"} onClick={() => { setOpenId(isOpen ? null : s.id); setEditIdx(null); }}>
                           {isOpen ? "Tutup Lembar" : "Koreksi Lembar"}
                         </Button>
