@@ -34,7 +34,7 @@ function PesertaPage() {
   const { allUsers, allUnits } = Route.useLoaderData();
   const router = useRouter();
   
-  const peserta = allUsers.filter((u: any) => u.role === "mahasiswa");
+  const peserta = (allUsers as User[]).filter((u: User) => u.role === "mahasiswa");
   const units = allUnits;
 
   const [editing, setEditing] = useState<PesertaWithPwd | null>(null);
@@ -67,7 +67,7 @@ function PesertaPage() {
       const unitName = String(r.group ?? r.Group ?? r.kelas ?? r.unit ?? "").trim();
       let unitId: string | undefined;
       if (unitName) {
-        let g = localUnits.find((x: any) => x.nama.toLowerCase() === unitName.toLowerCase());
+        let g = localUnits.find((x: UnitAkademik) => x.nama.toLowerCase() === unitName.toLowerCase());
         if (!g) { 
           g = { id: uid("u_"), nama: unitName, tipe: "kelas", parentId: null }; 
           const resUnit = await mutateUnitAkademikServer({ data: { action: "upsert", payload: g } });
@@ -80,7 +80,7 @@ function PesertaPage() {
         unitId = g?.id;
       }
 
-      const existingUser = allUsers.find((u: any) => u.username === username);
+      const existingUser = (allUsers as User[]).find((u: User) => u.username === username);
       const userId = existingUser ? existingUser.id : uid("u_");
 
       const res = await upsertUserServer({

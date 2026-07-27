@@ -49,7 +49,7 @@ function RolesPage() {
   const [cfg, setCfg] = useState(config);
   const adminProdiAccess = (cfg.roleAccess.admin_prodi ?? []) as NavKey[];
   const evaluatorAccess = (cfg.roleAccess.evaluator ?? []) as NavKey[];
-  const managers = allUsers.filter((u: any) => u.role === "admin_prodi" || u.role === "evaluator");
+  const managers = (allUsers as User[]).filter((u: User) => u.role === "admin_prodi" || u.role === "evaluator");
 
   async function toggleNav(role: "admin_prodi" | "evaluator", key: NavKey) {
     const list = (cfg.roleAccess[role] ?? []) as NavKey[];
@@ -69,7 +69,7 @@ function RolesPage() {
     }
   }
 
-  async function toggleTopik(u: any, topikId: string) {
+  async function toggleTopik(u: User, topikId: string) {
     const has = u.allowedTopikIds.includes(topikId);
     const res = await upsertUserServer({
       data: {

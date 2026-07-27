@@ -42,7 +42,7 @@ function UsersPage() {
   const { allUsers, units } = Route.useLoaderData();
   const router = useRouter();
   
-  const users = allUsers.filter((u: any) => u.role !== "mahasiswa");
+  const users = (allUsers as User[]).filter((u: User) => u.role !== "mahasiswa");
 
   const [editing, setEditing] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
