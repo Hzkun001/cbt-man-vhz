@@ -206,7 +206,7 @@ export const mutateSesiServer = createServerFn({ method: "POST" })
 export const getLiveOnlineSesis = createServerFn({ method: "GET" }).handler(
 	async () => {
 		const caller = await requireCaller();
-		if (!caller) return [];
+		if (!caller || caller.role === "mahasiswa") return [];
 		const rows = await prisma.sesiUjian.findMany({
 			where: { status: "sedang" },
 			include: { peserta: true, ujian: true }

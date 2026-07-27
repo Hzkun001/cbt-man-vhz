@@ -245,7 +245,7 @@ function AdminLayout() {
               <span className="truncate">{appName}</span>
             </div>
             {mobileMenuOpen && (
-              <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8 border-2 border-black hover:bg-yellow-400 bg-white shadow-[2px_2px_0_0_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none rounded-none" onClick={() => setMobileMenuOpen(false)}>
+              <Button variant="ghost" size="icon" title="Tutup menu navigasi" aria-label="Tutup menu navigasi" className="lg:hidden h-8 w-8 border-2 border-black hover:bg-yellow-400 bg-white shadow-[2px_2px_0_0_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none rounded-none" onClick={() => setMobileMenuOpen(false)}>
                 <X className="h-5 w-5 stroke-[3]" />
               </Button>
             )}
@@ -272,7 +272,7 @@ function AdminLayout() {
                           to={n.to as never}
                           activeOptions={{ exact: n.exact }}
                           activeProps={{
-                            className: "bg-[#a3e635] text-white translate-x-[4px] translate-y-[4px] shadow-[2px_2px_0_0_rgba(0,0,0,1)]"
+                            className: "bg-[#a3e635] text-black translate-x-[4px] translate-y-[4px] shadow-[2px_2px_0_0_rgba(0,0,0,1)]"
                           }}
                           inactiveProps={{
                             className: "bg-white text-black shadow-[6px_6px_0_0_rgba(0,0,0,1)] hover:bg-yellow-400 hover:text-black hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)]"
@@ -298,6 +298,8 @@ function AdminLayout() {
               <Button
                 variant="ghost"
                 size="icon"
+                title="Buka menu navigasi"
+                aria-label="Buka menu navigasi"
                 className="lg:hidden h-10 w-10 border-2 border-black bg-yellow-400 hover:bg-[#a3e635] shadow-[4px_4px_0_0_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)] rounded-none"
                 onClick={() => setMobileMenuOpen(true)}
               >
@@ -316,12 +318,15 @@ function AdminLayout() {
                 size="icon"
                 className="h-10 w-10 rounded-none border-2 border-black bg-white shadow-[4px_4px_0_0_rgba(0,0,0,1)] hover:bg-yellow-400 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)]"
                 onClick={toggleTheme}
-                title="Ganti Tema"
+                title="Ganti tema"
+                aria-label="Ganti tema"
               >
                 {theme === "dark" ? <Sun className="h-5 w-5 stroke-[3] text-black" /> : <Moon className="h-5 w-5 stroke-[3] text-black" />}
               </Button>
               <Button
                 variant="outline"
+                title="Keluar"
+                aria-label="Keluar"
                 className="h-10 rounded-none border-2 border-black bg-white font-black uppercase text-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] hover:bg-red-400 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)]"
                 onClick={async () => {
                   await logout();

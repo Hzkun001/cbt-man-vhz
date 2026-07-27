@@ -412,7 +412,7 @@ export const getFullConfigServer = createServerFn({ method: "GET" }).handler(
 );export const getUjiansList = createServerFn({ method: "GET" }).handler(
 	async () => {
 		const caller = await requireCaller();
-		if (!caller) return [];
+		if (!caller || caller.role === "mahasiswa") return [];
 		const rows = await prisma.ujian.findMany();
 		return rows.map(mapUjian);
 	}

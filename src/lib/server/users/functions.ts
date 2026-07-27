@@ -188,7 +188,7 @@ export const mutateUserServer = createServerFn({ method: "POST" })
 export const getUsersList = createServerFn({ method: "GET" }).handler(
 	async () => {
 		const caller = await requireCaller();
-		if (!caller) return [];
+		if (!caller || caller.role !== "super_admin") return [];
 		const users = await prisma.user.findMany();
 		return users.map(u => ({
 			id: u.id,

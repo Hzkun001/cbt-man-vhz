@@ -49,26 +49,27 @@ function RolesPage() {
   const [cfg, setCfg] = useState(config);
   const adminProdiAccess = (cfg.roleAccess.admin_prodi ?? []) as NavKey[];
   const evaluatorAccess = (cfg.roleAccess.evaluator ?? []) as NavKey[];
-  const managers = allUsers.filter((u: User) => u.role === "admin_prodi" || u.role === "evaluator");
+  const managers = allUsers.filter((u: any) => u.role === "admin_prodi" || u.role === "evaluator");
 
   async function toggleNav(role: "admin_prodi" | "evaluator", key: NavKey) {
     const list = (cfg.roleAccess[role] ?? []) as NavKey[];
     const has = list.includes(key);
     const next = has ? list.filter((x) => x !== key) : [...list, key];
     
+    const prevConfig = cfg;
     const newConfig = { ...cfg, roleAccess: { ...cfg.roleAccess, [role]: next } };
     setCfg(newConfig);
 
     const res = await saveConfigServer({ data: newConfig });
     if (!res.ok) {
       toast.error(res.error || "Gagal menyimpan konfigurasi hak akses");
-      setCfg(config);
+      setCfg(prevConfig);
     } else {
       await router.invalidate();
     }
   }
 
-  async function toggleTopik(u: User, topikId: string) {
+  async function toggleTopik(u: any, topikId: string) {
     const has = u.allowedTopikIds.includes(topikId);
     const res = await upsertUserServer({
       data: {
@@ -77,7 +78,7 @@ function RolesPage() {
         namaLengkap: u.namaLengkap,
         role: u.role,
         allowedTopikIds: has
-          ? u.allowedTopikIds.filter((x) => x !== topikId)
+          ? u.allowedTopikIds.filter((x: string) => x !== topikId)
           : [...u.allowedTopikIds, topikId],
         unitId: u.unitId,
         detail: u.detail,

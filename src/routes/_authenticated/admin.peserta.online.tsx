@@ -35,8 +35,8 @@ function OnlinePage() {
     const t = window.setInterval(() => {
       tickRef.current += 1;
       setTick(tickRef.current);
-      // Poll every 5 seconds
-      if (tickRef.current % 5 === 0) {
+      // Poll every 15 seconds
+      if (tickRef.current % 15 === 0) {
         router.invalidate();
       }
     }, 1000);

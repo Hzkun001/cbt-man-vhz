@@ -42,7 +42,7 @@ function UsersPage() {
   const { allUsers, units } = Route.useLoaderData();
   const router = useRouter();
   
-  const users = allUsers.filter((u: User) => u.role !== "mahasiswa");
+  const users = allUsers.filter((u: any) => u.role !== "mahasiswa");
 
   const [editing, setEditing] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
@@ -132,9 +132,12 @@ function UsersPage() {
                     </Button>
                     <Button variant="ghost" size="sm" className="h-8 text-destructive hover:bg-destructive/10" onClick={async () => {
                       if (confirm("Hapus pengguna ini?")) {
-                        await mutateUserServer({ data: { action: "remove", payload: { id: u.id } } });
-                        refresh();
-
+                        const res = await mutateUserServer({ data: { action: "remove", payload: { id: u.id } } });
+                        if (res.ok) {
+                          refresh();
+                        } else {
+                          toast.error(res.error ?? "Gagal menghapus pengguna");
+                        }
                       }
                     }}>
                       <Trash2 className="h-4 w-4" />

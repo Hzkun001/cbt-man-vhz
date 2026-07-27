@@ -34,7 +34,7 @@ function PesertaPage() {
   const { allUsers, allUnits } = Route.useLoaderData();
   const router = useRouter();
   
-  const peserta = allUsers.filter((u: User) => u.role === "mahasiswa");
+  const peserta = allUsers.filter((u: any) => u.role === "mahasiswa");
   const units = allUnits;
 
   const [editing, setEditing] = useState<PesertaWithPwd | null>(null);
@@ -59,7 +59,7 @@ function PesertaPage() {
     const sheet = wb.Sheets[wb.SheetNames[0]];
     const rows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
     let added = 0;
-
+    const localUnits = [...units];
     for (const r of rows) {
       const username = String(r.username ?? r.Username ?? "").trim();
       const nama = String(r.nama ?? r.Nama ?? r.namaLengkap ?? "").trim();
@@ -67,24 +67,34 @@ function PesertaPage() {
       const unitName = String(r.group ?? r.Group ?? r.kelas ?? r.unit ?? "").trim();
       let unitId: string | undefined;
       if (unitName) {
-        let g = units.find((x: UnitAkademik) => x.nama.toLowerCase() === unitName.toLowerCase());
+        let g = localUnits.find((x: any) => x.nama.toLowerCase() === unitName.toLowerCase());
         if (!g) { 
-          g = { id: uid("u_"), nama: unitName, tipe: "kelas", parentId: null } as UnitAkademik; 
-          await mutateUnitAkademikServer({ data: { action: "upsert", payload: g } });
+          g = { id: uid("u_"), nama: unitName, tipe: "kelas", parentId: null }; 
+          const resUnit = await mutateUnitAkademikServer({ data: { action: "upsert", payload: g } });
+          if (resUnit.ok) {
+            localUnits.push(g);
+          } else {
+            g = undefined;
+          }
         }
-        unitId = g.id;
+        unitId = g?.id;
       }
 
-      await upsertUserServer({
+      const existingUser = allUsers.find((u: any) => u.username === username);
+      const userId = existingUser ? existingUser.id : uid("u_");
+
+      const res = await upsertUserServer({
         data: {
-          id: uid("u_"), username, namaLengkap: nama, role: "mahasiswa",
-          allowedTopikIds: [], unitId: unitId, aktif: true,
-          createdAt: Date.now(), newPassword: password,
+          id: userId, username, namaLengkap: nama, role: "mahasiswa",
+          allowedTopikIds: existingUser ? existingUser.allowedTopikIds : [], unitId: unitId, aktif: true,
+          createdAt: existingUser ? existingUser.createdAt : Date.now(), newPassword: password,
         }
       });
-      added++;
+      if (res.ok) {
+        added++;
+      }
     }
-    toast.success(`${added} peserta diimport`);
+    toast.success(`${added} peserta berhasil diimport`);
     refresh();
 
   }
@@ -191,9 +201,12 @@ function PesertaPage() {
                     </Button>
                     <Button variant="ghost" size="sm" className="h-8 text-destructive hover:bg-destructive/10" onClick={async () => {
                       if (confirm("Hapus peserta ini?")) {
-                        await mutateUserServer({ data: { action: "remove", payload: { id: p.id } } });
-                        refresh();
-
+                        const res = await mutateUserServer({ data: { action: "remove", payload: { id: p.id } } });
+                        if (res.ok) {
+                          refresh();
+                        } else {
+                          toast.error(res.error ?? "Gagal menghapus peserta");
+                        }
                       }
                     }}>
                       <Trash2 className="h-4 w-4" />
