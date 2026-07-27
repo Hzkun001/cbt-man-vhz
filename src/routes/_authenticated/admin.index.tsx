@@ -77,12 +77,11 @@ function CommandCenter() {
       {/* 1. HERO SECTION (Neobrutalism Style) */}
       <section className="relative overflow-hidden bg-yellow-400 p-8 sm:p-10 border-4 border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)]">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-          <div className="space-y-4 max-w-2xl">
-            <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tight text-black">
-              Selamat datang kembali, <br className="hidden sm:block" />
-              <span className="bg-white px-3 py-1 border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] inline-block mt-3">{user.namaLengkap}</span>
+          <div className="space-y-6 max-w-4xl">
+            <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tight text-black leading-normal md:leading-snug">
+              Selamat datang kembali, <span className="bg-white px-4 py-1 border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] inline-block sm:ml-4 whitespace-nowrap mt-4 sm:mt-0">{user.namaLengkap}</span>
             </h1>
-            <p className="text-black text-base max-w-xl font-bold leading-relaxed border-l-4 border-black pl-4 bg-white/50 p-2 border-r-4 border-y-4 shadow-[4px_4px_0_0_rgba(0,0,0,1)] mt-6">
+            <p className="text-black text-base max-w-3xl font-bold leading-relaxed border-l-4 border-black pl-4 bg-white/50 p-3 border-r-4 border-y-4 shadow-[4px_4px_0_0_rgba(0,0,0,1)]">
               Pusat kendali ujian interaktif Anda. Pantau ujian secara real-time, kelola bank soal, dan hasilkan laporan performa dengan satu klik.
             </p>
           </div>
