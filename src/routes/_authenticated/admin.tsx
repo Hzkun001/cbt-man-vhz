@@ -293,41 +293,42 @@ function AdminLayout() {
 
         <div className="flex min-h-screen flex-1 flex-col min-w-0">
 
-          <header className="flex h-14 items-center justify-between border-b bg-card px-4 lg:px-6 sticky top-0 z-30 shadow-sm backdrop-blur-md bg-card/80">
+          <header className="flex h-16 items-center justify-between border-b-4 border-black bg-white px-4 lg:px-6 sticky top-0 z-30">
             <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
                 size="icon"
-                className="lg:hidden"
+                className="lg:hidden h-10 w-10 border-2 border-black bg-yellow-400 hover:bg-[#a3e635] shadow-[4px_4px_0_0_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)] rounded-none"
                 onClick={() => setMobileMenuOpen(true)}
               >
-                <Menu className="h-5 w-5" />
+                <Menu className="h-6 w-6 stroke-[3] text-black" />
               </Button>
-              <div className="text-sm text-muted-foreground hidden sm:block">
-                <span className="font-medium text-foreground">{user.namaLengkap}</span>
-                <span className="ml-2 rounded bg-accent px-1.5 py-0.5 text-xs font-medium text-accent-foreground">
+              <div className="text-sm hidden sm:flex items-center gap-4">
+                <span className="font-black uppercase text-black text-base">{user.namaLengkap}</span>
+                <span className="border-2 border-black bg-[#a3e635] px-2 py-0.5 text-xs font-black uppercase text-black shadow-[3px_3px_0_0_rgba(0,0,0,1)]">
                   {user.role}
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-5">
               <Button
                 variant="ghost"
                 size="icon"
+                className="h-10 w-10 rounded-none border-2 border-black bg-white shadow-[4px_4px_0_0_rgba(0,0,0,1)] hover:bg-yellow-400 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)]"
                 onClick={toggleTheme}
                 title="Ganti Tema"
               >
-                {theme === "dark" ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4 text-primary" />}
+                {theme === "dark" ? <Sun className="h-5 w-5 stroke-[3] text-black" /> : <Moon className="h-5 w-5 stroke-[3] text-black" />}
               </Button>
               <Button
                 variant="outline"
-                size="sm"
+                className="h-10 rounded-none border-2 border-black bg-white font-black uppercase text-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] hover:bg-red-400 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)]"
                 onClick={async () => {
                   await logout();
                   navigate({ to: "/login" });
                 }}
               >
-                <LogOut className="mr-1.5 h-4 w-4" /> <span className="hidden sm:inline">Keluar</span>
+                <LogOut className="mr-2 h-5 w-5 stroke-[3]" /> <span className="hidden sm:inline">Keluar</span>
               </Button>
             </div>
           </header>
