@@ -86,15 +86,15 @@ function CommandCenter() {
             </p>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-4 shrink-0">
-            <Button size="lg" className="font-black uppercase rounded-none border-4 border-black bg-[#a3e635] text-black shadow-[6px_6px_0_0_rgba(0,0,0,1)] hover:bg-white hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0_0_rgba(0,0,0,1)] h-14 px-8" asChild>
+          <div className="flex flex-col gap-4 shrink-0 min-w-[240px]">
+            <Button size="lg" className="w-full justify-start font-black uppercase rounded-none border-4 border-black bg-[#a3e635] text-black shadow-[6px_6px_0_0_rgba(0,0,0,1)] hover:bg-white hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0_0_rgba(0,0,0,1)] h-14 px-8" asChild>
               <Link to="/admin/ujian">
-                <Plus className="mr-2 h-6 w-6 stroke-[3]" /> Jadwalkan Ujian
+                <Plus className="mr-3 h-6 w-6 stroke-[3]" /> Jadwalkan Ujian
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="font-black uppercase rounded-none border-4 border-black bg-white text-black shadow-[6px_6px_0_0_rgba(0,0,0,1)] hover:bg-yellow-400 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0_0_rgba(0,0,0,1)] h-14 px-8" asChild>
+            <Button size="lg" variant="outline" className="w-full justify-start font-black uppercase rounded-none border-4 border-black bg-white text-black shadow-[6px_6px_0_0_rgba(0,0,0,1)] hover:bg-yellow-400 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0_0_rgba(0,0,0,1)] h-14 px-8" asChild>
               <Link to="/admin/modul">
-                <BookOpen className="mr-2 h-6 w-6 stroke-[3]" /> Bank Soal
+                <BookOpen className="mr-3 h-6 w-6 stroke-[3]" /> Bank Soal
               </Link>
             </Button>
           </div>
