@@ -59,6 +59,7 @@ function PesertaPage() {
     const sheet = wb.Sheets[wb.SheetNames[0]];
     const rows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
     let added = 0;
+    let failed = 0;
     const localUnits = [...units];
     for (const r of rows) {
       const username = String(r.username ?? r.Username ?? "").trim();
@@ -77,7 +78,11 @@ function PesertaPage() {
             g = undefined;
           }
         }
-        unitId = g?.id;
+        if (!g) {
+          failed++;
+          continue;
+        }
+        unitId = g.id;
       }
 
       const existingUser = (allUsers as User[]).find((u: User) => u.username === username);
@@ -92,9 +97,15 @@ function PesertaPage() {
       });
       if (res.ok) {
         added++;
+      } else {
+        failed++;
       }
     }
-    toast.success(`${added} peserta berhasil diimport`);
+    if (failed > 0) {
+      toast.warning(`${added} peserta diimport, ${failed} gagal diimport`);
+    } else {
+      toast.success(`${added} peserta berhasil diimport`);
+    }
     refresh();
 
   }
