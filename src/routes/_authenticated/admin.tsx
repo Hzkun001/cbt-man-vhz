@@ -230,27 +230,27 @@ function AdminLayout() {
 
         {/* Sidebar */}
         <aside className={cn(
-          "w-64 shrink-0 border-r bg-sidebar text-sidebar-foreground lg:block transition-transform duration-300 z-50 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto scrollbar-thin",
-          mobileMenuOpen ? "fixed inset-y-0 left-0 h-screen overflow-y-auto shadow-2xl" : "hidden"
+          "w-72 shrink-0 border-r-4 border-black bg-white text-black lg:block transition-transform duration-300 z-50 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto scrollbar-thin",
+          mobileMenuOpen ? "fixed inset-y-0 left-0 h-screen overflow-y-auto shadow-[12px_0_0_0_rgba(0,0,0,1)]" : "hidden"
         )}>
-          <div className="flex h-14 items-center justify-between border-b px-4 font-semibold">
-            <div className="flex items-center gap-2">
+          <div className="flex h-16 items-center justify-between border-b-4 border-black px-5 font-black uppercase tracking-wider text-xl bg-white">
+            <div className="flex items-center gap-3">
               {cfg.appLogo ? (
-                <img src={cfg.appLogo} alt="Logo" className="h-7 w-auto object-contain" />
+                <img src={cfg.appLogo} alt="Logo" className="h-8 w-auto object-contain" />
               ) : (
-                <span className="grid h-7 w-7 place-items-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
+                <span className="grid h-9 w-9 place-items-center bg-[#a3e635] border-2 border-black shadow-[3px_3px_0_0_rgba(0,0,0,1)] text-black text-lg">
                   Z
                 </span>
               )}
               <span className="truncate">{appName}</span>
             </div>
             {mobileMenuOpen && (
-              <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8" onClick={() => setMobileMenuOpen(false)}>
-                <X className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8 border-2 border-black hover:bg-yellow-400 bg-white shadow-[2px_2px_0_0_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none rounded-none" onClick={() => setMobileMenuOpen(false)}>
+                <X className="h-5 w-5 stroke-[3]" />
               </Button>
             )}
           </div>
-          <nav className="space-y-6 p-4">
+          <nav className="flex flex-col gap-8 p-6">
             {navGroups.map((group) => {
               const visibleItems = group.items.filter((item) =>
                 canAccessAdminPath(user, item.to, cfg)
@@ -259,27 +259,28 @@ function AdminLayout() {
               if (visibleItems.length === 0) return null;
 
               return (
-                <div key={group.label} className="space-y-2">
-                  <h3 className="px-2 text-xs font-bold uppercase tracking-wider text-muted-foreground/70">
+                <div key={group.label} className="flex flex-col gap-4">
+                  <h3 className="w-full text-center px-3 py-2 text-xs font-black uppercase tracking-wider text-black bg-yellow-400 border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)]">
                     {group.label}
                   </h3>
-                  <div className="space-y-1">
+                  <div className="flex flex-col gap-3">
                     {visibleItems.map((n) => {
-                      const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
                       const Icon = n.icon;
                       return (
                         <Link
                           key={n.to}
                           to={n.to as never}
-                          className={cn(
-                            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
-                            active
-                              ? "bg-primary/10 text-primary shadow-sm"
-                              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                          )}
+                          activeOptions={{ exact: n.exact }}
+                          activeProps={{
+                            className: "bg-[#a3e635] text-white translate-x-[4px] translate-y-[4px] shadow-[2px_2px_0_0_rgba(0,0,0,1)]"
+                          }}
+                          inactiveProps={{
+                            className: "bg-white text-black shadow-[6px_6px_0_0_rgba(0,0,0,1)] hover:bg-yellow-400 hover:text-black hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)]"
+                          }}
+                          className="flex items-center gap-3 border-2 border-black px-4 py-3 text-xs md:text-sm font-black uppercase tracking-wider transition-all duration-100 ease-in-out rounded-none"
                         >
-                          <Icon className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground")} />
-                          {n.label}
+                          <Icon className="h-5 w-5 stroke-[2.5] shrink-0" />
+                          <span className="leading-snug">{n.label}</span>
                         </Link>
                       );
                     })}
