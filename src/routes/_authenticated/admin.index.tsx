@@ -75,29 +75,35 @@ function CommandCenter() {
     <div className="w-full space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       
       {/* 1. HERO SECTION (Neobrutalism Style) */}
-      <section className="relative overflow-hidden bg-yellow-400 p-8 sm:p-10 border-4 border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)]">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-          <div className="space-y-6 max-w-4xl">
-            <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tight text-black leading-normal md:leading-snug">
-              Selamat datang kembali, <span className="bg-white px-4 py-1 border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] inline-block sm:ml-4 whitespace-nowrap mt-4 sm:mt-0">{user.namaLengkap}</span>
-            </h1>
-            <p className="text-black text-base max-w-3xl font-bold leading-relaxed border-l-4 border-black pl-4 bg-white/50 p-3 border-r-4 border-y-4 shadow-[4px_4px_0_0_rgba(0,0,0,1)]">
-              Pusat kendali ujian interaktif Anda. Pantau ujian secara real-time, kelola bank soal, dan hasilkan laporan performa dengan satu klik.
-            </p>
-          </div>
+      <section className="relative overflow-hidden bg-[color:var(--neo-bg)] rounded-[2rem] p-8 sm:p-12 text-[color:var(--neo-text)]">
+        {/* Background Sparkles / Stars (Matching Coursue Design) */}
+        <div className="absolute top-0 right-0 bottom-0 w-1/2 overflow-hidden pointer-events-none hidden md:block">
+          {/* Large Star */}
+          <svg className="absolute top-8 right-16 w-[280px] h-[280px] text-[color:var(--neo-text)]/5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C12 0 12 10 24 12C24 12 12 14 12 24C12 24 12 14 0 12C0 12 12 10 12 0Z" />
+          </svg>
+          {/* Small Star */}
+          <svg className="absolute bottom-16 right-[30%] w-24 h-24 text-[color:var(--neo-text)]/5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C12 0 12 10 24 12C24 12 12 14 12 24C12 24 12 14 0 12C0 12 12 10 12 0Z" />
+          </svg>
+        </div>
+
+        <div className="relative z-10 max-w-2xl">
+          <p className="text-[color:var(--neo-text)]/60 uppercase tracking-widest text-xs font-bold mb-3">
+            DASHBOARD ADMINISTRASI
+          </p>
+          <h1 className="text-3xl md:text-5xl lg:text-[54px] font-medium leading-[1.1] mb-10 text-[color:var(--neo-text)]">
+            Kelola Ujian Kampus Anda Secara Profesional
+          </h1>
           
-          <div className="flex flex-col gap-4 shrink-0 min-w-[240px]">
-            <Button size="lg" className="w-full justify-start font-black uppercase rounded-none border-4 border-black bg-[#a3e635] text-black shadow-[6px_6px_0_0_rgba(0,0,0,1)] hover:bg-white hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0_0_rgba(0,0,0,1)] h-14 px-8" asChild>
-              <Link to="/admin/ujian">
-                <Plus className="mr-3 h-6 w-6 stroke-[3]" /> Jadwalkan Ujian
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" className="w-full justify-start font-black uppercase rounded-none border-4 border-black bg-white text-black shadow-[6px_6px_0_0_rgba(0,0,0,1)] hover:bg-yellow-400 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0_0_rgba(0,0,0,1)] h-14 px-8" asChild>
-              <Link to="/admin/modul">
-                <BookOpen className="mr-3 h-6 w-6 stroke-[3]" /> Bank Soal
-              </Link>
-            </Button>
-          </div>
+          <Button size="lg" className="rounded-full bg-black text-white hover:bg-gray-800 pl-8 pr-2 py-2 h-14 text-base font-medium flex items-center gap-4 border-0 w-fit" asChild>
+            <Link to="/admin/ujian">
+              Jadwalkan Ujian
+              <div className="bg-white text-[color:var(--neo-text)] rounded-full w-10 h-10 flex items-center justify-center shrink-0">
+                <ArrowRight className="w-5 h-5 stroke-[3]" />
+              </div>
+            </Link>
+          </Button>
         </div>
       </section>
 
@@ -134,19 +140,19 @@ function CommandCenter() {
         <div className="lg:col-span-8 space-y-8">
           
           {/* Live Exams Dashboard */}
-          <section className="bg-white border-4 border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] p-6 sm:p-8">
-            <div className="flex items-center justify-between mb-8 pb-4 border-b-4 border-black">
+          <section className="bg-white border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)] p-6 sm:p-8">
+            <div className="flex items-center justify-between mb-8 pb-4 border-b-[length:var(--neo-border-width)] border-b-[color:var(--neo-border-color)]">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-[#a3e635] border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)]">
+                <div className="p-3 bg-[color:var(--neo-accent)] border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)]">
                   <MonitorPlay className="h-8 w-8 stroke-[3]" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black uppercase text-black tracking-tight">Live Monitoring</h2>
-                  <p className="text-sm font-bold text-black mt-1">Pantau ujian yang sedang berlangsung secara real-time</p>
+                  <h2 className="text-2xl font-black uppercase text-[color:var(--neo-text)] tracking-tight">Live Monitoring</h2>
+                  <p className="text-sm font-bold text-[color:var(--neo-text)] mt-1">Pantau ujian yang sedang berlangsung secara real-time</p>
                 </div>
               </div>
               {activeExams.length > 0 && (
-                <div className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-black bg-yellow-400 px-4 py-2 border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)]">
+                <div className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-[color:var(--neo-text)] bg-[color:var(--neo-bg)] px-4 py-2 border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)]">
                   <span className="relative flex h-3 w-3">
                     <span className="animate-ping absolute inline-flex h-full w-full bg-black opacity-75"></span>
                     <span className="relative inline-flex h-3 w-3 bg-black"></span>
@@ -157,34 +163,34 @@ function CommandCenter() {
             </div>
 
             {activeExams.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center border-4 border-dashed border-black bg-yellow-400">
-                <div className="h-16 w-16 bg-white border-4 border-black flex items-center justify-center text-black mb-6 shadow-[6px_6px_0_0_rgba(0,0,0,1)]">
+              <div className="flex flex-col items-center justify-center py-16 text-center border-4 border-dashed border-black bg-[color:var(--neo-bg)]">
+                <div className="h-16 w-16 bg-white border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] flex items-center justify-center text-[color:var(--neo-text)] mb-6 shadow-[var(--neo-shadow)]">
                   <PlayCircle className="h-8 w-8 stroke-[3]" />
                 </div>
-                <h3 className="text-xl font-black uppercase text-black mb-3 bg-white px-4 py-1 border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)]">Sistem Siaga</h3>
-                <p className="text-sm font-bold text-black max-w-sm mb-8 bg-white/70 p-3 border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)]">
+                <h3 className="text-xl font-black uppercase text-[color:var(--neo-text)] mb-3 bg-white px-4 py-1 border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)]">Sistem Siaga</h3>
+                <p className="text-sm font-bold text-[color:var(--neo-text)] max-w-sm mb-8 bg-white/70 p-3 border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)]">
                   Belum ada ujian yang berjalan saat ini. Anda dapat bersantai atau mulai menjadwalkan ujian berikutnya.
                 </p>
-                <Button className="font-black uppercase rounded-none border-4 border-black bg-[#a3e635] text-black shadow-[6px_6px_0_0_rgba(0,0,0,1)] hover:bg-white hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0_0_rgba(0,0,0,1)] px-8 h-12" asChild>
+                <Button className="font-black uppercase rounded-[var(--neo-radius)] border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] bg-[color:var(--neo-accent)] text-[color:var(--neo-text)] shadow-[var(--neo-shadow)] hover:bg-white hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[var(--neo-shadow)] px-8 h-12" asChild>
                   <Link to="/admin/ujian">Buat Ujian Baru</Link>
                 </Button>
               </div>
             ) : (
               <div className="grid gap-6">
                 {activeExams.map((exam) => (
-                  <div key={exam.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white border-4 border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] hover:bg-yellow-400 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[6px_6px_0_0_rgba(0,0,0,1)] transition-all duration-100">
+                  <div key={exam.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)] hover:bg-[color:var(--neo-bg)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[var(--neo-shadow)] transition-all duration-100">
                     <div className="flex items-center gap-5 mb-4 sm:mb-0">
-                      <div className="flex h-14 w-14 items-center justify-center bg-[#a3e635] border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)]">
+                      <div className="flex h-14 w-14 items-center justify-center bg-[color:var(--neo-accent)] border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)]">
                         <Activity className="h-7 w-7 stroke-[3]" />
                       </div>
                       <div>
-                        <h3 className="text-xl font-black uppercase text-black mb-2">{exam.nama}</h3>
-                        <div className="flex items-center gap-3 text-sm font-bold text-black bg-white px-3 py-1.5 border-4 border-black inline-flex shadow-[4px_4px_0_0_rgba(0,0,0,1)]">
+                        <h3 className="text-xl font-black uppercase text-[color:var(--neo-text)] mb-2">{exam.nama}</h3>
+                        <div className="flex items-center gap-3 text-sm font-bold text-[color:var(--neo-text)] bg-white px-3 py-1.5 border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] inline-flex shadow-[var(--neo-shadow)]">
                           <Clock className="h-5 w-5 stroke-[3]" /> Berakhir {new Date(exam.endAt!).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" })}
                         </div>
                       </div>
                     </div>
-                    <Button className="w-full sm:w-auto font-black uppercase bg-black text-white rounded-none border-4 border-black shadow-[6px_6px_0_0_rgba(0,0,0,1)] hover:bg-white hover:text-black hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0_0_rgba(0,0,0,1)] transition-all h-12 px-6" asChild>
+                    <Button className="w-full sm:w-auto font-black uppercase bg-black text-white rounded-[var(--neo-radius)] border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)] hover:bg-white hover:text-[color:var(--neo-text)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[var(--neo-shadow)] transition-all h-12 px-6" asChild>
                       <Link to="/admin/peserta/online">
                         Pantau Peserta <ArrowRight className="ml-3 h-5 w-5 stroke-[3]" />
                       </Link>
@@ -201,38 +207,38 @@ function CommandCenter() {
         <div className="lg:col-span-4 space-y-8">
           
           {/* Action Required */}
-          <section className="bg-white border-4 border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] p-6 sm:p-8">
-            <div className="flex items-center gap-4 mb-6 pb-4 border-b-4 border-black">
-              <div className="p-2 bg-yellow-400 border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)]">
+          <section className="bg-white border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)] p-6 sm:p-8">
+            <div className="flex items-center gap-4 mb-6 pb-4 border-b-[length:var(--neo-border-width)] border-b-[color:var(--neo-border-color)]">
+              <div className="p-2 bg-[color:var(--neo-bg)] border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)]">
                 <AlertCircle className="h-6 w-6 stroke-[3]" />
               </div>
-              <h2 className="text-xl font-black uppercase text-black tracking-tight">Perlu Perhatian</h2>
+              <h2 className="text-xl font-black uppercase text-[color:var(--neo-text)] tracking-tight">Perlu Perhatian</h2>
             </div>
 
             {pendingTasks.length === 0 ? (
-              <div className="flex items-start gap-4 p-5 bg-[#a3e635] border-4 border-black shadow-[6px_6px_0_0_rgba(0,0,0,1)]">
-                <div className="bg-white border-4 border-black p-2 shadow-[4px_4px_0_0_rgba(0,0,0,1)]">
-                  <CheckCircle2 className="h-6 w-6 stroke-[3] text-black" />
+              <div className="flex items-start gap-4 p-5 bg-[color:var(--neo-accent)] border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)]">
+                <div className="bg-white border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] p-2 shadow-[var(--neo-shadow)]">
+                  <CheckCircle2 className="h-6 w-6 stroke-[3] text-[color:var(--neo-text)]" />
                 </div>
                 <div>
-                  <p className="text-lg font-black uppercase text-black">Semua Terkendali</p>
-                  <p className="text-sm font-bold text-black mt-1">Tidak ada tugas yang tertunda.</p>
+                  <p className="text-lg font-black uppercase text-[color:var(--neo-text)]">Semua Terkendali</p>
+                  <p className="text-sm font-bold text-[color:var(--neo-text)] mt-1">Tidak ada tugas yang tertunda.</p>
                 </div>
               </div>
             ) : (
               <div className="space-y-6">
                 {pendingTasks.map((task) => (
-                  <Link key={task.id} to={task.route} className="flex flex-col p-5 bg-yellow-400 border-4 border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[6px_6px_0_0_rgba(0,0,0,1)] transition-all group">
+                  <Link key={task.id} to={task.route} className="flex flex-col p-5 bg-[color:var(--neo-bg)] border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[var(--neo-shadow)] transition-all group">
                     <div className="flex justify-between items-start mb-5">
-                      <div className="bg-white border-4 border-black p-2 shadow-[4px_4px_0_0_rgba(0,0,0,1)] text-black">
+                      <div className="bg-white border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] p-2 shadow-[var(--neo-shadow)] text-[color:var(--neo-text)]">
                         {task.icon}
                       </div>
-                      <div className="bg-black text-white text-xs font-black uppercase tracking-wider px-3 py-1.5 shadow-[4px_4px_0_0_rgba(0,0,0,1)] border-2 border-white">
+                      <div className="bg-black text-white text-xs font-black uppercase tracking-wider px-3 py-1.5 shadow-[var(--neo-shadow)] border-2 border-white">
                         {task.count} antrean
                       </div>
                     </div>
-                    <h3 className="font-black uppercase text-black text-xl mb-3">{task.title}</h3>
-                    <p className="text-sm font-bold text-black flex items-center bg-white px-3 py-1.5 border-4 border-black inline-flex shadow-[4px_4px_0_0_rgba(0,0,0,1)] w-fit group-hover:bg-[#a3e635]">
+                    <h3 className="font-black uppercase text-[color:var(--neo-text)] text-xl mb-3">{task.title}</h3>
+                    <p className="text-sm font-bold text-[color:var(--neo-text)] flex items-center bg-white px-3 py-1.5 border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] inline-flex shadow-[var(--neo-shadow)] w-fit group-hover:bg-[color:var(--neo-accent)]">
                       Selesaikan sekarang <ArrowRight className="ml-2 h-5 w-5 stroke-[3]" />
                     </p>
                   </Link>
@@ -243,12 +249,12 @@ function CommandCenter() {
 
           {/* Upcoming Schedule */}
           {upcomingExams.length > 0 && (
-            <section className="bg-white border-4 border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] p-6 sm:p-8">
-              <div className="flex items-center gap-4 mb-6 pb-4 border-b-4 border-black">
-                <div className="p-2 bg-yellow-400 border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)]">
+            <section className="bg-white border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)] p-6 sm:p-8">
+              <div className="flex items-center gap-4 mb-6 pb-4 border-b-[length:var(--neo-border-width)] border-b-[color:var(--neo-border-color)]">
+                <div className="p-2 bg-[color:var(--neo-bg)] border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)]">
                   <CalendarClock className="h-6 w-6 stroke-[3]" />
                 </div>
-                <h2 className="text-xl font-black uppercase text-black tracking-tight">Ujian Mendatang</h2>
+                <h2 className="text-xl font-black uppercase text-[color:var(--neo-text)] tracking-tight">Ujian Mendatang</h2>
               </div>
               
               <div className="relative">
@@ -258,12 +264,12 @@ function CommandCenter() {
                 <div className="space-y-8 relative">
                   {upcomingExams.map((exam) => (
                     <div key={exam.id} className="flex gap-6 group cursor-default">
-                      <div className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center bg-[#a3e635] border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)]">
+                      <div className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center bg-[color:var(--neo-accent)] border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)]">
                         <div className="h-4 w-4 bg-black group-hover:scale-150 transition-transform duration-300"></div>
                       </div>
                       <div className="pt-1 pb-2">
-                        <h3 className="text-base font-black uppercase text-black leading-none mb-3 bg-white px-2 py-1 border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] inline-block">{exam.nama}</h3>
-                        <p className="text-xs font-bold text-black bg-yellow-400 px-3 py-1.5 border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] flex items-center gap-2 w-fit">
+                        <h3 className="text-base font-black uppercase text-[color:var(--neo-text)] leading-none mb-3 bg-white px-2 py-1 border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)] inline-block">{exam.nama}</h3>
+                        <p className="text-xs font-bold text-[color:var(--neo-text)] bg-[color:var(--neo-bg)] px-3 py-1.5 border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)] flex items-center gap-2 w-fit">
                           <Clock className="h-4 w-4 stroke-[3]" /> 
                           <span suppressHydrationWarning>{new Date(exam.beginAt!).toLocaleDateString("id-ID", { day: "numeric", month: "short", timeZone: "Asia/Jakarta" })} • {new Date(exam.beginAt!).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" })}</span>
                         </p>
@@ -276,24 +282,24 @@ function CommandCenter() {
           )}
 
           {/* System Info */}
-          <section className="bg-yellow-400 border-4 border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] p-6 sm:p-8">
-            <h2 className="text-lg font-black uppercase tracking-wider text-black mb-6 border-b-4 border-black pb-3">
+          <section className="bg-[color:var(--neo-bg)] border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)] p-6 sm:p-8">
+            <h2 className="text-lg font-black uppercase tracking-wider text-[color:var(--neo-text)] mb-6 border-b-[length:var(--neo-border-width)] border-b-[color:var(--neo-border-color)] pb-3">
               Informasi Sistem
             </h2>
             <div className="space-y-5 text-sm font-bold">
-              <div className="flex justify-between items-center border-b-4 border-black pb-4 border-dashed">
-                <span className="text-black uppercase">Database</span>
-                <span className="text-black bg-white px-3 py-1 border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] flex items-center gap-2">
-                  <div className="h-3 w-3 bg-[#a3e635] border-2 border-black"></div> SQLite Local
+              <div className="flex justify-between items-center border-b-[length:var(--neo-border-width)] border-b-[color:var(--neo-border-color)] pb-4 border-dashed">
+                <span className="text-[color:var(--neo-text)] uppercase">Database</span>
+                <span className="text-[color:var(--neo-text)] bg-white px-3 py-1 border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)] flex items-center gap-2">
+                  <div className="h-3 w-3 bg-[color:var(--neo-accent)] border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)]"></div> SQLite Local
                 </span>
               </div>
-              <div className="flex justify-between items-center border-b-4 border-black pb-4 border-dashed">
-                <span className="text-black uppercase">Engine</span>
-                <span className="text-black bg-white px-3 py-1 border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)]">Prisma ORM</span>
+              <div className="flex justify-between items-center border-b-[length:var(--neo-border-width)] border-b-[color:var(--neo-border-color)] pb-4 border-dashed">
+                <span className="text-[color:var(--neo-text)] uppercase">Engine</span>
+                <span className="text-[color:var(--neo-text)] bg-white px-3 py-1 border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)]">Prisma ORM</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-black uppercase">Version</span>
-                <span className="text-black bg-white px-3 py-1 border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)]">v1.2.0</span>
+                <span className="text-[color:var(--neo-text)] uppercase">Version</span>
+                <span className="text-[color:var(--neo-text)] bg-white px-3 py-1 border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)]">v1.2.0</span>
               </div>
             </div>
           </section>
@@ -307,18 +313,18 @@ function CommandCenter() {
 // Reusable Stat Card Component (Neobrutalism)
 function StatCard({ icon, label, value, trend }: { icon: React.ReactNode, label: string, value: number, trend?: string | null }) {
   return (
-    <div className="bg-white p-5 sm:p-6 border-4 border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[6px_6px_0_0_rgba(0,0,0,1)] transition-all duration-100 flex flex-col justify-between h-full">
+    <div className="bg-white p-5 sm:p-6 border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[var(--neo-shadow)] transition-all duration-100 flex flex-col justify-between h-full">
       <div className="flex items-start justify-between mb-6">
-        <h3 className="text-xs font-black uppercase tracking-wider text-black bg-yellow-400 px-3 py-1.5 border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] text-center">{label}</h3>
-        <div className="text-black bg-[#a3e635] p-2 border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)]">
+        <h3 className="text-xs font-black uppercase tracking-wider text-[color:var(--neo-text)] bg-[color:var(--neo-bg)] px-3 py-1.5 border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)] text-center">{label}</h3>
+        <div className="text-[color:var(--neo-text)] bg-[color:var(--neo-accent)] p-2 border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)]">
           {icon}
         </div>
       </div>
       <div>
         <div className="flex items-end gap-3 mt-4">
-          <span className="text-4xl md:text-5xl font-black text-black tracking-tight">{value}</span>
+          <span className="text-4xl md:text-5xl font-black text-[color:var(--neo-text)] tracking-tight">{value}</span>
           {trend && (
-            <span className="text-xs font-black text-black bg-[#a3e635] px-2 py-1 border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] mb-2 inline-block">
+            <span className="text-xs font-black text-[color:var(--neo-text)] bg-[color:var(--neo-accent)] px-2 py-1 border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)] mb-2 inline-block">
               {trend}
             </span>
           )}
