@@ -65,7 +65,17 @@ export const mutateTahunAkademikServer = createServerFn({ method: "POST" })
 			
 			if (action === "upsert") {
 				const item = payload as TahunAkademik;
-				await prisma.tahunAkademik.upsert({ where: { id: item.id }, update: item, create: item });
+				if (item.aktif) {
+					await prisma.$transaction([
+						prisma.tahunAkademik.updateMany({
+							where: { id: { not: item.id } },
+							data: { aktif: false },
+						}),
+						prisma.tahunAkademik.upsert({ where: { id: item.id }, update: item, create: item }),
+					]);
+				} else {
+					await prisma.tahunAkademik.upsert({ where: { id: item.id }, update: item, create: item });
+				}
 			} else if (action === "remove") {
 				const id = String((payload as { id?: string }).id ?? "");
 				await prisma.tahunAkademik.delete({ where: { id } }).catch(() => {});
