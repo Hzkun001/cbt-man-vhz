@@ -221,38 +221,38 @@
 }
 
 /* Membajak semua kelas utilitas Tailwind secara global saat Neobrutalism aktif */
-[data-theme='neobrutalism'] * {
+[data-theme='neobrutalism'] .neo-ready * {
   border-color: #000000 !important;
 }
 
-[data-theme='neobrutalism'] .border { border-width: 3px !important; }
-[data-theme='neobrutalism'] .border-t { border-top-width: 3px !important; }
-[data-theme='neobrutalism'] .border-b { border-bottom-width: 3px !important; }
-[data-theme='neobrutalism'] .border-l { border-left-width: 3px !important; }
-[data-theme='neobrutalism'] .border-r { border-right-width: 3px !important; }
+[data-theme='neobrutalism'] .neo-ready .border { border-width: 3px !important; }
+[data-theme='neobrutalism'] .neo-ready .border-t { border-top-width: 3px !important; }
+[data-theme='neobrutalism'] .neo-ready .border-b { border-bottom-width: 3px !important; }
+[data-theme='neobrutalism'] .neo-ready .border-l { border-left-width: 3px !important; }
+[data-theme='neobrutalism'] .neo-ready .border-r { border-right-width: 3px !important; }
 
-[data-theme='neobrutalism'] .shadow,
-[data-theme='neobrutalism'] .shadow-sm,
-[data-theme='neobrutalism'] .shadow-md,
-[data-theme='neobrutalism'] .shadow-lg,
-[data-theme='neobrutalism'] .shadow-xl {
+[data-theme='neobrutalism'] .neo-ready .shadow,
+[data-theme='neobrutalism'] .neo-ready .shadow-sm,
+[data-theme='neobrutalism'] .neo-ready .shadow-md,
+[data-theme='neobrutalism'] .neo-ready .shadow-lg,
+[data-theme='neobrutalism'] .neo-ready .shadow-xl {
   box-shadow: 4px 4px 0px 0px rgba(0,0,0,1) !important;
 }
 
 /* Tipografi Khas Neobrutalism (Font tebal & uppercase untuk tabel/badge) */
-[data-theme='neobrutalism'] th {
+[data-theme='neobrutalism'] .neo-ready th {
   font-weight: 900 !important;
   text-transform: uppercase !important;
   color: #000000 !important;
   letter-spacing: 0.05em;
 }
 
-[data-theme='neobrutalism'] td {
+[data-theme='neobrutalism'] .neo-ready td {
   font-weight: 600 !important;
   color: #000000 !important;
 }
 
-[data-theme='neobrutalism'] button {
+[data-theme='neobrutalism'] .neo-ready button {
   font-weight: 800 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.025em;

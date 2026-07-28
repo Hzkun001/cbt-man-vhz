@@ -36,7 +36,7 @@ function AkademikLayout() {
   const { theme } = useThemeStore();
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-6 neo-ready">
       
       {/* Header */}
       <div className="space-y-4">
