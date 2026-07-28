@@ -13,7 +13,8 @@ import { Plus, Users, BarChart3, KeyRound, PlayCircle, Clock, CheckCircle2, Sett
 import { toast } from "sonner";
 import { visibleUjians } from "@/lib/cbt/access";
 import { Button } from "@/components/ui/button";
-
+import { cn } from "@/lib/utils";
+import { useThemeStore } from "@/lib/cbt/theme-store";
 import { AdminPage, AdminPageHeader } from "@/components/cbt/AdminPage";
 
 export const Route = createFileRoute("/_authenticated/admin/ujian")({
@@ -31,6 +32,7 @@ function UjianRoute() {
 
 function UjianList() {
   const user = useAuthStore((s) => s.user)!;
+  const { theme } = useThemeStore();
   const [list, setList] = useState<Ujian[]>(visibleUjians(user));
   const [activeTab, setActiveTab] = useState<"semua" | "persiapan" | "berlangsung" | "selesai">("semua");
   const [search, setSearch] = useState("");
