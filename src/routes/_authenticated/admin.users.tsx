@@ -60,7 +60,7 @@ function UsersPage() {
   );
 
   return (
-    <AdminPage>
+    <AdminPage className="neo-ready">
       <AdminPageHeader
         title="Pengguna Sistem"
         description="Kelola akses akun admin, admin jurusan, dan evaluator."

@@ -11,7 +11,7 @@ export function ThemeSwitcher() {
       size="icon"
       onClick={toggleTheme}
       title={`Beralih ke Tema ${theme === "default" ? "Neobrutalism" : "Modern"}`}
-      aria-label={`Beralih ke Tema ${theme === "default" ? "Neobrutalism" : "Modern"}`}
+      aria-label={`Ganti Template (Saat ini: ${theme === "default" ? "Modern" : "Neobrutalism"})`}
       aria-pressed={theme === "neobrutalism"}
       className="h-10 w-10 border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] bg-background text-foreground shadow-[var(--neo-shadow)] transition-all hover:bg-[color:var(--neo-hover)] hover:translate-x-[2px] hover:translate-y-[2px]"
       style={{
