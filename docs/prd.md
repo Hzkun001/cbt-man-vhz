@@ -1,4 +1,4 @@
-# PRD — CBT-Kampus v2
+# PRD — CBT-MAN v2
 **Product Requirements Document**
 **Versi:** 2.0
 **Terakhir diperbarui:** Juli 2026
@@ -8,7 +8,7 @@
 
 ## 1. Latar Belakang & Konteks
 
-CBT-Kampus (Computer-Based Test Manager) adalah aplikasi ujian berbasis komputer untuk lembaga pendidikan Indonesia. Versi pertama (v1) telah berhasil diimplementasikan dengan fitur inti: bank soal terstruktur, manajemen ujian, penilaian otomatis & manual, analisis butir soal, dan pengelolaan peserta.
+CBT-MAN (Computer-Based Test Manager) adalah aplikasi ujian berbasis komputer untuk lembaga pendidikan Indonesia. Versi pertama (v1) telah berhasil diimplementasikan dengan fitur inti: bank soal terstruktur, manajemen ujian, penilaian otomatis & manual, analisis butir soal, dan pengelolaan peserta.
 
 Versi 2 (v2) bertujuan untuk:
 1. **Mempertahankan** seluruh kapabilitas v1 yang sudah berjalan baik.

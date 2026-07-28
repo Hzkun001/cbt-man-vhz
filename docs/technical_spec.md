@@ -1,4 +1,4 @@
-# Spesifikasi Teknis — CBT-Kampus v2
+# Spesifikasi Teknis — CBT-MAN v2
 **Technical Specification**
 **Versi:** 2.0
 **Terakhir diperbarui:** Juli 2026

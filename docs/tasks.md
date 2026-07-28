@@ -1,4 +1,4 @@
-# Daftar Tugas — CBT-Kampus v2
+# Daftar Tugas — CBT-MAN v2
 **Task List & Implementation Checklist**
 **Versi:** 2.0
 **Terakhir diperbarui:** Juli 2026

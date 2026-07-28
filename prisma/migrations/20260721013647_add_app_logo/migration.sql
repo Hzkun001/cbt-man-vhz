@@ -44,7 +44,7 @@ PRAGMA defer_foreign_keys=ON;
 PRAGMA foreign_keys=OFF;
 CREATE TABLE "new_AppConfig" (
     "id" TEXT NOT NULL PRIMARY KEY DEFAULT 'app',
-    "appName" TEXT NOT NULL DEFAULT 'CBT-Kampus',
+    "appName" TEXT NOT NULL DEFAULT 'CBT-MAN',
     "appLogo" TEXT NOT NULL DEFAULT '',
     "appDeskripsi" TEXT NOT NULL DEFAULT 'Aplikasi ujian berbasis komputer',
     "pesanLogin" TEXT NOT NULL DEFAULT 'Selamat datang di aplikasi ujian online',

@@ -184,7 +184,7 @@ model SesiUjian {
 
 model AppConfig {
   id           String  @id @default("app")
-  appName      String  @default("CBT-Kampus")
+  appName      String  @default("CBT-MAN")
   appLogo      String  @default("")
   appDeskripsi String  @default("Aplikasi ujian berbasis komputer")
   pesanLogin   String  @default("Selamat datang di aplikasi ujian online")
