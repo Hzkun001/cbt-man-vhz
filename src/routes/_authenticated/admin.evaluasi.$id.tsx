@@ -35,7 +35,7 @@ function EvaluasiSesi() {
 
   const items = sesi.jawaban
     .map((j, idx) => ({ j, idx, soal: soalRepo.byId(j.soalId) }))
-    .filter((x) => x.soal?.tipe === "essay" || x.j.jawabanEssay.trim().length > 0);
+    .filter((x) => x.soal?.tipe === "essay" || (x.j.jawabanEssay && x.j.jawabanEssay.trim().length > 0));
 
   const totalUngraded = items.filter(x => typeof x.j.skor !== 'number').length;
 
@@ -57,6 +57,29 @@ function EvaluasiSesi() {
   }
 
   const [isSaving, setIsSaving] = useState(false);
+
+  function fillZeroForEmpty() {
+    if (!sesi) return;
+    let changed = false;
+    const nextJawaban = sesi.jawaban.map((j) => {
+      const soal = soalRepo.byId(j.soalId);
+      if (soal?.tipe === "essay" && typeof j.skor !== "number") {
+        if (!j.jawabanEssay || j.jawabanEssay.trim().length === 0) {
+          changed = true;
+          return { ...j, skor: 0, catatanGrader: "Tidak menjawab" };
+        }
+      }
+      return j;
+    });
+    if (changed) {
+      const next = { ...sesi, jawaban: nextJawaban };
+      sesiRepo.upsert(next);
+      setSesi(next);
+      toast.success("Berhasil memberi nilai 0 pada jawaban kosong.");
+    } else {
+      toast.info("Tidak ada jawaban kosong yang belum dinilai.");
+    }
+  }
 
   async function selesaikan() {
     if (!sesi) return;
@@ -84,12 +107,24 @@ function EvaluasiSesi() {
         >
           ← Kembali
         </Link>
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-          {peserta?.namaLengkap || "Peserta Anonim"}
-        </h1>
-        <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-2">
-          {ujian.nama} • <span className="font-bold text-slate-700 dark:text-slate-300">{items.length}</span> essay untuk dinilai
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mt-2">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+              {peserta?.namaLengkap || "Peserta Anonim"}
+            </h1>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-2">
+              {ujian.nama} • <span className="font-bold text-slate-700 dark:text-slate-300">{items.length}</span> essay untuk dinilai
+            </p>
+          </div>
+          
+          <button 
+            onClick={fillZeroForEmpty} 
+            className="inline-flex items-center gap-1.5 text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-lg transition-colors border border-slate-200 dark:border-slate-700 self-start sm:self-auto"
+          >
+            <AlertTriangle className="h-3.5 w-3.5 text-slate-500" />
+            Beri 0 untuk yang Kosong
+          </button>
+        </div>
       </div>
 
       <div className="space-y-6 neo-ready">
