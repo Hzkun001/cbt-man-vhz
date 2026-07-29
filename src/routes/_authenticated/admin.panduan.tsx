@@ -2,6 +2,31 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { configRepo } from "@/lib/cbt/repos";
 import { AdminPage, AdminPageHeader } from "@/components/cbt/AdminPage";
+
+// Official shadcn/ui Components
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { 
+  Breadcrumb, 
+  BreadcrumbList, 
+  BreadcrumbItem, 
+  BreadcrumbLink, 
+  BreadcrumbPage, 
+  BreadcrumbSeparator 
+} from "@/components/ui/breadcrumb";
+import { 
+  Table, 
+  TableHeader, 
+  TableBody, 
+  TableHead, 
+  TableRow, 
+  TableCell 
+} from "@/components/ui/table";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+
+// Lucide Icons
 import { 
   Search, 
   ExternalLink, 
@@ -16,12 +41,8 @@ import {
   Info,
   ShieldAlert,
   Download,
-  Users,
-  CheckCircle2,
-  Folder,
-  ArrowRight
+  ArrowUpRight
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/_authenticated/admin/panduan")({
   component: PanduanPage,
@@ -107,8 +128,8 @@ const articlesMap: Record<string, DocArticle> = {
     content: (onNavigate) => (
       <div className="space-y-8">
         <section id="tahapan" data-heading="tahapan" className="space-y-4">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">5 Tahapan Pelaksanaan Ujian</h2>
-          <p className="text-slate-600 dark:text-slate-400">
+          <h2 className="text-xl font-bold text-card-foreground tracking-tight">5 Tahapan Pelaksanaan Ujian</h2>
+          <p className="text-muted-foreground">
             Seluruh operasional ujian pada sistem CBT mengikuti 5 langkah berurutan yang saling terhubung:
           </p>
 
@@ -120,17 +141,22 @@ const articlesMap: Record<string, DocArticle> = {
               { step: "4", label: "Pantau", sub: "Monitoring Live", target: "pantau-live" },
               { step: "5", label: "Evaluasi", sub: "Grading & Hasil", target: "evaluasi-essay" },
             ].map((s) => (
-              <button 
+              <Card 
                 key={s.step} 
                 onClick={() => onNavigate(s.target)} 
-                className="group bg-white dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:border-primary/50 hover:shadow-md transition-all text-center cursor-pointer"
+                className="group border-border bg-card text-card-foreground hover:border-primary/50 hover:bg-accent/50 transition-all text-center cursor-pointer shadow-sm hover:shadow-md"
               >
-                <div className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold mb-2 group-hover:bg-primary group-hover:text-white transition-colors">
-                  {s.step}
-                </div>
-                <div className="font-bold text-slate-900 dark:text-slate-100 text-xs group-hover:text-primary transition-colors">{s.label}</div>
-                <div className="text-slate-500 text-[10px] mt-0.5">{s.sub}</div>
-              </button>
+                <CardContent className="p-4 flex flex-col items-center">
+                  <Badge variant="default" className="h-8 w-8 rounded-full p-0 flex items-center justify-center font-bold mb-2 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                    {s.step}
+                  </Badge>
+                  <div className="font-bold text-card-foreground text-xs group-hover:text-primary transition-colors flex items-center gap-1">
+                    {s.label}
+                    <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                  <div className="text-muted-foreground text-[10px] mt-0.5">{s.sub}</div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </section>
@@ -140,8 +166,8 @@ const articlesMap: Record<string, DocArticle> = {
         </DocCallout>
 
         <section id="akses-cepat" data-heading="akses-cepat" className="space-y-4 pt-4">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Pintasan Halaman Utama</h2>
-          <p className="text-slate-600 dark:text-slate-400">
+          <h2 className="text-xl font-bold text-card-foreground tracking-tight">Pintasan Halaman Utama</h2>
+          <p className="text-muted-foreground">
             Akses langsung halaman kerja aplikasi melalui pintasan resmi di bawah:
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -168,20 +194,20 @@ const articlesMap: Record<string, DocArticle> = {
     content: () => (
       <div className="space-y-8">
         <section id="struktur-hierarki" data-heading="struktur-hierarki" className="space-y-3">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Struktur Hierarki Soal</h2>
-          <p className="text-slate-600 dark:text-slate-400">
+          <h2 className="text-xl font-bold text-card-foreground tracking-tight">Struktur Hierarki Soal</h2>
+          <p className="text-muted-foreground">
             Bank soal menggunakan susunan berjenjang: <Strong>Modul → Topik → Soal</Strong>.
           </p>
-          <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono space-y-1.5">
+          <Card className="border-border bg-muted/50 p-4 text-xs font-mono space-y-1.5 shadow-sm">
             <div className="text-primary font-bold">📦 Modul (Mata Kuliah / Subjek Utama)</div>
-            <div className="pl-4 text-slate-600 dark:text-slate-400">└─ 📂 Topik 1 (Bab / Pokok Bahasan)</div>
-            <div className="pl-8 text-slate-500">├─ ❓ Soal #1 (Pilihan Ganda)</div>
-            <div className="pl-8 text-slate-500">└─ ❓ Soal #2 (Essay)</div>
-          </div>
+            <div className="pl-4 text-muted-foreground">└─ 📂 Topik 1 (Bab / Pokok Bahasan)</div>
+            <div className="pl-8 text-muted-foreground/80">├─ ❓ Soal #1 (Pilihan Ganda)</div>
+            <div className="pl-8 text-muted-foreground/80">└─ ❓ Soal #2 (Essay)</div>
+          </Card>
         </section>
 
         <section id="langkah-pembuatan" data-heading="langkah-pembuatan" className="space-y-4">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Langkah Pembuatan</h2>
+          <h2 className="text-xl font-bold text-card-foreground tracking-tight">Langkah Pembuatan</h2>
           <StepList steps={[
             <>Buka <DocMenuLink to="/admin/modul">Bank Soal</DocMenuLink> di menu navigasi utama.</>,
             <>Klik tombol <Strong>+ Buat Modul</Strong> dan masukkan nama mata kuliah.</>,
@@ -191,20 +217,20 @@ const articlesMap: Record<string, DocArticle> = {
         </section>
 
         <section id="tipe-soal" data-heading="tipe-soal" className="space-y-3">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Tipe Soal yang Didukung</h2>
+          <h2 className="text-xl font-bold text-card-foreground tracking-tight">Tipe Soal yang Didukung</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm space-y-1">
-              <span className="font-bold text-slate-900 dark:text-slate-100 block">Pilihan Ganda (PG)</span>
-              <span className="text-slate-500">Satu jawaban benar. Koreksi otomatis.</span>
-            </div>
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm space-y-1">
-              <span className="font-bold text-slate-900 dark:text-slate-100 block">PG Kompleks (Multi)</span>
-              <span className="text-slate-500">Beberapa jawaban benar. Koreksi otomatis.</span>
-            </div>
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm space-y-1">
-              <span className="font-bold text-slate-900 dark:text-slate-100 block">Essay Uraian</span>
-              <span className="text-slate-500">Jawaban teks bebas. Penilaian manual admin/dosen.</span>
-            </div>
+            <Card className="border-border bg-card p-4 space-y-1 shadow-sm">
+              <CardTitle className="text-xs font-bold text-card-foreground">Pilihan Ganda (PG)</CardTitle>
+              <CardDescription className="text-[11px] text-muted-foreground">Satu jawaban benar. Koreksi otomatis.</CardDescription>
+            </Card>
+            <Card className="border-border bg-card p-4 space-y-1 shadow-sm">
+              <CardTitle className="text-xs font-bold text-card-foreground">PG Kompleks (Multi)</CardTitle>
+              <CardDescription className="text-[11px] text-muted-foreground">Beberapa jawaban benar. Koreksi otomatis.</CardDescription>
+            </Card>
+            <Card className="border-border bg-card p-4 space-y-1 shadow-sm">
+              <CardTitle className="text-xs font-bold text-card-foreground">Essay Uraian</CardTitle>
+              <CardDescription className="text-[11px] text-muted-foreground">Jawaban teks bebas. Penilaian manual admin/dosen.</CardDescription>
+            </Card>
           </div>
         </section>
       </div>
@@ -224,11 +250,11 @@ const articlesMap: Record<string, DocArticle> = {
     content: () => (
       <div className="space-y-8">
         <section id="konfigurasi-paket" data-heading="konfigurasi-paket" className="space-y-4">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Konfigurasi Ujian Baru</h2>
+          <h2 className="text-xl font-bold text-card-foreground tracking-tight">Konfigurasi Ujian Baru</h2>
           <StepList steps={[
             <>Buka <DocMenuLink to="/admin/ujian">Paket Ujian</DocMenuLink> → klik <Strong>+ Buat Ujian Baru</Strong>.</>,
             <>Isi judul ujian, deskripsi/petunjuk, dan tentukan durasi maksimal pengerjaan (dalam menit).</>,
-            <>Pilih butir-butir soal yang diambil dari bank soal.</>,
+            <>Pilih soal yang akan diujikan dari bank soal.</>,
             <>Hubungkan ujian ke peserta tertentu atau seluruh <Strong>Grup Kelas</Strong>.</>,
           ]} />
         </section>
@@ -253,22 +279,30 @@ const articlesMap: Record<string, DocArticle> = {
     content: () => (
       <div className="space-y-8">
         <section id="rentang-waktu" data-heading="rentang-waktu" className="space-y-3">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Rentang Waktu Akses</h2>
-          <p className="text-slate-600 dark:text-slate-400">
+          <h2 className="text-xl font-bold text-card-foreground tracking-tight">Rentang Waktu Akses</h2>
+          <p className="text-muted-foreground">
             Setiap ujian memiliki dua parameter jadwal utama:
           </p>
-          <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
-            <li className="p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl">
-              <Strong>Waktu Mulai (beginAt)</Strong>: Batas jam awal ketika peserta diizinkan menekan tombol "Mulai Ujian".
-            </li>
-            <li className="p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl">
-              <Strong>Waktu Selesai (endAt)</Strong>: Batas jam penutupan ujian di mana sesi baru tidak lagi diperbolehkan.
-            </li>
-          </ul>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <Card className="border-border bg-card p-5 space-y-2 shadow-sm">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Rentang Waktu</CardTitle>
+              <CardContent className="p-0 text-xs text-muted-foreground space-y-1">
+                <div>• <Strong>Waktu Mulai</Strong>: Akses sesi pengerjaan dibuka.</div>
+                <div>• <Strong>Waktu Selesai</Strong>: Batas akhir peserta memulai ujian.</div>
+              </CardContent>
+            </Card>
+            <Card className="border-border bg-card p-5 space-y-2 shadow-sm">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Token Akses</CardTitle>
+              <CardContent className="p-0 text-xs text-muted-foreground space-y-1">
+                <div>• Kode acak yang wajib diisi peserta sebelum mulai.</div>
+                <div>• Bagikan token secara langsung di ruang ujian.</div>
+              </CardContent>
+            </Card>
+          </div>
         </section>
 
         <DocCallout type="warning" title="Perhatian Kalibrasi Jam">
-          Pastikan jam server terkalibrasi dengan WIB (Asia/Jakarta) agar peserta tidak terhalang masuk akibat selisih detik.
+          Pastikan jam pada server dan perangkat peserta telah terkalibrasi dengan benar agar tidak menghambat akses masuk.
         </DocCallout>
       </div>
     )
@@ -287,30 +321,40 @@ const articlesMap: Record<string, DocArticle> = {
     content: () => (
       <div className="space-y-8">
         <section id="fitur-pengawas" data-heading="fitur-pengawas" className="space-y-4">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Fitur Dashboard Pengawas</h2>
-          <p className="text-slate-600 dark:text-slate-400">
+          <h2 className="text-xl font-bold text-card-foreground tracking-tight">Fitur Dashboard Pengawas</h2>
+          <p className="text-muted-foreground">
             Buka menu <DocMenuLink to="/admin/peserta/online">Monitoring Live</DocMenuLink> saat ujian berlangsung.
           </p>
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden text-xs">
-            <table className="w-full">
-              <thead className="bg-slate-50 dark:bg-slate-900 text-left font-bold text-slate-500 border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th className="p-3">Indikator</th>
-                  <th className="p-3">Keterangan</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-950">
-                <tr><td className="p-3 font-bold">Status Koneksi</td><td className="p-3">Indikator real-time keaktifan peserta.</td></tr>
-                <tr><td className="p-3 font-bold">Hitung Pelanggaran</td><td className="p-3">Jumlah keluar dari aplikasi / pindah tab.</td></tr>
-                <tr><td className="p-3 font-bold">Progress Sesi</td><td className="p-3">Persentase soal yang sudah dijawab.</td></tr>
-              </tbody>
-            </table>
-          </div>
+
+          <Card className="border-border overflow-hidden shadow-sm">
+            <Table>
+              <TableHeader className="bg-muted">
+                <TableRow>
+                  <TableHead className="font-bold text-muted-foreground">Fitur Monitoring</TableHead>
+                  <TableHead className="font-bold text-muted-foreground">Fungsi Utama</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="bg-card">
+                <TableRow>
+                  <TableCell className="font-bold text-card-foreground">Status Online & Progress</TableCell>
+                  <TableCell className="text-muted-foreground">Melihat keaktifan koneksi dan jumlah soal yang telah dijawab.</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-bold text-card-foreground">Deteksi Pelanggaran</TableCell>
+                  <TableCell className="text-muted-foreground">Mencatat indikasi kecurangan (pindah tab / keluar layar).</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-bold text-card-foreground">Aksi Pengawas</TableCell>
+                  <TableCell className="text-muted-foreground">Fitur paksa kumpulkan, tambah waktu pengerjaan, atau riset insiden.</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </Card>
         </section>
 
         <section id="aksi-interaktif" data-heading="aksi-interaktif" className="space-y-3">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Aksi Pengawas</h2>
-          <p className="text-slate-600 dark:text-slate-400">
+          <h2 className="text-xl font-bold text-card-foreground tracking-tight">Aksi Pengawas</h2>
+          <p className="text-muted-foreground">
             Pengawas dapat melakukan aksi langsung dari dasbor: <Strong>Paksa Kumpulkan</Strong>, <Strong>Tambah Waktu</Strong>, atau <Strong>Riset Insiden</Strong>.
           </p>
         </section>
@@ -330,13 +374,12 @@ const articlesMap: Record<string, DocArticle> = {
     content: () => (
       <div className="space-y-8">
         <section id="penilaian-manual" data-heading="penilaian-manual" className="space-y-4">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Proses Evaluasi Essay</h2>
+          <h2 className="text-xl font-bold text-card-foreground tracking-tight">Proses Evaluasi Essay</h2>
           <StepList steps={[
             <>Buka <DocMenuLink to="/admin/evaluasi">Evaluasi Essay</DocMenuLink>.</>,
-            <>Pilih paket ujian dan nama peserta yang akan dinilai.</>,
-            <>Beri nilai angka (0 sampai bobot maksimum) pada tiap jawaban essay.</>,
-            <>Gunakan tombol <Strong>Beri 0 untuk Kosong</Strong> untuk otomatis menilai jawaban yang tidak diisi.</>,
-            <>Klik <Strong>Simpan Nilai</Strong> untuk mengalkulasi nilai akhir total.</>,
+            <>Pilih peserta dan berikan skor sesuai bobot maksimal soal.</>,
+            <>Manfaatkan fitur <Strong>Beri 0 untuk Kosong</Strong> untuk mempercepat penilaian jawaban kosong.</>,
+            <>Setelah penilaian selesai, rekap nilai dapat diunduh melalui laporan hasil.</>,
           ]} />
         </section>
       </div>
@@ -356,15 +399,15 @@ const articlesMap: Record<string, DocArticle> = {
     content: () => (
       <div className="space-y-8">
         <section id="format-excel" data-heading="format-excel" className="space-y-3">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Impor Berkas Excel (.xlsx)</h2>
-          <p className="text-slate-600 dark:text-slate-400">
+          <h2 className="text-xl font-bold text-card-foreground tracking-tight">Impor Berkas Excel (.xlsx)</h2>
+          <p className="text-muted-foreground">
             Gunakan template resmi dari menu Bank Soal. Pastikan nama kolom sesuai: <Strong>Nomor, Pertanyaan, Pilihan A–E, Kunci, Bobot</Strong>.
           </p>
         </section>
 
         <section id="format-word" data-heading="format-word" className="space-y-3">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Impor Berkas Word (.docx)</h2>
-          <p className="text-slate-600 dark:text-slate-400">
+          <h2 className="text-xl font-bold text-card-foreground tracking-tight">Impor Berkas Word (.docx)</h2>
+          <p className="text-muted-foreground">
             Gunakan penomoran standar angka (1., 2.) dan pilihan (A., B., C.). Kunci jawaban dapat ditandai dengan cetak tebal (*bold*).
           </p>
         </section>
@@ -385,15 +428,15 @@ const articlesMap: Record<string, DocArticle> = {
     content: () => (
       <div className="space-y-8">
         <section id="akun-peserta" data-heading="akun-peserta" className="space-y-3">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Manajemen Akun Peserta</h2>
-          <p className="text-slate-600 dark:text-slate-400">
+          <h2 className="text-xl font-bold text-card-foreground tracking-tight">Manajemen Akun Peserta</h2>
+          <p className="text-muted-foreground">
             Daftarkan peserta melalui <DocMenuLink to="/admin/users">Pengguna</DocMenuLink> atau impor masal dari file Excel.
           </p>
         </section>
 
         <section id="matriks-rbac" data-heading="matriks-rbac" className="space-y-3">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Hak Akses Role (RBAC)</h2>
-          <p className="text-slate-600 dark:text-slate-400">
+          <h2 className="text-xl font-bold text-card-foreground tracking-tight">Hak Akses Role (RBAC)</h2>
+          <p className="text-muted-foreground">
             Atur wewenang khusus Admin Jurusan dan Evaluator di menu <DocMenuLink to="/admin/users/roles">Hak Akses Role</DocMenuLink>.
           </p>
         </section>
@@ -413,8 +456,8 @@ const articlesMap: Record<string, DocArticle> = {
     content: () => (
       <div className="space-y-8">
         <section id="pencadangan" data-heading="pencadangan" className="space-y-3">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Pencadangan & Pemulihan</h2>
-          <p className="text-slate-600 dark:text-slate-400">
+          <h2 className="text-xl font-bold text-card-foreground tracking-tight">Pencadangan & Pemulihan</h2>
+          <p className="text-muted-foreground">
             Buka menu <DocMenuLink to="/admin/tools">Alat Sistem</DocMenuLink> untuk mengunduh snapshot JSON atau memulihkan database.
           </p>
         </section>
@@ -434,7 +477,7 @@ const articlesMap: Record<string, DocArticle> = {
     content: () => (
       <div className="space-y-8">
         <section id="pertanyaan-umum" data-heading="pertanyaan-umum" className="space-y-4">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Pertanyaan yang Sering Diajukan</h2>
+          <h2 className="text-xl font-bold text-card-foreground tracking-tight">Pertanyaan yang Sering Diajukan</h2>
           
           <div className="space-y-3">
             <FaqAccordion q="Peserta tidak bisa masuk menggunakan Token">
@@ -459,7 +502,7 @@ const articlesMap: Record<string, DocArticle> = {
   }
 };
 
-/* ─── 2. MAIN DOCUSAURUS ENGINE PAGE COMPONENT ─── */
+/* ─── 2. MAIN DOCUSAURUS ENGINE PAGE COMPONENT (100% SHADCN/UI COMPLIANT) ─── */
 function PanduanPage() {
   const cfg = configRepo.get();
   const [activeDocId, setActiveDocId] = useState("alur-kerja");
@@ -471,7 +514,6 @@ function PanduanPage() {
     return articlesMap[activeDocId] || articlesMap["alur-kerja"];
   }, [activeDocId]);
 
-  // Order array for prev/next pagination
   const allArticlesList = useMemo(() => {
     const list: { id: string; title: string }[] = [];
     docCategories.forEach((cat) => {
@@ -536,142 +578,187 @@ function PanduanPage() {
         description={`Pusat pengetahuan resmi ${cfg.appName} — panduan alur kerja, pengelolaan ujian, dan pemecahan masalah.`}
       />
 
-      {/* 3-COLUMN DOCUSAURUS RESPONSIVE LAYOUT */}
-      <div className="flex flex-col lg:flex-row gap-8 items-start">
-        
-        {/* COLUMN 1: LEFT DOCS CATEGORY SIDEBAR */}
-        <aside className="w-full lg:w-64 shrink-0 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sleek space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+      {/* QUICK SEARCH & SHORTCUT BAR (Official shadcn Card) */}
+      <Card className="border-border bg-card text-card-foreground shadow-sleek">
+        <CardContent className="p-4 sm:p-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Filter dokumen..."
+              placeholder="Cari kata kunci (misal: token, import, reset)..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-9 text-xs bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+              className="pl-10 bg-muted border-input font-medium h-11"
             />
           </div>
 
-          <nav aria-label="Kategori Panduan" className="space-y-4 text-xs">
-            {filteredCategories.map((cat) => {
-              const IconComp = cat.icon;
-              return (
-                <div key={cat.id} className="space-y-1.5">
-                  <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[10px] text-slate-400 px-2">
-                    <IconComp className="h-3.5 w-3.5 text-primary shrink-0" />
-                    <span>{cat.label}</span>
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 shrink-0 text-xs font-bold">
+            <Button variant="secondary" size="sm" asChild className="rounded-xl h-10 px-4">
+              <Link to="/admin/modul">
+                <Layers className="h-3.5 w-3.5 text-primary mr-1.5" /> Bank Soal
+              </Link>
+            </Button>
+            <Button variant="secondary" size="sm" asChild className="rounded-xl h-10 px-4">
+              <Link to="/admin/peserta/online">
+                <BookOpen className="h-3.5 w-3.5 text-primary mr-1.5" /> Monitoring
+              </Link>
+            </Button>
+            <Button variant="secondary" size="sm" asChild className="rounded-xl h-10 px-4">
+              <Link to="/admin/evaluasi">
+                <FileText className="h-3.5 w-3.5 text-primary mr-1.5" /> Evaluasi
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 3-COLUMN DOCUSAURUS RESPONSIVE LAYOUT */}
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
+        
+        {/* COLUMN 1: LEFT DOCS CATEGORY SIDEBAR (Official shadcn Card) */}
+        <Card className="w-full lg:w-64 shrink-0 border-border bg-card text-card-foreground shadow-sleek">
+          <CardContent className="p-4 space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input 
+                placeholder="Filter dokumen..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 h-9 text-xs bg-muted border-input"
+              />
+            </div>
+
+            <nav aria-label="Kategori Panduan" className="space-y-4 text-xs">
+              {filteredCategories.map((cat) => {
+                const IconComp = cat.icon;
+                return (
+                  <div key={cat.id} className="space-y-1.5">
+                    <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[10px] text-muted-foreground px-2">
+                      <IconComp className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <span>{cat.label}</span>
+                    </div>
+                    <ul className="space-y-1 pl-2">
+                      {cat.articles.map((art) => {
+                        const isActive = art.id === activeDocId;
+                        return (
+                          <li key={art.id}>
+                            <Button
+                              variant={isActive ? "default" : "ghost"}
+                              size="sm"
+                              onClick={() => handleNavigate(art.id)}
+                              className={`w-full justify-start text-left text-xs font-medium h-9 rounded-xl transition-all cursor-pointer ${
+                                isActive ? "font-bold shadow-sm" : "text-muted-foreground hover:text-foreground"
+                              }`}
+                            >
+                              <span className="truncate">{art.title}</span>
+                            </Button>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </div>
-                  <ul className="space-y-1 pl-2">
-                    {cat.articles.map((art) => {
-                      const isActive = art.id === activeDocId;
-                      return (
-                        <li key={art.id}>
-                          <button
-                            onClick={() => handleNavigate(art.id)}
-                            className={`w-full text-left px-3 py-2 rounded-xl transition-all font-medium cursor-pointer ${
-                              isActive
-                                ? "bg-primary text-primary-foreground font-bold shadow-sm"
-                                : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100"
-                            }`}
-                          >
-                            {art.title}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              );
-            })}
-          </nav>
-        </aside>
+                );
+              })}
+            </nav>
+          </CardContent>
+        </Card>
 
-        {/* COLUMN 2: CENTER DOCS READING CANVAS */}
-        <main className="flex-1 min-w-0 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-10 shadow-sleek">
-          <div className="max-w-3xl mx-auto space-y-8">
+        {/* COLUMN 2: CENTER DOCS READING CANVAS (Official shadcn Card) */}
+        <Card className="flex-1 min-w-0 border-border bg-card text-card-foreground shadow-sleek">
+          <CardHeader className="p-6 sm:p-8 border-b border-border space-y-3">
             
-            {/* Breadcrumb Trail */}
-            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium border-b border-slate-100 dark:border-slate-900 pb-4">
-              <span>Dokumentasi</span>
-              <ChevronRight className="h-3 w-3" />
-              <span>{activeDoc.categoryLabel}</span>
-              <ChevronRight className="h-3 w-3" />
-              <span className="font-bold text-slate-900 dark:text-slate-100">{activeDoc.title}</span>
-            </div>
+            {/* Official shadcn Breadcrumb */}
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink className="text-xs">Dokumentasi</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink className="text-xs">{activeDoc.categoryLabel}</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage className="text-xs font-bold">{activeDoc.title}</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
 
-            {/* Document Header */}
-            <div className="space-y-2">
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                {activeDoc.title}
-              </h1>
-              <p className="text-sm text-slate-500 leading-relaxed">
-                {activeDoc.description}
-              </p>
-            </div>
+            <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight text-card-foreground">
+              {activeDoc.title}
+            </CardTitle>
+            <CardDescription className="text-sm text-muted-foreground">
+              {activeDoc.description}
+            </CardDescription>
+          </CardHeader>
 
-            <div className="h-px w-full bg-slate-100 dark:bg-slate-900" />
-
+          <CardContent className="p-6 sm:p-8 space-y-8">
+            
             {/* Render Active Document Content */}
             <div ref={contentRef} className="prose prose-slate dark:prose-invert max-w-none">
               {activeDoc.content(handleNavigate)}
             </div>
 
-            <div className="h-px w-full bg-slate-100 dark:bg-slate-900 pt-6" />
+            <div className="h-px w-full bg-border pt-4" />
 
-            {/* Bottom Docusaurus Pagination Bar */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 text-xs font-bold">
+            {/* Bottom Docusaurus Pagination Bar (Official shadcn Buttons) */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 text-xs font-bold">
               {prevDoc ? (
-                <button
+                <Button
+                  variant="outline"
                   onClick={() => handleNavigate(prevDoc.id)}
-                  className="w-full sm:w-auto flex items-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-primary transition-all text-slate-700 dark:text-slate-300 hover:text-primary cursor-pointer"
+                  className="w-full sm:w-auto h-auto p-3 justify-start rounded-xl border-border text-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-4 w-4 mr-2" />
                   <div className="text-left">
-                    <span className="text-[10px] text-slate-400 font-normal block">Bab Sebelumnya</span>
+                    <span className="text-[10px] text-muted-foreground font-normal block">Bab Sebelumnya</span>
                     <span>{prevDoc.title}</span>
                   </div>
-                </button>
+                </Button>
               ) : <div />}
 
               {nextDoc ? (
-                <button
+                <Button
+                  variant="outline"
                   onClick={() => handleNavigate(nextDoc.id)}
-                  className="w-full sm:w-auto flex items-center justify-end gap-2 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-primary transition-all text-slate-700 dark:text-slate-300 hover:text-primary cursor-pointer text-right ml-auto"
+                  className="w-full sm:w-auto h-auto p-3 justify-end rounded-xl border-border text-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer text-right ml-auto"
                 >
                   <div className="text-right">
-                    <span className="text-[10px] text-slate-400 font-normal block">Bab Selanjutnya</span>
+                    <span className="text-[10px] text-muted-foreground font-normal block">Bab Selanjutnya</span>
                     <span>{nextDoc.title}</span>
                   </div>
-                  <ChevronRight className="h-4 w-4" />
-                </button>
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
               ) : <div />}
             </div>
 
-          </div>
-        </main>
+          </CardContent>
+        </Card>
 
-        {/* COLUMN 3: RIGHT IN-PAGE TABLE OF CONTENTS (TOC) */}
+        {/* COLUMN 3: RIGHT IN-PAGE TABLE OF CONTENTS (TOC) (Official shadcn Card) */}
         {activeDoc.toc.length > 0 && (
-          <aside className="hidden xl:block w-56 shrink-0 sticky top-24 self-start bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-sleek rounded-2xl p-5 text-xs">
-            <div className="font-bold uppercase tracking-wider text-[10px] text-slate-400 mb-3 px-2">
-              Daftar Isi Halaman
-            </div>
-            <ul className="space-y-1">
-              {activeDoc.toc.map((item) => (
-                <li key={item.id}>
-                  <a
-                    href={`#${item.id}`}
-                    className={`block px-3 py-1.5 rounded-lg font-medium transition-all ${
-                      activeHeadingId === item.id
-                        ? "bg-slate-100 dark:bg-slate-900 text-primary font-bold"
-                        : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
-                    }`}
-                  >
-                    {item.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </aside>
+          <Card className="hidden xl:block w-56 shrink-0 sticky top-24 self-start border-border bg-card text-card-foreground shadow-sleek">
+            <CardContent className="p-4 text-xs space-y-3">
+              <div className="font-bold uppercase tracking-wider text-[10px] text-muted-foreground px-2">
+                Daftar Isi Halaman
+              </div>
+              <ul className="space-y-1">
+                {activeDoc.toc.map((item) => (
+                  <li key={item.id}>
+                    <a
+                      href={`#${item.id}`}
+                      className={`block px-3 py-1.5 rounded-lg font-medium transition-all ${
+                        activeHeadingId === item.id
+                          ? "bg-muted text-primary font-bold"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {item.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
         )}
 
       </div>
@@ -679,20 +766,19 @@ function PanduanPage() {
   );
 }
 
-/* ─── 3. HELPER COMPONENTS (Docusaurus Callouts & Badges) ─── */
+/* ─── 3. HELPER COMPONENTS (Official shadcn Callouts & Badges) ─── */
 
 function Strong({ children }: { children: React.ReactNode }) {
-  return <strong className="font-bold text-slate-900 dark:text-slate-100">{children}</strong>;
+  return <strong className="font-bold text-foreground">{children}</strong>;
 }
 
 function DocMenuLink({ to, children }: { to: string; children: React.ReactNode }) {
   return (
-    <Link 
-      to={to} 
-      className="inline-flex items-center gap-1.5 text-xs font-bold bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 px-3 py-1.5 rounded-xl border border-slate-200/80 dark:border-slate-800 hover:border-primary hover:text-primary transition-all duration-200 shadow-sm"
-    >
-      {children} <ExternalLink className="h-3 w-3 opacity-70" />
-    </Link>
+    <Button variant="secondary" size="sm" asChild className="rounded-xl font-bold h-8 px-3 text-xs border border-border">
+      <Link to={to} className="inline-flex items-center gap-1.5">
+        {children} <ExternalLink className="h-3 w-3 opacity-70" />
+      </Link>
+    </Button>
   );
 }
 
@@ -701,10 +787,10 @@ function StepList({ steps }: { steps: React.ReactNode[] }) {
     <ol className="space-y-3 mb-6">
       {steps.map((step, i) => (
         <li key={i} className="flex gap-3 text-xs sm:text-sm">
-          <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold mt-0.5 shadow-sm">
+          <Badge variant="default" className="shrink-0 h-5 w-5 rounded-full p-0 flex items-center justify-center font-bold text-[10px] mt-0.5 shadow-sm">
             {i + 1}
-          </span>
-          <span className="flex-1 text-slate-700 dark:text-slate-300 leading-relaxed">{step}</span>
+          </Badge>
+          <span className="flex-1 text-foreground leading-relaxed">{step}</span>
         </li>
       ))}
     </ol>
@@ -720,13 +806,6 @@ function DocCallout({
   title?: string; 
   children: React.ReactNode 
 }) {
-  const styles = {
-    note: "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/40 text-blue-900 dark:text-blue-300",
-    tip: "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40 text-emerald-900 dark:text-emerald-300",
-    warning: "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40 text-amber-900 dark:text-amber-300",
-    danger: "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/40 text-red-900 dark:text-red-300",
-  };
-
   const icons = {
     note: Info,
     tip: Lightbulb,
@@ -735,15 +814,18 @@ function DocCallout({
   };
 
   const IconComp = icons[type];
+  const isDestructive = type === "danger" || type === "warning";
 
   return (
-    <div className={`p-4 rounded-2xl border text-xs leading-relaxed space-y-1 shadow-sm ${styles[type]}`}>
-      <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-[10px]">
-        <IconComp className="h-4 w-4 shrink-0" />
-        <span>{title || type}</span>
-      </div>
-      <div className="pl-6">{children}</div>
-    </div>
+    <Alert variant={isDestructive ? "destructive" : "default"} className="rounded-2xl border-border bg-muted/60 text-foreground p-4 space-y-1 shadow-sm">
+      <IconComp className="h-4 w-4 shrink-0" />
+      <AlertTitle className="font-bold uppercase tracking-wider text-[10px] text-foreground">
+        {title || type}
+      </AlertTitle>
+      <AlertDescription className="text-xs text-muted-foreground leading-relaxed">
+        {children}
+      </AlertDescription>
+    </Alert>
   );
 }
 
@@ -751,21 +833,22 @@ function FaqAccordion({ q, children }: { q: string; children: React.ReactNode })
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm overflow-hidden transition-all duration-300">
-      <button 
+    <Card className="border-border bg-card text-card-foreground shadow-sm overflow-hidden transition-all duration-300">
+      <Button 
+        variant="ghost"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full p-4 flex items-center justify-between text-left font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors cursor-pointer"
+        className="w-full p-4 h-auto flex items-center justify-between text-left font-bold text-xs sm:text-sm text-card-foreground hover:bg-muted/50 transition-colors cursor-pointer rounded-none"
       >
         <span className="flex items-center gap-2.5">
           <HelpCircle className="h-4 w-4 text-primary shrink-0" /> {q}
         </span>
-        <ChevronRight className={`h-4 w-4 text-slate-400 transition-transform duration-300 ${isOpen ? "rotate-90 text-primary" : ""}`} />
-      </button>
+        <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform duration-300 ${isOpen ? "rotate-90 text-primary" : ""}`} />
+      </Button>
       {isOpen && (
-        <div className="px-4 pb-4 pt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
+        <CardContent className="px-4 pb-4 pt-2 text-xs text-muted-foreground leading-relaxed border-t border-border bg-muted/30">
           <div className="pl-6">{children}</div>
-        </div>
+        </CardContent>
       )}
-    </div>
+    </Card>
   );
 }
