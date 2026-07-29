@@ -67,10 +67,10 @@ function ToolsPage() {
     reader.readAsText(f);
   }
 
-  function doRestore() {
+  async function doRestore() {
     if (!preview) return;
     try {
-      importBackup(preview);
+      await importBackup(preview);
       toast.success("Restore berhasil! Aplikasi akan disegarkan...");
       setTimeout(() => window.location.reload(), 1500);
     } catch (e) {
@@ -78,12 +78,12 @@ function ToolsPage() {
     }
   }
 
-  function doReset() {
+  async function doReset() {
     if (confirmText !== "HAPUS") {
       toast.error("Ketik 'HAPUS' untuk konfirmasi");
       return;
     }
-    resetAllData();
+    await resetAllData();
     ensureSeed();
     toast.success("Database berhasil dikosongkan! Memuat data awal...");
     setTimeout(() => window.location.reload(), 1500);

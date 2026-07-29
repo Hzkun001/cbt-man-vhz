@@ -209,7 +209,7 @@ function UjianEditor() {
     set("topicSets", [...u!.topicSets, ts]);
   }
 
-  function save() {
+  async function save() {
     if (!u!.nama.trim()) {
       toast.error("Nama wajib");
       return;
@@ -225,6 +225,7 @@ function UjianEditor() {
       }
     }
     ujianRepo.upsert(u!);
+    await ujianRepo.flush();
     toast.success("Disimpan");
     navigate({ to: "/admin/ujian" });
   }

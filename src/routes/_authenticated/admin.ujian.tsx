@@ -38,7 +38,7 @@ function UjianList() {
   const [activeTab, setActiveTab] = useState<"semua" | "persiapan" | "berlangsung" | "selesai">("semua");
   const [search, setSearch] = useState("");
 
-  function add() {
+  async function add() {
     const u: Ujian = {
       id: uid("ex_"),
       nama: "Ujian Baru",
@@ -61,6 +61,7 @@ function UjianList() {
       createdAt: Date.now(),
     };
     ujianRepo.upsert(u);
+    await ujianRepo.flush();
     setList(visibleUjians(user));
     toast.success("Ujian baru dibuat — silakan edit");
   }
