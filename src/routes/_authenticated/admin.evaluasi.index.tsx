@@ -35,9 +35,8 @@ function EvaluasiList() {
   const ujians = ujianRepo.all();
   const soals = soalRepo.all();
   const mks = mataKuliahRepo.all();
-  const soalSet = new Set(soals.filter((s) => s.tipe === "essay").map((s) => s.id));
-
   const items = useMemo(() => {
+    const soalSet = new Set(soals.filter((s) => s.tipe === "essay").map((s) => s.id));
     const ujianMap = new Map<string, { ujian: any, mk: any, totalSesi: number, belumSesi: number, totalEssay: number, belumEssay: number }>();
 
     sesis.forEach(s => {
@@ -68,7 +67,7 @@ function EvaluasiList() {
         (i.mk?.nama || "").toLowerCase().includes(search.toLowerCase())
       )
       .sort((a, b) => b.belumSesi - a.belumSesi);
-  }, [sesis, ujians, mks, soalSet, search]);
+  }, [sesis, ujians, mks, soals, search]);
 
   const totalBelumSesi = items.reduce((acc, curr) => acc + curr.belumSesi, 0);
   const totalBelumEssay = items.reduce((acc, curr) => acc + curr.belumEssay, 0);

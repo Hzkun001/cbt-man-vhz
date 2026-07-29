@@ -27,20 +27,13 @@ function EvaluasiUjianList() {
   const [search, setSearch] = useState("");
 
   const visibleIds = new Set(visibleUjians(user).map((u) => u.id));
-  
-  if (!visibleIds.has(id)) {
-    return <div className="py-20 text-center text-sm font-medium text-slate-500">Tidak ada akses atau ujian tidak ditemukan.</div>;
-  }
-
   const ujian = ujianRepo.byId(id);
-  if (!ujian) return <div className="py-20 text-center text-sm font-medium text-slate-500">Ujian tidak ditemukan.</div>;
-
   const sesis = sesiRepo.all().filter((s) => s.status === "selesai" && s.ujianId === id);
   const users = usersRepo.all();
   const soals = soalRepo.all();
-  const soalSet = new Set(soals.filter((s) => s.tipe === "essay").map((s) => s.id));
 
   const items = useMemo(() => {
+    const soalSet = new Set(soals.filter((s) => s.tipe === "essay").map((s) => s.id));
     return sesis
       .map((s) => {
         const essays = s.jawaban.filter((j) => soalSet.has(j.soalId));
@@ -54,7 +47,12 @@ function EvaluasiUjianList() {
         (x.u?.username || "").toLowerCase().includes(search.toLowerCase())
       )
       .sort((a, b) => b.belum - a.belum);
-  }, [sesis, soalSet, users, search]);
+  }, [sesis, soals, users, search]);
+
+  if (!visibleIds.has(id)) {
+    return <div className="py-20 text-center text-sm font-medium text-slate-500">Tidak ada akses atau ujian tidak ditemukan.</div>;
+  }
+  if (!ujian) return <div className="py-20 text-center text-sm font-medium text-slate-500">Ujian tidak ditemukan.</div>;
 
   const totalBelum = items.reduce((acc, curr) => acc + curr.belum, 0);
 

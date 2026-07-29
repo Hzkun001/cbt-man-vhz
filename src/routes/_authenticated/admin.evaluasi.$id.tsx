@@ -24,6 +24,7 @@ function EvaluasiSesi() {
   const { id } = useParams({ from: "/_authenticated/admin/evaluasi/$id" });
   const me = useAuthStore((s) => s.user);
   const [sesi, setSesi] = useState(sesiRepo.byId(id));
+  const [isSaving, setIsSaving] = useState(false);
   
   if (!me) return <div className="py-20 text-center text-sm font-bold text-slate-500">Akses Ditolak</div>;
   if (!sesi) return <div className="py-20 text-center text-sm font-bold text-slate-500">Sesi tidak ditemukan</div>;
@@ -55,8 +56,6 @@ function EvaluasiSesi() {
     sesiRepo.upsert(next);
     setSesi(next);
   }
-
-  const [isSaving, setIsSaving] = useState(false);
 
   function fillZeroForEmpty() {
     if (!sesi) return;
