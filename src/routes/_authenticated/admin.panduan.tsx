@@ -707,12 +707,12 @@ function PanduanPage() {
                 <Button
                   variant="outline"
                   onClick={() => handleNavigate(prevDoc.id)}
-                  className="w-full sm:w-auto h-auto p-3 justify-start rounded-lg border-border text-foreground hover:bg-muted cursor-pointer"
+                  className="w-full sm:w-auto h-auto p-3 justify-start rounded-lg border-border bg-card text-foreground hover:bg-muted hover:text-foreground cursor-pointer transition-colors"
                 >
                   <ChevronLeft className="h-4 w-4 mr-2 text-muted-foreground" />
                   <div className="text-left">
                     <span className="text-[10px] text-muted-foreground font-normal block">Bab Sebelumnya</span>
-                    <span>{prevDoc.title}</span>
+                    <span className="font-semibold text-foreground">{prevDoc.title}</span>
                   </div>
                 </Button>
               ) : <div />}
@@ -721,11 +721,11 @@ function PanduanPage() {
                 <Button
                   variant="outline"
                   onClick={() => handleNavigate(nextDoc.id)}
-                  className="w-full sm:w-auto h-auto p-3 justify-end rounded-lg border-border text-foreground hover:bg-muted cursor-pointer text-right ml-auto"
+                  className="w-full sm:w-auto h-auto p-3 justify-end rounded-lg border-border bg-card text-foreground hover:bg-muted hover:text-foreground cursor-pointer text-right ml-auto transition-colors"
                 >
                   <div className="text-right">
                     <span className="text-[10px] text-muted-foreground font-normal block">Bab Selanjutnya</span>
-                    <span>{nextDoc.title}</span>
+                    <span className="font-semibold text-foreground">{nextDoc.title}</span>
                   </div>
                   <ChevronRight className="h-4 w-4 ml-2 text-muted-foreground" />
                 </Button>
