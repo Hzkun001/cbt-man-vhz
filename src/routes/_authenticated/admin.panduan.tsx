@@ -97,11 +97,11 @@ function PanduanPage() {
         </div>
       </div>
 
-      <div className="flex gap-8 items-start">
+      <div className="flex flex-col lg:flex-row gap-10 items-start">
         {/* Main Content Area */}
         <article
           ref={contentRef}
-          className="flex-1 min-w-0 text-sm text-slate-700 dark:text-slate-300 leading-relaxed divide-y divide-slate-200/80 dark:divide-slate-800/80 [&>section]:py-10 first:[&>section]:pt-0"
+          className="flex-1 min-w-0 text-sm text-slate-700 dark:text-slate-300 leading-relaxed divide-y divide-slate-200/80 dark:divide-slate-800/80 [&>section]:py-12 md:[&>section]:py-16 first:[&>section]:pt-0"
         >
           {/* Alur Kerja Overview */}
           <section data-section="alur-kerja">
