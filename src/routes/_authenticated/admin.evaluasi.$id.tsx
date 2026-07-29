@@ -75,6 +75,7 @@ function EvaluasiSesi() {
       const next = { ...sesi, jawaban: nextJawaban };
       sesiRepo.upsert(next);
       setSesi(next);
+      sesiRepo.flush().catch(console.error); // 🔥 PERSISTENCE: Ensure 0s are saved!
       toast.success("Berhasil memberi nilai 0 pada jawaban kosong.");
     } else {
       toast.info("Tidak ada jawaban kosong yang belum dinilai.");
@@ -150,7 +151,7 @@ function EvaluasiSesi() {
                     <CheckCircle2 className="h-3.5 w-3.5" /> Dinilai
                   </span>
                 ) : (
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-accent flex items-center gap-1.5 bg-accent/10 px-2 py-1 rounded-md border border-accent/20">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-600 flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 rounded-md border border-amber-200 dark:border-amber-900/40">
                     Belum
                   </span>
                 )}
