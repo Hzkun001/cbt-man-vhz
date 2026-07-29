@@ -1,6 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -38,6 +37,11 @@ function ToolsPage() {
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmText, setConfirmText] = useState("");
 
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -67,14 +71,28 @@ function ToolsPage() {
     reader.readAsText(f);
   }
 
+  async function handleDownloadBackup() {
+    setIsDownloading(true);
+    try {
+      await downloadBackup();
+      toast.success("Pencadangan berhasil diunduh.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal mengunduh backup");
+    } finally {
+      setIsDownloading(false);
+    }
+  }
+
   async function doRestore() {
-    if (!preview) return;
+    if (!preview || isRestoring) return;
+    setIsRestoring(true);
     try {
       await importBackup(preview);
       toast.success("Restore berhasil! Aplikasi akan disegarkan...");
-      setTimeout(() => window.location.reload(), 1500);
+      setTimeout(() => window.location.reload(), 1200);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      toast.error(e instanceof Error ? e.message : "Gagal memulihkan backup");
+      setIsRestoring(false);
     }
   }
 
@@ -83,15 +101,36 @@ function ToolsPage() {
       toast.error("Ketik 'HAPUS' untuk konfirmasi");
       return;
     }
-    await resetAllData();
-    ensureSeed();
-    toast.success("Database berhasil dikosongkan! Memuat data awal...");
-    setTimeout(() => window.location.reload(), 1500);
+    if (isResetting) return;
+    setIsResetting(true);
+    try {
+      await resetAllData();
+      await ensureSeed();
+      toast.success("Database berhasil dikosongkan! Memuat data awal...");
+      setConfirmReset(false);
+      setConfirmText("");
+      setTimeout(() => window.location.reload(), 1200);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal melakukan reset database");
+      setIsResetting(false);
+    }
+  }
+
+  async function handleSeed() {
+    if (isSeeding) return;
+    setIsSeeding(true);
+    try {
+      await ensureSeed();
+      toast.success("Seed data berhasil dimuat.");
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal memuat seed data");
+      setIsSeeding(false);
+    }
   }
 
   return (
     <AdminPage className="neo-ready">
-
       <AdminPageHeader
         title="Alat Sistem"
         description="Fasilitas pencadangan data (backup), pemulihan (restore), dan pengaturan ulang pangkalan data."
@@ -106,7 +145,6 @@ function ToolsPage() {
           </p>
         </div>
         <div role="region" aria-labelledby="backup-heading" className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
-
           
           {/* Export Backup Row */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 p-6 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
@@ -120,8 +158,8 @@ function ToolsPage() {
               <p className="text-xs text-slate-500 pl-8">Menghasilkan berkas JSON tunggal berisi snapshot pangkalan data saat ini.</p>
             </div>
             <div className="shrink-0">
-              <Button onClick={() => void downloadBackup()} className="w-full sm:w-auto shadow-sm">
-                Unduh Backup
+              <Button onClick={handleDownloadBackup} disabled={isDownloading} className="w-full sm:w-auto shadow-sm">
+                {isDownloading ? "Mengunduh..." : "Unduh Backup"}
               </Button>
             </div>
           </div>
@@ -144,7 +182,6 @@ function ToolsPage() {
                 accept="application/json,.json"
                 className="hidden"
                 aria-hidden="true"
-
                 onChange={handleFile}
               />
               <Button variant="outline" onClick={() => fileRef.current?.click()} className="w-full sm:w-auto bg-white dark:bg-slate-950">
@@ -167,7 +204,6 @@ function ToolsPage() {
           </p>
         </div>
         <div role="region" aria-labelledby="advanced-heading" className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
-
           
           {/* Seed Data Row */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 p-6 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
@@ -181,12 +217,8 @@ function ToolsPage() {
               <p className="text-xs text-slate-500 pl-8">Isi pangkalan data kosong dengan sampel otomatis (pengguna, soal, ujian).</p>
             </div>
             <div className="shrink-0">
-              <Button variant="outline" onClick={() => {
-                ensureSeed();
-                toast.success("Seed data dimuat (hanya jika kosong).");
-                setTimeout(() => window.location.reload(), 600);
-              }} className="w-full sm:w-auto bg-white dark:bg-slate-950">
-                Muat Seed Data
+              <Button variant="outline" onClick={handleSeed} disabled={isSeeding} className="w-full sm:w-auto bg-white dark:bg-slate-950">
+                {isSeeding ? "Memuat Seed..." : "Muat Seed Data"}
               </Button>
             </div>
           </div>
@@ -201,7 +233,6 @@ function ToolsPage() {
                 <h3 className="text-sm font-semibold text-red-700 dark:text-red-400">Zona Berbahaya: Hapus Semua Data</h3>
               </div>
               <p className="text-xs font-medium text-red-700 dark:text-red-400 pl-8">Tindakan ini akan mengosongkan seluruh pangkalan data. Tidak dapat dibatalkan!</p>
-
             </div>
             <div className="shrink-0">
               <Button variant="destructive" onClick={() => setConfirmReset(true)} className="w-full sm:w-auto font-semibold">
@@ -214,7 +245,7 @@ function ToolsPage() {
       </div>
 
       {/* Preview import */}
-      <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
+      <Dialog open={!!preview} onOpenChange={(o) => !o && !isRestoring && setPreview(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Preview restore</DialogTitle>
@@ -238,10 +269,12 @@ function ToolsPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setPreview(null)}>
+            <Button variant="ghost" disabled={isRestoring} onClick={() => setPreview(null)}>
               Batal
             </Button>
-            <Button onClick={doRestore}>Terapkan restore</Button>
+            <Button onClick={doRestore} disabled={isRestoring}>
+              {isRestoring ? "Memulihkan..." : "Terapkan restore"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -250,7 +283,7 @@ function ToolsPage() {
       <Dialog
         open={confirmReset}
         onOpenChange={(o) => {
-          if (!o) {
+          if (!o && !isResetting) {
             setConfirmReset(false);
             setConfirmText("");
           }
@@ -269,6 +302,7 @@ function ToolsPage() {
             <Input
               id="confirm"
               value={confirmText}
+              disabled={isResetting}
               onChange={(e) => setConfirmText(e.target.value)}
               placeholder="HAPUS"
             />
@@ -276,6 +310,7 @@ function ToolsPage() {
           <DialogFooter>
             <Button
               variant="ghost"
+              disabled={isResetting}
               onClick={() => {
                 setConfirmReset(false);
                 setConfirmText("");
@@ -283,8 +318,8 @@ function ToolsPage() {
             >
               Batal
             </Button>
-            <Button variant="destructive" onClick={doReset}>
-              Reset sekarang
+            <Button variant="destructive" disabled={isResetting} onClick={doReset}>
+              {isResetting ? "Mereset..." : "Reset sekarang"}
             </Button>
           </DialogFooter>
         </DialogContent>
