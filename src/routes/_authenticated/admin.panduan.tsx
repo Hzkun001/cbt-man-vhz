@@ -2,7 +2,19 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { configRepo } from "@/lib/cbt/repos";
 import { AdminPage, AdminPageHeader } from "@/components/cbt/AdminPage";
-import { Search, ExternalLink, BookOpen, ChevronRight, HelpCircle, FileText, Settings, ShieldAlert, Users, Layers } from "lucide-react";
+import { 
+  Search, 
+  ExternalLink, 
+  BookOpen, 
+  ChevronRight, 
+  ChevronDown,
+  HelpCircle, 
+  FileText, 
+  Layers, 
+  Lightbulb, 
+  AlertTriangle,
+  ArrowUpRight
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/_authenticated/admin/panduan")({
@@ -65,22 +77,22 @@ function PanduanPage() {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input 
-            placeholder="Cari dalam panduan (misal: token, import, reset)..."
+            placeholder="Cari kata kunci (misal: token, import, reset)..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 font-medium"
+            className="pl-10 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 font-medium h-11"
           />
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 shrink-0 text-xs">
-          <Link to="/admin/modul" className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300 transition-colors">
-            <Layers className="h-3.5 w-3.5" /> Bank Soal
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 shrink-0 text-xs font-bold">
+          <Link to="/admin/modul" className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors shadow-sm">
+            <Layers className="h-3.5 w-3.5 text-primary" /> Bank Soal
           </Link>
-          <Link to="/admin/peserta/online" className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300 transition-colors">
-            <BookOpen className="h-3.5 w-3.5" /> Monitoring
+          <Link to="/admin/peserta/online" className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors shadow-sm">
+            <BookOpen className="h-3.5 w-3.5 text-primary" /> Monitoring
           </Link>
-          <Link to="/admin/evaluasi" className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300 transition-colors">
-            <FileText className="h-3.5 w-3.5" /> Evaluasi
+          <Link to="/admin/evaluasi" className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors shadow-sm">
+            <FileText className="h-3.5 w-3.5 text-primary" /> Evaluasi
           </Link>
         </div>
       </div>
@@ -95,7 +107,7 @@ function PanduanPage() {
           <section data-section="alur-kerja">
             <SectionTitle id="alur-kerja">Alur Kerja Ujian</SectionTitle>
             <p className="mb-6 text-slate-600 dark:text-slate-400">
-              Pelaksanaan ujian mengikuti 5 tahapan utama berurutan. Setiap tahap dapat diakses langsung melalui pintasan menu terkait.
+              Pelaksanaan ujian mengikuti 5 tahapan utama berurutan. Klik kartu di bawah untuk membuka modul secara langsung.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center text-xs font-medium">
               {[
@@ -105,11 +117,14 @@ function PanduanPage() {
                 { step: "4", label: "Pantau", sub: "Monitoring Live", to: "/admin/peserta/online" },
                 { step: "5", label: "Evaluasi", sub: "Grading & Hasil", to: "/admin/evaluasi" },
               ].map((s) => (
-                <Link key={s.step} to={s.to} className="group bg-white dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:border-primary/50 transition-all">
-                  <div className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold mb-2 group-hover:bg-primary group-hover:text-white transition-colors">
+                <Link key={s.step} to={s.to} className="group bg-white dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:border-primary/50 hover:shadow-md transition-all duration-300 ease-spring hover:-translate-y-0.5 relative">
+                  <div className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold mb-2 group-hover:bg-primary group-hover:text-white transition-colors shadow-sm">
                     {s.step}
                   </div>
-                  <div className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-primary transition-colors">{s.label}</div>
+                  <div className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-primary transition-colors flex items-center justify-center gap-1">
+                    {s.label}
+                    <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
                   <div className="text-slate-500 text-[11px] mt-0.5">{s.sub}</div>
                 </Link>
               ))}
@@ -155,7 +170,7 @@ function PanduanPage() {
               Atur jendela waktu akses dan aktifkan token sebagai pengaman akses masuk peserta.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5 bg-white dark:bg-slate-950 shadow-sm space-y-2">
                 <div className="text-xs font-bold uppercase tracking-wider text-slate-500">Rentang Waktu</div>
                 <ul className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
@@ -182,7 +197,7 @@ function PanduanPage() {
             <p className="mb-4 text-slate-600 dark:text-slate-400">
               Pantau status pengerjaan peserta secara langsung melalui <MenuRef to="/admin/peserta/online">Monitoring Live</MenuRef>.
             </p>
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden mb-4 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden mb-6 shadow-sm">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-900 text-left font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
@@ -219,7 +234,7 @@ function PanduanPage() {
             <p className="mb-4 text-slate-600 dark:text-slate-400">
               Gunakan fitur impor berkas untuk memasukkan puluhan soal secara instan di <MenuRef to="/admin/modul">Bank Soal</MenuRef>.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5 bg-white dark:bg-slate-950 shadow-sm space-y-2">
                 <div className="text-xs font-bold uppercase tracking-wider text-slate-500">Format Excel (.xlsx)</div>
                 <p className="text-xs text-slate-600 dark:text-slate-400">Gunakan template kolom standar: Pertanyaan, Pilihan A–E, Kunci, dan Bobot.</p>
@@ -251,30 +266,34 @@ function PanduanPage() {
             </p>
           </section>
 
-          {/* FAQ */}
+          {/* FAQ (Interactive Accordions) */}
           <section data-section="faq">
             <SectionTitle id="faq">FAQ & Pemecahan Masalah</SectionTitle>
 
-            <div className="space-y-4">
-              <FaqItem q="Peserta tidak bisa masuk menggunakan Token">
+            <div className="space-y-3">
+              <FaqAccordion q="Peserta tidak bisa masuk menggunakan Token">
                 Pastikan token diketik persis sesuai huruf besar/kecil. Periksa juga apakah waktu ujian (`beginAt` & `endAt`) sedang aktif di server.
-              </FaqItem>
+              </FaqAccordion>
 
-              <FaqItem q="Jawaban peserta tidak muncul di Evaluasi">
+              <FaqAccordion q="Jawaban peserta tidak muncul di Evaluasi">
                 Jawaban essay hanya akan muncul jika sesi ujian peserta telah berakhir (`selesai`). Jika sesi masih berjalan, lakukan paksa submit dari menu Monitoring Live.
-              </FaqItem>
+              </FaqAccordion>
 
-              <FaqItem q="Bagaimana mereset password akun peserta?">
+              <FaqAccordion q="Bagaimana mereset password akun peserta?">
                 Buka menu <MenuRef to="/admin/users">Pengguna</MenuRef>, pilih peserta yang bersangkutan, lalu klik tombol ubah password.
-              </FaqItem>
+              </FaqAccordion>
+
+              <FaqAccordion q="Soal atau Gambar tidak muncul di layar peserta">
+                Pastikan gambar di-upload menggunakan format WebP/PNG/JPG standar. Jika menggunakan server lokal, pastikan folder media dapat diakses publik.
+              </FaqAccordion>
             </div>
           </section>
 
           {/* Footer */}
           <div className="text-xs text-slate-400 dark:text-slate-500 pt-6 pb-8 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <p>{cfg.appName} v2.4.0-proctoring — Dokumentasi Resmi Sistem CBT.</p>
-            <Link to="/admin/pengaturan" className="font-bold text-primary hover:underline">
-              Pengaturan Sistem →
+            <Link to="/admin/pengaturan" className="font-bold text-primary hover:underline flex items-center gap-1">
+              Pengaturan Sistem <ChevronRight className="h-3.5 w-3.5" />
             </Link>
           </div>
         </article>
@@ -290,7 +309,7 @@ function PanduanPage() {
                 <a
                   href={`#${s.id}`}
                   aria-current={activeId === s.id ? "true" : undefined}
-                  className={`block px-3 py-2 text-xs rounded-xl font-medium transition-all ${
+                  className={`block px-3.5 py-2 text-xs rounded-xl font-medium transition-all ${
                     activeId === s.id
                       ? "bg-primary text-primary-foreground font-bold shadow-sm"
                       : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900"
@@ -326,9 +345,9 @@ function MenuRef({ to, children }: { to: string; children: React.ReactNode }) {
   return (
     <Link 
       to={to} 
-      className="inline-flex items-center gap-1 text-xs font-bold bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded-lg border border-slate-200/80 dark:border-slate-800 hover:border-primary hover:text-primary transition-all"
+      className="inline-flex items-center gap-1 text-xs font-bold bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 px-2.5 py-1 rounded-lg border border-slate-200/80 dark:border-slate-800 hover:border-primary hover:text-primary transition-all duration-200"
     >
-      {children} <ExternalLink className="h-3 w-3" />
+      {children} <ExternalLink className="h-3 w-3 opacity-70" />
     </Link>
   );
 }
@@ -351,8 +370,11 @@ function StepList({ steps }: { steps: React.ReactNode[] }) {
 function Tip({ children }: { children: React.ReactNode }) {
   return (
     <div role="note" className="flex gap-3 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-900/40 text-xs text-emerald-800 dark:text-emerald-300 mb-6 shadow-sm">
-      <span className="shrink-0 font-bold text-emerald-600 uppercase tracking-wider">TIPS</span>
-      <span className="leading-relaxed">{children}</span>
+      <Lightbulb className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+      <div className="space-y-0.5">
+        <span className="font-bold uppercase tracking-wider block text-[10px] text-emerald-600">TIPS</span>
+        <span className="leading-relaxed block">{children}</span>
+      </div>
     </div>
   );
 }
@@ -360,19 +382,34 @@ function Tip({ children }: { children: React.ReactNode }) {
 function Warning({ children }: { children: React.ReactNode }) {
   return (
     <div role="alert" className="flex gap-3 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-900/40 text-xs text-amber-800 dark:text-amber-300 mb-6 shadow-sm">
-      <span className="shrink-0 font-bold text-amber-600 uppercase tracking-wider">PERHATIAN</span>
-      <span className="leading-relaxed">{children}</span>
+      <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+      <div className="space-y-0.5">
+        <span className="font-bold uppercase tracking-wider block text-[10px] text-amber-600">PERHATIAN</span>
+        <span className="leading-relaxed block">{children}</span>
+      </div>
     </div>
   );
 }
 
-function FaqItem({ q, children }: { q: string; children: React.ReactNode }) {
+function FaqAccordion({ q, children }: { q: string; children: React.ReactNode }) {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
-    <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm space-y-1.5">
-      <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-        <HelpCircle className="h-4 w-4 text-primary shrink-0" /> {q}
-      </h3>
-      <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed pl-6">{children}</p>
+    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm overflow-hidden transition-all duration-300">
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full p-4 flex items-center justify-between text-left font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors cursor-pointer"
+      >
+        <span className="flex items-center gap-2.5">
+          <HelpCircle className="h-4 w-4 text-primary shrink-0" /> {q}
+        </span>
+        <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-300 ${isOpen ? "rotate-180 text-primary" : ""}`} />
+      </button>
+      {isOpen && (
+        <div className="px-4 pb-4 pt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
+          <div className="pl-6">{children}</div>
+        </div>
+      )}
     </div>
   );
 }
