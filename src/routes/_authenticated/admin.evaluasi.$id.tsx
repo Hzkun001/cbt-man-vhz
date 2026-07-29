@@ -36,7 +36,7 @@ function EvaluasiSesi() {
 
   const items = sesi.jawaban
     .map((j, idx) => ({ j, idx, soal: soalRepo.byId(j.soalId) }))
-    .filter((x) => x.soal?.tipe === "essay" || (x.j.jawabanEssay && x.j.jawabanEssay.trim().length > 0));
+    .filter((x) => x.soal?.tipe === "essay");
 
   const totalUngraded = items.filter(x => typeof x.j.skor !== 'number').length;
 

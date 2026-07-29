@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { sesiRepo, ujianRepo, usersRepo, soalRepo } from "@/lib/cbt/repos";
 import { useAuthStore } from "@/lib/cbt/auth-store";
 import { visibleUjians } from "@/lib/cbt/access";
@@ -32,7 +32,7 @@ function EvaluasiUjianList() {
   const users = usersRepo.all();
   const soals = soalRepo.all();
 
-  const items = useMemo(() => {
+  const items = (() => {
     const soalSet = new Set(soals.filter((s) => s.tipe === "essay").map((s) => s.id));
     return sesis
       .map((s) => {
@@ -47,7 +47,7 @@ function EvaluasiUjianList() {
         (x.u?.username || "").toLowerCase().includes(search.toLowerCase())
       )
       .sort((a, b) => b.belum - a.belum);
-  }, [sesis, soals, users, search]);
+  })();
 
   if (!visibleIds.has(id)) {
     return <div className="py-20 text-center text-sm font-medium text-slate-500">Tidak ada akses atau ujian tidak ditemukan.</div>;

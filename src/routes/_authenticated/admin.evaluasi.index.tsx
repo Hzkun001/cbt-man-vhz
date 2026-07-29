@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { sesiRepo, ujianRepo, soalRepo, mataKuliahRepo } from "@/lib/cbt/repos";
 import { useAuthStore } from "@/lib/cbt/auth-store";
 import { visibleUjians } from "@/lib/cbt/access";
@@ -35,7 +35,7 @@ function EvaluasiList() {
   const ujians = ujianRepo.all();
   const soals = soalRepo.all();
   const mks = mataKuliahRepo.all();
-  const items = useMemo(() => {
+  const items = (() => {
     const soalSet = new Set(soals.filter((s) => s.tipe === "essay").map((s) => s.id));
     const ujianMap = new Map<string, { ujian: any, mk: any, totalSesi: number, belumSesi: number, totalEssay: number, belumEssay: number }>();
 
@@ -67,7 +67,7 @@ function EvaluasiList() {
         (i.mk?.nama || "").toLowerCase().includes(search.toLowerCase())
       )
       .sort((a, b) => b.belumSesi - a.belumSesi);
-  }, [sesis, ujians, mks, soals, search]);
+  })();
 
   const totalBelumSesi = items.reduce((acc, curr) => acc + curr.belumSesi, 0);
   const totalBelumEssay = items.reduce((acc, curr) => acc + curr.belumEssay, 0);
