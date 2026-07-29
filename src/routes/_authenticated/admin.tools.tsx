@@ -88,7 +88,7 @@ function ToolsPage() {
     setIsRestoring(true);
     try {
       await importBackup(preview);
-      toast.success("Restore berhasil! Aplikasi akan disegarkan...");
+      toast.success("Restore berhasil! Memuat ulang...");
       setTimeout(() => window.location.reload(), 1200);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Gagal memulihkan backup");
@@ -130,156 +130,133 @@ function ToolsPage() {
   }
 
   return (
-    <AdminPage className="neo-ready">
+    <AdminPage className="neo-ready max-w-5xl mx-auto space-y-12 pb-28">
       <AdminPageHeader
         title="Alat Sistem"
-        description="Fasilitas pencadangan data (backup), pemulihan (restore), dan pengaturan ulang pangkalan data."
+        description="Backup, restore, dan pemeliharaan pangkalan data."
       />
 
       {/* Section 1: Backup & Restore */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
-        <div className="space-y-2 lg:col-span-1">
-          <h2 id="backup-heading" className="text-lg font-semibold text-slate-900 dark:text-white">Pencadangan Data</h2>
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <div className="space-y-1">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+            Pencadangan Data
+          </h2>
           <p className="text-sm text-slate-500 leading-relaxed">
-            Amankan data aplikasi secara berkala atau pulihkan dari cadangan sebelumnya. Cadangan mencakup seluruh pengguna, soal, ujian, dan konfigurasi.
+            Ekspor dan impor snapshot database.
           </p>
         </div>
-        <div role="region" aria-labelledby="backup-heading" className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+
+        <div className="lg:col-span-2 bg-white dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sleek overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
           
           {/* Export Backup Row */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 p-6 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-            <div className="flex-1 space-y-1">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
-                  <Download className="h-4 w-4" />
-                </div>
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Unduh Berkas Cadangan</h3>
-              </div>
-              <p className="text-xs text-slate-500 pl-8">Menghasilkan berkas JSON tunggal berisi snapshot pangkalan data saat ini.</p>
+          <div className="flex items-center justify-between p-6 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+            <div className="space-y-0.5">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Unduh Backup</h3>
+              <p className="text-xs text-slate-500">Ekspor seluruh data ke file JSON.</p>
             </div>
-            <div className="shrink-0">
-              <Button onClick={handleDownloadBackup} disabled={isDownloading} className="w-full sm:w-auto shadow-sm">
-                {isDownloading ? "Mengunduh..." : "Unduh Backup"}
-              </Button>
-            </div>
+            <Button onClick={handleDownloadBackup} disabled={isDownloading} className="font-bold shadow-sm h-10 px-6">
+              {isDownloading ? "Mengunduh..." : "Unduh JSON"}
+            </Button>
           </div>
 
           {/* Restore Backup Row */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 p-6 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-            <div className="flex-1 space-y-1">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">
-                  <Upload className="h-4 w-4" />
-                </div>
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Pulihkan dari Cadangan</h3>
-              </div>
-              <p className="text-xs text-slate-500 pl-8">Pilih berkas JSON cadangan. Struktur data akan divalidasi terlebih dahulu.</p>
+          <div className="flex items-center justify-between p-6 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+            <div className="space-y-0.5">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Pulihkan Backup</h3>
+              <p className="text-xs text-slate-500">Impor data dari file JSON cadangan.</p>
             </div>
-            <div className="shrink-0 flex gap-2">
+            <div className="flex gap-2">
               <input
                 ref={fileRef}
                 type="file"
                 accept="application/json,.json"
                 className="hidden"
-                aria-hidden="true"
                 onChange={handleFile}
               />
-              <Button variant="outline" onClick={() => fileRef.current?.click()} className="w-full sm:w-auto bg-white dark:bg-slate-950">
-                Pilih Berkas JSON...
+              <Button variant="outline" onClick={() => fileRef.current?.click()} className="font-bold h-10 px-6 border-slate-200 dark:border-slate-800">
+                Pilih File...
               </Button>
             </div>
           </div>
 
         </div>
-      </div>
+      </section>
 
-      <div className="h-px w-full bg-slate-200 dark:bg-slate-800/60 my-10" />
-
-      {/* Section 2: Pemeliharaan Pangkalan Data */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
-        <div className="space-y-2 lg:col-span-1">
-          <h2 id="advanced-heading" className="text-lg font-semibold text-slate-900 dark:text-white">Pengelolaan Lanjut</h2>
+      {/* Section 2: Pemeliharaan Database */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <div className="space-y-1">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+            Pemeliharaan Data
+          </h2>
           <p className="text-sm text-slate-500 leading-relaxed">
-            Aksi-aksi kritikal untuk memanipulasi pangkalan data sistem secara langsung.
+            Inisialisasi sampel & reset total.
           </p>
         </div>
-        <div role="region" aria-labelledby="advanced-heading" className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+
+        <div className="lg:col-span-2 bg-white dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sleek overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
           
           {/* Seed Data Row */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 p-6 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-            <div className="flex-1 space-y-1">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                  <RefreshCw className="h-4 w-4" />
-                </div>
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Inisialisasi Data Demo</h3>
-              </div>
-              <p className="text-xs text-slate-500 pl-8">Isi pangkalan data kosong dengan sampel otomatis (pengguna, soal, ujian).</p>
+          <div className="flex items-center justify-between p-6 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+            <div className="space-y-0.5">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Inisialisasi Data Demo</h3>
+              <p className="text-xs text-slate-500">Muat data sampel awal jika database kosong.</p>
             </div>
-            <div className="shrink-0">
-              <Button variant="outline" onClick={handleSeed} disabled={isSeeding} className="w-full sm:w-auto bg-white dark:bg-slate-950">
-                {isSeeding ? "Memuat Seed..." : "Muat Seed Data"}
-              </Button>
-            </div>
+            <Button variant="outline" onClick={handleSeed} disabled={isSeeding} className="font-bold h-10 px-6 border-slate-200 dark:border-slate-800">
+              {isSeeding ? "Memuat..." : "Muat Seed Data"}
+            </Button>
           </div>
 
           {/* Reset Data Row */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 p-6 bg-red-50/30 dark:bg-red-950/10 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
-            <div className="flex-1 space-y-1">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
-                  <AlertTriangle className="h-4 w-4" />
-                </div>
-                <h3 className="text-sm font-semibold text-red-700 dark:text-red-400">Zona Berbahaya: Hapus Semua Data</h3>
-              </div>
-              <p className="text-xs font-medium text-red-700 dark:text-red-400 pl-8">Tindakan ini akan mengosongkan seluruh pangkalan data. Tidak dapat dibatalkan!</p>
+          <div className="flex items-center justify-between p-6 bg-red-50/20 dark:bg-red-950/10 hover:bg-red-50/40 dark:hover:bg-red-950/20 transition-colors">
+            <div className="space-y-0.5">
+              <h3 className="text-sm font-bold text-red-600 dark:text-red-400">Reset Total Database</h3>
+              <p className="text-xs text-slate-500">Hapus seluruh isi database secara permanen.</p>
             </div>
-            <div className="shrink-0">
-              <Button variant="destructive" onClick={() => setConfirmReset(true)} className="w-full sm:w-auto font-semibold">
-                <Trash2 className="mr-2 h-4 w-4" /> Reset Keseluruhan
-              </Button>
-            </div>
+            <Button variant="destructive" onClick={() => setConfirmReset(true)} className="font-bold h-10 px-6 shadow-sm">
+              Reset Database
+            </Button>
           </div>
 
         </div>
-      </div>
+      </section>
 
-      {/* Preview import */}
+      {/* Preview import Dialog */}
       <Dialog open={!!preview} onOpenChange={(o) => !o && !isRestoring && setPreview(null)}>
-        <DialogContent>
+        <DialogContent className="rounded-2xl border-slate-200 dark:border-slate-800">
           <DialogHeader>
-            <DialogTitle>Preview restore</DialogTitle>
-            <DialogDescription>
-              Data berikut akan menggantikan seluruh data yang ada saat ini.
+            <DialogTitle className="text-lg font-bold">Pratinjau Pemulihan</DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Data berikut akan menggantikan seluruh isi database saat ini.
             </DialogDescription>
           </DialogHeader>
           {preview && (
-            <div className="rounded border bg-muted/30 p-3 text-sm">
-              <div className="mb-2 text-xs text-muted-foreground">
-                Diekspor: {new Date(preview.exportedAt).toLocaleString()}
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-4 text-xs space-y-3">
+              <div className="text-slate-400 font-mono">
+                Tanggal Ekspor: {new Date(preview.exportedAt).toLocaleString("id-ID")}
               </div>
-              <ul className="grid grid-cols-2 gap-1">
+              <div className="grid grid-cols-2 gap-2 font-medium">
                 {Object.entries(backupSummary(preview)).map(([k, v]) => (
-                  <li key={k} className="flex justify-between">
-                    <span className="text-muted-foreground capitalize">{k}</span>
-                    <span className="font-mono">{v}</span>
-                  </li>
+                  <div key={k} className="flex justify-between border-b border-slate-200/60 dark:border-slate-800/60 pb-1">
+                    <span className="text-slate-500 capitalize">{k}</span>
+                    <span className="font-mono font-bold text-slate-900 dark:text-slate-100">{v}</span>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="ghost" disabled={isRestoring} onClick={() => setPreview(null)}>
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" disabled={isRestoring} onClick={() => setPreview(null)} className="font-bold">
               Batal
             </Button>
-            <Button onClick={doRestore} disabled={isRestoring}>
-              {isRestoring ? "Memulihkan..." : "Terapkan restore"}
+            <Button onClick={doRestore} disabled={isRestoring} className="font-bold px-6">
+              {isRestoring ? "Memulihkan..." : "Terapkan Restore"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Reset confirm */}
+      {/* Reset confirm Dialog */}
       <Dialog
         open={confirmReset}
         onOpenChange={(o) => {
@@ -289,25 +266,25 @@ function ToolsPage() {
           }
         }}
       >
-        <DialogContent>
+        <DialogContent className="rounded-2xl border-slate-200 dark:border-slate-800">
           <DialogHeader>
-            <DialogTitle className="text-destructive">Reset semua data?</DialogTitle>
-            <DialogDescription>
-              Semua pengguna, soal, ujian, dan sesi akan terhapus. Ketik <strong>HAPUS</strong>{" "}
-              untuk konfirmasi.
+            <DialogTitle className="text-lg font-bold text-red-600">Konfirmasi Reset Database</DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Seluruh data pengguna, soal, ujian, dan sesi akan terhapus. Ketik <strong className="text-red-600 font-mono">HAPUS</strong> untuk melanjutkan.
             </DialogDescription>
           </DialogHeader>
-          <div>
-            <Label htmlFor="confirm">Konfirmasi</Label>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="confirm" className="text-xs font-bold uppercase tracking-wider text-slate-500">Kata Kunci Konfirmasi</Label>
             <Input
               id="confirm"
               value={confirmText}
               disabled={isResetting}
               onChange={(e) => setConfirmText(e.target.value)}
               placeholder="HAPUS"
+              className="font-mono font-bold text-center h-11 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
             />
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button
               variant="ghost"
               disabled={isResetting}
@@ -315,52 +292,50 @@ function ToolsPage() {
                 setConfirmReset(false);
                 setConfirmText("");
               }}
+              className="font-bold"
             >
               Batal
             </Button>
-            <Button variant="destructive" disabled={isResetting} onClick={doReset}>
-              {isResetting ? "Mereset..." : "Reset sekarang"}
+            <Button variant="destructive" disabled={isResetting} onClick={doReset} className="font-bold px-6">
+              {isResetting ? "Mereset..." : "Hapus Semua Data"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Validation errors */}
+      {/* Validation errors Dialog */}
       <Dialog open={!!validationErrors} onOpenChange={(o) => !o && setValidationErrors(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-xl rounded-2xl border-slate-200 dark:border-slate-800">
           <DialogHeader>
-            <DialogTitle className="text-destructive flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" /> Struktur backup tidak valid
+            <DialogTitle className="text-lg font-bold text-red-600 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" /> File Backup Tidak Valid
             </DialogTitle>
-            <DialogDescription>
-              Data tidak ditimpa. Perbaiki file lalu coba lagi. Ditemukan{" "}
-              {validationErrors?.length ?? 0} masalah:
+            <DialogDescription className="text-xs text-slate-500">
+              Ditemukan {validationErrors?.length ?? 0} ketidaksesuaian struktur data:
             </DialogDescription>
           </DialogHeader>
-          <div className="max-h-80 overflow-auto rounded border bg-muted/30 text-sm">
+          <div className="max-h-64 overflow-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3 text-xs">
             <table className="w-full">
-              <thead className="sticky top-0 bg-muted text-left text-xs">
+              <thead className="sticky top-0 bg-slate-100 dark:bg-slate-800 text-left font-bold text-slate-500">
                 <tr>
                   <th className="p-2">#</th>
                   <th className="p-2">Path</th>
-                  <th className="p-2">Pesan</th>
-                  <th className="p-2">Kode</th>
+                  <th className="p-2">Pesan Error</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                 {validationErrors?.map((iss, i) => (
-                  <tr key={i} className="border-t align-top">
-                    <td className="p-2 text-muted-foreground">{i + 1}</td>
-                    <td className="p-2 font-mono text-xs">{iss.path}</td>
-                    <td className="p-2">{iss.message}</td>
-                    <td className="p-2 font-mono text-xs text-muted-foreground">{iss.code}</td>
+                  <tr key={i} className="align-top">
+                    <td className="p-2 text-slate-400 font-mono">{i + 1}</td>
+                    <td className="p-2 font-mono font-bold text-slate-700 dark:text-slate-300">{iss.path}</td>
+                    <td className="p-2 text-slate-600 dark:text-slate-400">{iss.message}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           <DialogFooter>
-            <Button onClick={() => setValidationErrors(null)}>Tutup</Button>
+            <Button onClick={() => setValidationErrors(null)} className="font-bold">Tutup</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
