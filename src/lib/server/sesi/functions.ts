@@ -64,13 +64,17 @@ export const mutateSesiServer = createServerFn({ method: "POST" })
 					return { ok: false as const, error: "Forbidden" };
 				const existing = await prisma.sesiUjian.findUnique({
 					where: { id: item.id },
-					select: { pesertaId: true, ujianId: true },
+					select: { pesertaId: true, ujianId: true, status: true },
 				});
 				if (
 					existing &&
 					(existing.pesertaId !== caller.id || existing.ujianId !== item.ujianId)
 				) {
 					return { ok: false as const, error: "Forbidden" };
+				}
+				if (existing && existing.status === "selesai") {
+					// Prevent student's debounced save from resurrecting a forced-submit session
+					return { ok: false as const, error: "Ujian sudah disubmit oleh pengawas" };
 				}
 				const ujianForIp = await prisma.ujian.findUnique({
 					where: { id: item.ujianId },
