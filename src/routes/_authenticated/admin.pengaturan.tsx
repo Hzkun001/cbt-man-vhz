@@ -2,25 +2,22 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useRef } from "react";
 import { configRepo, hydrateRepos } from "@/lib/cbt/repos";
 import { ConfigSchema } from "@/lib/cbt/types";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Settings, Upload, Image as ImageIcon, Save } from "lucide-react";
+import { Upload, Image as ImageIcon, Save, CheckCircle2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPage, AdminPageHeader } from "@/components/cbt/AdminPage";
-import { useThemeStore, ThemeType } from "@/lib/cbt/theme-store";
-import { CheckCircle2 } from "lucide-react";
-
+import { useThemeStore } from "@/lib/cbt/theme-store";
 
 export const Route = createFileRoute("/_authenticated/admin/pengaturan")({
   loader: async () => {
     try {
       await hydrateRepos();
     } catch {
-      // Fallback ke cache; jangan brick navigasi saat snapshot gagal.
+      // Fallback
     }
   },
   component: PengaturanPage,
@@ -30,16 +27,25 @@ function PengaturanPage() {
   const [cfg, setCfg] = useState(configRepo.get());
   const { theme, setTheme } = useThemeStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   async function save() {
-    const parsed = ConfigSchema.safeParse(cfg);
-    if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "Konfigurasi tidak valid");
-      return;
+    setIsSaving(true);
+    try {
+      const parsed = ConfigSchema.safeParse(cfg);
+      if (!parsed.success) {
+        toast.error(parsed.error.issues[0]?.message ?? "Konfigurasi tidak valid");
+        setIsSaving(false);
+        return;
+      }
+      configRepo.set(parsed.data);
+      await configRepo.flush();
+      toast.success("Pengaturan berhasil disimpan.");
+    } catch {
+      toast.error("Gagal menyimpan pengaturan.");
+    } finally {
+      setIsSaving(false);
     }
-    configRepo.set(parsed.data);
-    await configRepo.flush();
-    toast.success("Pengaturan disimpan.");
   }
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -47,7 +53,7 @@ function PengaturanPage() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      toast.error("File harus berupa gambar (PNG, JPG, dll).");
+      toast.error("File harus berupa gambar.");
       return;
     }
 
@@ -55,7 +61,7 @@ function PengaturanPage() {
       const base64Str = await resizeImage(file, 200);
       setCfg({ ...cfg, appLogo: base64Str });
       toast.success("Logo berhasil ditambahkan.");
-    } catch (err) {
+    } catch {
       toast.error("Gagal memproses gambar logo.");
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -63,177 +69,231 @@ function PengaturanPage() {
   }
 
   return (
-    <AdminPage className="neo-ready">
+    <AdminPage className="neo-ready max-w-5xl mx-auto space-y-12 pb-28">
       <AdminPageHeader
-        title="Pengaturan Aplikasi"
-        description="Konfigurasi institusi, keamanan, browser ujian, dan branding CBT."
+        title="Pengaturan"
+        description="Konfigurasi sistem, branding institusi, dan hak akses."
         action={
-          <Button onClick={save} className="h-10 px-8 shadow-sm">
-            Simpan Semua
+          <Button 
+            onClick={save} 
+            disabled={isSaving}
+            className="h-11 px-8 font-bold shadow-md hover:shadow-lg transition-all active:scale-95 flex items-center gap-2"
+          >
+            {isSaving ? (
+              <>
+                <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Menyimpan...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" /> Simpan Pengaturan
+              </>
+            )}
           </Button>
         }
       />
 
-      {/* Section 1: Identitas Aplikasi */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
-        <div className="space-y-2 lg:col-span-1">
-          <h2 id="identitas-heading" className="text-lg font-semibold text-slate-900 dark:text-white">Identitas Aplikasi</h2>
+      {/* Section 1: Identitas Institusi */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <div className="space-y-1">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            Identitas Institusi
+          </h2>
           <p className="text-sm text-slate-500 leading-relaxed">
-            Informasi ini akan ditampilkan di halaman login dan pada panel atas dasbor aplikasi.
+            Branding utama aplikasi dan pengumuman.
           </p>
         </div>
-        <div role="region" aria-labelledby="identitas-heading" className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-          <div className="p-6 space-y-6">
-            
-            <div className="space-y-2.5">
-              <Label className="text-slate-700 dark:text-slate-300 font-semibold">Nama Aplikasi</Label>
-              <Input
-                value={cfg.appName}
-                onChange={(e) => setCfg({ ...cfg, appName: e.target.value })}
-                className="bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800"
-              />
-            </div>
 
-            <div className="space-y-2.5">
-              <Label className="text-slate-700 dark:text-slate-300 font-semibold">Logo Aplikasi</Label>
-              <div className="flex flex-col sm:flex-row gap-6 items-start">
-                <div className="h-20 w-20 shrink-0 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 flex items-center justify-center overflow-hidden">
-                  {cfg.appLogo ? (
-                    <img src={cfg.appLogo} alt="Logo" className="h-12 w-12 object-contain" onError={(e) => (e.currentTarget.style.display = 'none')} onLoad={(e) => (e.currentTarget.style.display = 'block')} />
-                  ) : (
-                    <ImageIcon className="h-8 w-8 text-slate-300" />
-                  )}
-                </div>
-                <div className="flex-1 space-y-3 w-full">
-                  <div className="flex gap-2">
-                    <Input
-                      value={cfg.appLogo ?? ""}
-                      placeholder="https://... atau klik Upload"
-                      onChange={(e) => setCfg({ ...cfg, appLogo: e.target.value })}
-                      className="bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 font-mono text-xs"
-                    />
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      className="hidden"
-                      aria-hidden="true"
-                      ref={fileInputRef} 
-                      onChange={handleLogoUpload}
-                    />
-                    <Button type="button" variant="secondary" onClick={() => fileInputRef.current?.click()} className="shrink-0 shadow-sm border-slate-200 dark:border-slate-700">
-                      <Upload className="h-4 w-4 mr-2" /> Upload
-                    </Button>
-                  </div>
-                  <p className="text-xs text-slate-500">Mendukung format PNG/JPG. Gambar akan diubah ukurannya secara otomatis (max 200px).</p>
-                </div>
+        <div className="lg:col-span-2 bg-white dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sleek p-8 space-y-6">
+          <div className="space-y-2">
+            <Label className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider">
+              Nama Aplikasi / Institusi
+            </Label>
+            <Input
+              value={cfg.appName}
+              onChange={(e) => setCfg({ ...cfg, appName: e.target.value })}
+              className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 font-medium h-11 text-slate-900 dark:text-slate-100"
+              placeholder="CBT-MAN"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider">
+              Logo Aplikasi
+            </Label>
+            <div className="flex items-center gap-6 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800">
+              <div className="h-16 w-16 shrink-0 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 flex items-center justify-center overflow-hidden">
+                {cfg.appLogo ? (
+                  <img src={cfg.appLogo} alt="Logo" className="h-12 w-12 object-contain" />
+                ) : (
+                  <ImageIcon className="h-7 w-7 text-slate-400 dark:text-slate-500" />
+                )}
+              </div>
+              <div className="flex-1 flex items-center gap-3">
+                <Input
+                  value={cfg.appLogo ?? ""}
+                  placeholder="URL logo atau unggah berkas"
+                  onChange={(e) => setCfg({ ...cfg, appLogo: e.target.value })}
+                  className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 font-mono text-xs h-10 text-slate-900 dark:text-slate-100"
+                />
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden"
+                  ref={fileInputRef} 
+                  onChange={handleLogoUpload}
+                />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => fileInputRef.current?.click()} 
+                  className="shrink-0 font-bold h-10 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300"
+                >
+                  <Upload className="h-4 w-4 mr-2" /> Upload
+                </Button>
               </div>
             </div>
+          </div>
 
-            <div className="space-y-2.5">
-              <Label className="text-slate-700 dark:text-slate-300 font-semibold">Deskripsi Singkat</Label>
-              <Textarea
-                value={cfg.appDeskripsi}
-                onChange={(e) => setCfg({ ...cfg, appDeskripsi: e.target.value })}
-                className="min-h-[80px] bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider">
+              Deskripsi Singkat
+            </Label>
+            <Textarea
+              value={cfg.appDeskripsi}
+              onChange={(e) => setCfg({ ...cfg, appDeskripsi: e.target.value })}
+              className="min-h-[70px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 font-medium text-slate-900 dark:text-slate-100"
+            />
+          </div>
 
-            <div className="space-y-2.5">
-              <Label className="text-slate-700 dark:text-slate-300 font-semibold">Pengumuman Halaman Login</Label>
-              <Textarea
-                value={cfg.pesanLogin}
-                onChange={(e) => setCfg({ ...cfg, pesanLogin: e.target.value })}
-                className="min-h-[80px] bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800"
-                placeholder="Ketik pengumuman atau instruksi untuk peserta..."
-              />
-            </div>
-
+          <div className="space-y-2">
+            <Label className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider">
+              Pengumuman Login
+            </Label>
+            <Textarea
+              value={cfg.pesanLogin}
+              onChange={(e) => setCfg({ ...cfg, pesanLogin: e.target.value })}
+              className="min-h-[80px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 font-medium text-slate-900 dark:text-slate-100"
+              placeholder="Instruksi untuk peserta di halaman depan..."
+            />
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="h-px w-full bg-slate-200 dark:bg-slate-800/60 my-10" />
-
-      {/* Section 2: Kebijakan Ujian */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
-        <div className="space-y-2 lg:col-span-1">
-          <h2 id="kebijakan-heading" className="text-lg font-semibold text-slate-900 dark:text-white">Kebijakan Ujian</h2>
+      {/* Section 2: Hak Akses Role */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <div className="space-y-1">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            Hak Akses Role
+          </h2>
           <p className="text-sm text-slate-500 leading-relaxed">
-            Konfigurasi keamanan dan pembatasan akses perangkat untuk melindungi integritas pelaksanaan ujian.
+            Matriks wewenang Admin Jurusan & Evaluator.
           </p>
         </div>
-        <div role="region" aria-labelledby="kebijakan-heading" className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
 
-          <ToggleRow
-            label="Kunci akses dari perangkat Mobile"
-            desc="Mencegah peserta mengakses aplikasi ujian melalui smartphone atau tablet."
-            checked={cfg.mobileLock}
-            onChange={(v) => setCfg({ ...cfg, mobileLock: v })}
-            disabled
-            badge="Belum diberlakukan"
-          />
-          <ToggleRow
-            label="Izinkan Multi-Device"
-            desc="Mengizinkan satu akun mahasiswa login dari lebih dari satu perangkat pada waktu yang bersamaan."
-            checked={cfg.multiDevice}
-            onChange={(v) => setCfg({ ...cfg, multiDevice: v })}
-            disabled
-            badge="Belum diberlakukan"
-          />
+        <div className="lg:col-span-2 bg-white dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sleek p-8 flex items-center justify-between gap-6">
+          <div className="space-y-1">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base">
+              Atur Akses Menu & Topik
+            </h3>
+            <p className="text-xs text-slate-500">
+              Konfigurasi pembatasan menu dan mata kuliah per peran pengguna.
+            </p>
+          </div>
+          <Button asChild className="shrink-0 font-bold px-6 h-11 shadow-sm">
+            <Link to="/admin/users/roles" className="flex items-center gap-2">
+              Kelola RBAC <ExternalLink className="h-4 w-4" />
+            </Link>
+          </Button>
         </div>
-      </div>
+      </section>
 
-      <div className="h-px w-full bg-slate-200 dark:bg-slate-800/60 my-10" />
-
-      {/* Section 3: Tema & Tampilan */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
-        <div className="space-y-2 lg:col-span-1">
-          <h2 id="tema-heading" className="text-lg font-semibold text-slate-900 dark:text-white">Tema & Tampilan</h2>
+      {/* Section 3: Tema Visual */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <div className="space-y-1">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            Tema Visual
+          </h2>
           <p className="text-sm text-slate-500 leading-relaxed">
-            Sesuaikan gaya visual dan nuansa aplikasi. Tema ini akan diterapkan secara global untuk Anda.
+            Pilihan antarmuka pengguna.
           </p>
         </div>
-        <div role="region" aria-labelledby="tema-heading" className="lg:col-span-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             
-            {/* Theme: Modern (Default) */}
+            {/* Theme: Modern */}
             <button 
               onClick={() => setTheme("default")}
-              aria-pressed={theme === "default"}
-              className={`text-left p-4 rounded-xl border-2 transition-all ${theme === "default" ? "border-primary ring-2 ring-primary/20 bg-primary/5" : "border-slate-200 dark:border-slate-800 hover:border-primary/50 bg-white dark:bg-slate-900"}`}
+              className={`text-left p-6 rounded-2xl border-2 transition-all cursor-pointer ${
+                theme === "default" 
+                  ? "border-primary ring-4 ring-primary/10 bg-primary/5 shadow-md" 
+                  : "border-slate-200 dark:border-slate-800 hover:border-slate-300 bg-white dark:bg-slate-950"
+              }`}
             >
-              <div className="flex justify-between items-start mb-4">
-                <div className="font-bold text-slate-900 dark:text-white">Modern (Default)</div>
+              <div className="flex justify-between items-center mb-4">
+                <span className="font-bold text-slate-900 dark:text-slate-100 text-base">Modern SaaS</span>
                 {theme === "default" && <CheckCircle2 className="h-5 w-5 text-primary" />}
               </div>
-              <div className="h-20 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 shadow-sm flex flex-col gap-2">
-                <div className="w-full h-3 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800 shadow-sm" />
-                <div className="w-2/3 h-3 bg-primary/20 rounded" />
+              <div className="h-20 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 shadow-inner flex flex-col gap-2">
+                <div className="w-full h-3.5 bg-white dark:bg-slate-950 rounded border border-slate-200 dark:border-slate-800" />
+                <div className="w-2/3 h-3.5 bg-primary/20 rounded" />
               </div>
-              <p className="text-xs text-slate-500 mt-4">Bersih, profesional, standar SaaS modern.</p>
             </button>
 
             {/* Theme: Neobrutalism */}
             <button 
               onClick={() => setTheme("neobrutalism")}
-              aria-pressed={theme === "neobrutalism"}
-              className={`text-left p-4 rounded-none border-4 transition-all ${theme === "neobrutalism" ? "border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] bg-yellow-400/10" : "border-slate-200 dark:border-slate-800 hover:border-black bg-white dark:bg-slate-900"}`}
+              className={`text-left p-6 rounded-2xl border-2 transition-all cursor-pointer ${
+                theme === "neobrutalism" 
+                  ? "border-primary ring-4 ring-primary/10 bg-primary/5 shadow-md" 
+                  : "border-slate-200 dark:border-slate-800 hover:border-slate-300 bg-white dark:bg-slate-950"
+              }`}
             >
-              <div className="flex justify-between items-start mb-4">
-                <div className="font-black uppercase tracking-wider text-slate-900 dark:text-white">Neobrutalism</div>
-                {theme === "neobrutalism" && <CheckCircle2 className="h-5 w-5 text-black" />}
+              <div className="flex justify-between items-center mb-4">
+                <span className="font-black uppercase tracking-wider text-slate-900 dark:text-slate-100 text-base">Neobrutalism</span>
+                {theme === "neobrutalism" && <CheckCircle2 className="h-5 w-5 text-primary" />}
               </div>
-              <div className="h-20 bg-yellow-400 border-4 border-black p-2 shadow-[4px_4px_0_0_rgba(0,0,0,1)] flex flex-col gap-2">
-                <div className="w-full h-3 bg-white border-2 border-black" />
-                <div className="w-2/3 h-3 bg-black" />
+              <div className="h-20 rounded-xl bg-slate-100 dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-100 p-3 shadow-[3px_3px_0_0_rgba(0,0,0,1)] dark:shadow-[3px_3px_0_0_rgba(255,255,255,1)] flex flex-col gap-2">
+                <div className="w-full h-3.5 bg-white dark:bg-slate-950 border-2 border-slate-900 dark:border-slate-100" />
+                <div className="w-2/3 h-3.5 bg-slate-900 dark:bg-slate-100" />
               </div>
-              <p className="text-xs text-slate-500 mt-4 font-bold">Warna kontras, garis tegas, ekspresif.</p>
             </button>
 
           </div>
         </div>
-      </div>
+      </section>
 
+      {/* Section 4: Kebijakan Keamanan */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <div className="space-y-1">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            Kebijakan Sesi
+          </h2>
+          <p className="text-sm text-slate-500 leading-relaxed">
+            Batasan perangkat & multi-device.
+          </p>
+        </div>
+
+        <div className="lg:col-span-2 bg-white dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sleek overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+          <ToggleRow
+            label="Kunci Akses Perangkat Mobile"
+            desc="Mencegah ujian diakses dari smartphone/tablet."
+            checked={cfg.mobileLock}
+            onChange={(v) => setCfg({ ...cfg, mobileLock: v })}
+            disabled
+            badge="Versi V2"
+          />
+          <ToggleRow
+            label="Izinkan Multi-Device"
+            desc="Mengizinkan akun login bersamaan di multi perangkat."
+            checked={cfg.multiDevice}
+            onChange={(v) => setCfg({ ...cfg, multiDevice: v })}
+            disabled
+            badge="Versi V2"
+          />
+        </div>
+      </section>
     </AdminPage>
   );
 }
@@ -254,21 +314,19 @@ function ToggleRow({
   badge?: string;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 p-5 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-      <div className="flex-1">
-        <div className="flex items-center gap-3 mb-1">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{label}</h3>
+    <div className="flex items-center justify-between p-6 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+      <div className="space-y-0.5">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{label}</h3>
           {badge && (
-            <span className="rounded-md border border-amber-200/60 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+            <span className="rounded bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:text-slate-400">
               {badge}
             </span>
           )}
         </div>
-        <p className="text-xs text-slate-500 leading-relaxed pr-6">{desc}</p>
+        <p className="text-xs text-slate-500">{desc}</p>
       </div>
-      <div className="shrink-0 mt-3 sm:mt-0">
-        <Switch checked={checked} onCheckedChange={onChange} disabled={disabled} className="data-[state=checked]:bg-emerald-500" />
-      </div>
+      <Switch checked={checked} onCheckedChange={onChange} disabled={disabled} />
     </div>
   );
 }
@@ -303,8 +361,6 @@ async function resizeImage(file: File, maxWidthOrHeight: number): Promise<string
         }
 
         ctx.drawImage(img, 0, 0, width, height);
-        
-        // Use webp for better compression, fallback to png
         resolve(canvas.toDataURL("image/webp", 0.8));
       };
       img.onerror = () => reject(new Error("Invalid image"));
