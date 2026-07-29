@@ -591,18 +591,18 @@ function PanduanPage() {
             />
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 shrink-0 text-xs">
-            <Button variant="outline" size="sm" asChild className="rounded-lg h-8 px-3 text-xs border-border">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 shrink-0 text-xs font-semibold">
+            <Button variant="outline" size="sm" asChild className="rounded-lg h-8 px-3 text-xs border-border bg-card text-foreground hover:bg-muted hover:text-foreground transition-colors">
               <Link to="/admin/modul">
                 <Layers className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" /> Bank Soal
               </Link>
             </Button>
-            <Button variant="outline" size="sm" asChild className="rounded-lg h-8 px-3 text-xs border-border">
+            <Button variant="outline" size="sm" asChild className="rounded-lg h-8 px-3 text-xs border-border bg-card text-foreground hover:bg-muted hover:text-foreground transition-colors">
               <Link to="/admin/peserta/online">
                 <BookOpen className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" /> Monitoring
               </Link>
             </Button>
-            <Button variant="outline" size="sm" asChild className="rounded-lg h-8 px-3 text-xs border-border">
+            <Button variant="outline" size="sm" asChild className="rounded-lg h-8 px-3 text-xs border-border bg-card text-foreground hover:bg-muted hover:text-foreground transition-colors">
               <Link to="/admin/evaluasi">
                 <FileText className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" /> Evaluasi
               </Link>
@@ -778,7 +778,7 @@ function Strong({ children }: { children: React.ReactNode }) {
 
 function DocMenuLink({ to, children }: { to: string; children: React.ReactNode }) {
   return (
-    <Button variant="outline" size="sm" asChild className="rounded-lg font-semibold h-8 px-3 text-xs border border-border hover:bg-muted">
+    <Button variant="outline" size="sm" asChild className="rounded-lg font-semibold h-8 px-3 text-xs border border-border bg-card text-foreground hover:bg-muted hover:text-foreground transition-colors">
       <Link to={to} className="inline-flex items-center gap-1.5">
         {children} <ExternalLink className="h-3 w-3 opacity-60" />
       </Link>
