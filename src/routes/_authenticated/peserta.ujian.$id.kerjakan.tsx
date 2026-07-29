@@ -128,12 +128,18 @@ function RouteComponent() {
       try {
         await hydrateRepos();
         const latestSesi = sesiRepo.byId(sesi.id);
-        if (latestSesi && latestSesi.status === "selesai") {
-          toast.warning("Ujian telah dihentikan oleh pengawas.");
-          navigate({
-            to: "/peserta/ujian/$id/hasil",
-            params: { id: ujian.id },
-          });
+        if (latestSesi) {
+          if (latestSesi.status === "selesai") {
+            toast.warning("Ujian telah dihentikan oleh pengawas.");
+            navigate({
+              to: "/peserta/ujian/$id/hasil",
+              params: { id: ujian.id },
+            });
+          } else if (latestSesi.endsAt && sesiRef.current && latestSesi.endsAt !== sesiRef.current.endsAt) {
+            // Safely merge endsAt without wiping local un-flushed answers
+            setSesi(prev => prev ? { ...prev, endsAt: latestSesi.endsAt } : prev);
+            toast.info("Waktu ujian Anda telah diperbarui oleh pengawas.");
+          }
         }
       } catch (e) {
         // silent error fallback
@@ -194,8 +200,10 @@ function RouteComponent() {
     if (saveTimer.current) {
       clearTimeout(saveTimer.current);
       saveTimer.current = null;
-      sesiRepo.upsert(sesi);
-      sesiRepo.flush();
+      if (sesiRef.current) {
+        sesiRepo.upsert(sesiRef.current);
+        sesiRepo.flush().catch(() => {});
+      }
     }
     setIdx(newIdx);
   }
