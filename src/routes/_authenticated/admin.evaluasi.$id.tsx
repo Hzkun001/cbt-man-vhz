@@ -56,13 +56,23 @@ function EvaluasiSesi() {
     setSesi(next);
   }
 
-  function selesaikan() {
+  const [isSaving, setIsSaving] = useState(false);
+
+  async function selesaikan() {
     if (!sesi) return;
-    const final = recomputeSkor(sesi, ujian!);
-    const withMeta = { ...final, gradedAt: Date.now(), gradedBy: me!.id };
-    sesiRepo.upsert(withMeta);
-    setSesi(withMeta);
-    toast.success(`Berhasil disimpan. Nilai Akhir: ${withMeta.skorTotal} / ${withMeta.maxSkor}`);
+    setIsSaving(true);
+    try {
+      const final = recomputeSkor(sesi, ujian!);
+      const withMeta = { ...final, gradedAt: Date.now(), gradedBy: me!.id };
+      sesiRepo.upsert(withMeta);
+      setSesi(withMeta);
+      await sesiRepo.flush();
+      toast.success(`Berhasil disimpan. Nilai Akhir: ${withMeta.skorTotal} / ${withMeta.maxSkor}`);
+    } catch (e) {
+      toast.error("Gagal menyimpan nilai");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -192,10 +202,14 @@ function EvaluasiSesi() {
           
           <button 
             onClick={selesaikan}
-            className="flex items-center gap-2 text-sm font-bold bg-primary text-primary-foreground px-5 sm:px-6 py-2.5 rounded-full hover:opacity-90 active:scale-95 shadow-md transition-all"
+            disabled={isSaving}
+            className="flex items-center gap-2 text-sm font-bold bg-primary text-primary-foreground px-5 sm:px-6 py-2.5 rounded-full hover:opacity-90 active:scale-95 shadow-md transition-all disabled:opacity-50"
           >
-            <Save className="h-4 w-4" />
-            Simpan Nilai
+            {isSaving ? (
+              <span className="flex items-center gap-2"><div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</span>
+            ) : (
+              <span className="flex items-center gap-2"><Save className="h-4 w-4" /> Simpan Nilai</span>
+            )}
           </button>
         </div>
 
