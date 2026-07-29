@@ -167,6 +167,7 @@ function PreUjianContent({
       const sesi = findOrCreateSesi(ujian.id, user.id, user);
       const started = sesi.status === "sedang" ? sesi : startSesi(sesi, ujian);
       sesiRepo.upsert(started);
+      await sesiRepo.flush();
       navigate({ to: "/peserta/ujian/$id/kerjakan", params: { id: ujian.id } });
     } catch (err) {
       if (err instanceof PesertaNotAssignedToExamError) {
