@@ -57,7 +57,7 @@ function EvaluasiSesi() {
     setSesi(next);
   }
 
-  function fillZeroForEmpty() {
+  async function fillZeroForEmpty() {
     if (!sesi) return;
     let changed = false;
     const nextJawaban = sesi.jawaban.map((j) => {
@@ -74,8 +74,12 @@ function EvaluasiSesi() {
       const next = { ...sesi, jawaban: nextJawaban };
       sesiRepo.upsert(next);
       setSesi(next);
-      sesiRepo.flush().catch(console.error); // 🔥 PERSISTENCE: Ensure 0s are saved!
-      toast.success("Berhasil memberi nilai 0 pada jawaban kosong.");
+      try {
+        await sesiRepo.flush();
+        toast.success("Berhasil memberi nilai 0 pada jawaban kosong.");
+      } catch {
+        toast.error("Gagal menyimpan nilai 0.");
+      }
     } else {
       toast.info("Tidak ada jawaban kosong yang belum dinilai.");
     }
