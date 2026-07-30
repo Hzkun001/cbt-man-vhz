@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, ChevronRight, Upload, FileText, Download, FileUp, Lock, Pencil, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, ChevronRight, Upload, FileText, Download, FileUp, Lock, Pencil, AlertTriangle, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -162,7 +162,7 @@ function ModulPage() {
         description="Pusat penyimpanan referensi soal-soal ujian berdasarkan mata kuliah."
         action={
           canEdit && (
-            <>
+            <div className="flex items-center gap-2">
               <input
                 ref={importRef}
                 type="file"
@@ -178,9 +178,9 @@ function ModulPage() {
                 <FileUp className="mr-2 h-4 w-4" /> Import JSON
               </Button>
               <Button size="sm" variant="outline" className="h-9" asChild>
-                <Link to="/admin/modul/import"><Upload className="mr-2 h-4 w-4" /> Excel</Link>
+                <Link to="/admin/modul/import"><Upload className="mr-2 h-4 w-4" /> Import Excel</Link>
               </Button>
-            </>
+            </div>
           )
         }
       />
@@ -188,12 +188,15 @@ function ModulPage() {
       {/* Toolbar & Add New */}
       <div className="flex flex-col sm:flex-row gap-4 items-end mb-6">
         <div className="flex-1 w-full flex flex-col sm:flex-row gap-3">
-          <Input 
-            placeholder="Cari modul..." 
-            value={query} 
-            onChange={(e) => setQuery(e.target.value)} 
-            className="max-w-xs" 
-          />
+          <div className="relative flex-1 sm:max-w-xs">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Cari modul..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="h-9 pl-9"
+            />
+          </div>
           <Select value={filterMk} onValueChange={setFilterMk}>
             <SelectTrigger className="w-full sm:w-56">
               <SelectValue placeholder="Semua Mata Kuliah" />
