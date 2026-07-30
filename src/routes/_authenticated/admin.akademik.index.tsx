@@ -123,6 +123,7 @@ function UnitAkademikExplorer() {
         {children.map((u: UnitAkademik) => {
           const hasChildren = units.some((child: UnitAkademik) => child.parentId === u.id);
           const isExpanded = expanded.has(u.id);
+          const isAddingChild = !editing && form.parentId === u.id;
 
           // Filtering
           if (search && !u.nama.toLowerCase().includes(search.toLowerCase()) && !hasChildren) return null;
@@ -137,8 +138,8 @@ function UnitAkademikExplorer() {
                   className="flex h-6 w-6 cursor-pointer items-center justify-center rounded hover:bg-black/10 dark:hover:bg-white/10"
                   onClick={() => toggleExpand(u.id)}
                 >
-                  {hasChildren ? (
-                    isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
+                  {(hasChildren || isAddingChild) ? (
+                    isExpanded ? <ChevronDown className="h-4 w-4 text-primary" /> : <ChevronRight className="h-4 w-4" />
                   ) : (
                     <div className="h-4 w-4" />
                   )}
@@ -182,7 +183,36 @@ function UnitAkademikExplorer() {
                   </Button>
                 </div>
               </div>
-              {hasChildren && isExpanded && renderTree([u.id], level + 1)}
+
+              {/* Inline Sub-unit Input Form & Children */}
+              {isExpanded && (
+                <div className="flex flex-col">
+                  {isAddingChild && (
+                    <div 
+                      className="flex items-center gap-2 rounded-md p-2 bg-primary/10 border border-primary/30 my-1 animate-in fade-in slide-in-from-top-1 duration-150"
+                      style={{ paddingLeft: `${(level + 1) * 1.5 + 0.5}rem` }}
+                    >
+                      <div className="h-4 w-4 flex items-center justify-center text-primary font-bold">↳</div>
+                      {getIcon(form.tipe)}
+                      <Input
+                        ref={inputRef}
+                        placeholder={form.tipe === "prodi" ? "Nama Program Studi..." : "Nama Kelas / Angkatan..."}
+                        className="h-8 text-sm flex-1 bg-background"
+                        value={form.nama}
+                        onChange={(e) => setForm({ ...form, nama: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") save();
+                          if (e.key === "Escape") resetForm();
+                        }}
+                      />
+                      <Button size="sm" className="h-8 px-3 text-xs" onClick={save}>Simpan</Button>
+                      <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" onClick={resetForm}>Batal</Button>
+                    </div>
+                  )}
+
+                  {renderTree([u.id], level + 1)}
+                </div>
+              )}
             </div>
           );
         })}
