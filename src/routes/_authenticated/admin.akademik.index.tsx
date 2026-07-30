@@ -30,6 +30,20 @@ function getDescendantIds(targetId: string, units: UnitAkademik[]): Set<string> 
   return set;
 }
 
+function highlightText(text: string, query: string) {
+  if (!query.trim()) return text;
+  const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"));
+  return parts.map((part, i) =>
+    part.toLowerCase() === query.toLowerCase() ? (
+      <mark key={i} className="bg-amber-200 dark:bg-amber-900/80 dark:text-amber-100 font-semibold px-0.5 rounded">
+        {part}
+      </mark>
+    ) : (
+      part
+    )
+  );
+}
+
 function UnitAkademikExplorer() {
   const [units, setUnits] = useState<UnitAkademik[]>(unitAkademikRepo.all());
   const [search, setSearch] = useState("");
@@ -39,6 +53,10 @@ function UnitAkademikExplorer() {
   // Form State
   const [editing, setEditing] = useState<UnitAkademik | null>(null);
   const [form, setForm] = useState({ nama: "", tipe: "fakultas", parentId: "none" });
+
+  const filteredMatchCount = search.trim()
+    ? units.filter((u: UnitAkademik) => u.nama.toLowerCase().includes(search.toLowerCase())).length
+    : units.length;
 
   const toggleExpand = (id: string) => {
     const next = new Set(expanded);
@@ -145,7 +163,7 @@ function UnitAkademikExplorer() {
                   )}
                 </div>
                 {getIcon(u.tipe)}
-                <span className="flex-1 text-sm font-medium">{u.nama}</span>
+                <span className="flex-1 text-sm font-medium">{highlightText(u.nama, search)}</span>
                 <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground uppercase">{u.tipe}</span>
                 
                 <div className="flex items-center gap-1 opacity-50 hover:opacity-100">
@@ -225,19 +243,26 @@ function UnitAkademikExplorer() {
       <Card className="md:col-span-2">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0 pb-4">
           <CardTitle>Struktur Unit Akademik</CardTitle>
-          <Input
-            placeholder="Cari unit..."
-            className="max-w-xs"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              if (e.target.value) {
-                setExpanded(new Set(units.map((u: UnitAkademik) => u.id)));
-              } else {
-                setExpanded(new Set());
-              }
-            }}
-          />
+          <div className="flex items-center gap-2 max-w-xs w-full sm:w-auto">
+            {search.trim() !== "" && (
+              <span className="text-xs text-muted-foreground whitespace-nowrap bg-muted px-2.5 py-1 rounded-md font-medium border">
+                {filteredMatchCount} / {units.length} unit
+              </span>
+            )}
+            <Input
+              placeholder="Cari unit..."
+              className="max-w-xs"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                if (e.target.value) {
+                  setExpanded(new Set(units.map((u: UnitAkademik) => u.id)));
+                } else {
+                  setExpanded(new Set());
+                }
+              }}
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="rounded-lg border bg-card p-2 min-h-[400px]">
