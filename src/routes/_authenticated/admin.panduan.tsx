@@ -430,7 +430,7 @@ const articlesMap: Record<string, DocArticle> = {
         <section id="akun-peserta" data-heading="akun-peserta" className="space-y-3">
           <h2 className="text-lg font-bold text-foreground tracking-tight">Manajemen Akun Peserta</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Daftarkan peserta melalui <DocMenuLink to="/admin/users">Pengguna</DocMenuLink> atau impor masal dari file Excel.
+            Daftarkan peserta melalui <DocMenuLink to="/admin/peserta">Akun Peserta</DocMenuLink> atau impor masal dari file Excel.
           </p>
         </section>
 
@@ -489,7 +489,7 @@ const articlesMap: Record<string, DocArticle> = {
             </FaqAccordion>
 
             <FaqAccordion q="Bagaimana mereset password akun peserta?">
-              Buka menu <DocMenuLink to="/admin/users">Pengguna</DocMenuLink>, pilih peserta yang bersangkutan, lalu klik tombol ubah password.
+              Buka menu <DocMenuLink to="/admin/peserta">Akun Peserta</DocMenuLink>, pilih peserta yang bersangkutan, lalu klik tombol ubah password.
             </FaqAccordion>
 
             <FaqAccordion q="Soal atau Gambar tidak muncul di layar peserta">
