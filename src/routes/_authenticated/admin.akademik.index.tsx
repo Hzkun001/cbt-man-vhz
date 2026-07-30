@@ -186,11 +186,13 @@ function UnitAkademikExplorer() {
     );
   };
 
+  const parentName = form.parentId !== "none" ? units.find((u: UnitAkademik) => u.id === form.parentId)?.nama : null;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <Card className="md:col-span-2">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0 pb-4">
-          <CardTitle>Struktur Organisasi Akademik</CardTitle>
+          <CardTitle>Hierarki Kelas & Jurusan</CardTitle>
           <Input
             placeholder="Cari unit..."
             className="max-w-xs"
@@ -210,8 +212,8 @@ function UnitAkademikExplorer() {
             {units.length === 0 ? (
               <div className="flex h-[300px] flex-col items-center justify-center text-muted-foreground">
                 <Folder className="mb-2 h-10 w-10 opacity-20" />
-                <p>Belum ada data struktur akademik.</p>
-                <Button variant="link" onClick={() => setForm({ ...form, parentId: "none" })}>Buat Induk Pertama</Button>
+                <p>Belum ada hierarki rombongan belajar atau jurusan.</p>
+                <Button variant="link" onClick={() => setForm({ ...form, parentId: "none" })}>Buat Tingkat Pertama (Root)</Button>
               </div>
             ) : (
               renderTree(null, 0)
@@ -223,38 +225,44 @@ function UnitAkademikExplorer() {
       <div className="space-y-4">
         <Card>
           <CardHeader>
-            <CardTitle>{editing ? "Edit Unit" : "Tambah Unit Baru"}</CardTitle>
+            <CardTitle>{editing ? "Edit Rombel/Jurusan" : form.parentId !== "none" ? "Tambah Sub-Kelas" : "Tambah Kelas/Jurusan"}</CardTitle>
+            {!editing && parentName && (
+              <div className="bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs px-3 py-2 rounded-md border border-blue-200 dark:border-blue-800 mt-2 flex items-center gap-2 font-medium">
+                <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                Menambahkan di dalam: <strong>{parentName}</strong>
+              </div>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
-              <Label>Nama Unit</Label>
+              <Label>Nama Kelompok / Rombel</Label>
               <Input
-                placeholder="Contoh: Fakultas Teknik"
+                placeholder="Contoh: Kelas X MIPA 1, atau Teknik Informatika"
                 value={form.nama}
                 onChange={(e) => setForm({ ...form, nama: e.target.value })}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Tipe Unit</Label>
+              <Label>Tingkatan</Label>
               <Select value={form.tipe} onValueChange={(val) => setForm({ ...form, tipe: val })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="fakultas">Fakultas</SelectItem>
-                  <SelectItem value="prodi">Program Studi / Jurusan</SelectItem>
-                  <SelectItem value="kelas">Kelas / Paralel (A, B, C)</SelectItem>
+                  <SelectItem value="fakultas">Fakultas / Gedung Rayon</SelectItem>
+                  <SelectItem value="prodi">Jurusan / Program Studi</SelectItem>
+                  <SelectItem value="kelas">Rombel / Kelas Paralel</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Induk Unit (Parent)</Label>
+              <Label>Berada di bawah (Tingkat Induk)</Label>
               <Select value={form.parentId} onValueChange={(val) => setForm({ ...form, parentId: val })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">-- Sebagai Induk (Root) --</SelectItem>
+                  <SelectItem value="none">-- Sebagai Tingkat Utama (Root) --</SelectItem>
                   {allowedParentUnits.map((u: UnitAkademik) => (
                     <SelectItem key={u.id} value={u.id}>{u.nama} ({u.tipe})</SelectItem>
                   ))}
@@ -264,7 +272,7 @@ function UnitAkademikExplorer() {
             
             <div className="flex gap-2 pt-2">
               <Button onClick={save} className="flex-1">{editing ? "Simpan Perubahan" : "Tambahkan"}</Button>
-              {editing && <Button variant="outline" onClick={resetForm}>Batal</Button>}
+              {(editing || form.nama || form.parentId !== "none") && <Button variant="outline" onClick={resetForm}>Batal</Button>}
             </div>
           </CardContent>
         </Card>
