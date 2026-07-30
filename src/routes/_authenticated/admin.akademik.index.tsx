@@ -240,10 +240,10 @@ function UnitAkademikExplorer() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <Card className="md:col-span-2">
+      <Card className={editing ? "md:col-span-2" : "md:col-span-3"}>
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0 pb-4">
           <CardTitle>Struktur Unit Akademik</CardTitle>
-          <div className="flex items-center gap-2 max-w-xs w-full sm:w-auto">
+          <div className="flex items-center gap-2 max-w-sm w-full sm:w-auto">
             {search.trim() !== "" && (
               <span className="text-xs text-muted-foreground whitespace-nowrap bg-muted px-2.5 py-1 rounded-md font-medium border">
                 {filteredMatchCount} / {units.length} unit
@@ -262,10 +262,43 @@ function UnitAkademikExplorer() {
                 }
               }}
             />
+            <Button
+              size="sm"
+              className="gap-1 px-3 text-xs whitespace-nowrap"
+              onClick={() => {
+                setEditing(null);
+                setForm({ nama: "", tipe: "fakultas", parentId: "none" });
+                setTimeout(() => inputRef.current?.focus(), 50);
+              }}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Fakultas Utama
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
           <div className="rounded-lg border bg-card p-2 min-h-[400px]">
+            {/* Inline Root Adding Form */}
+            {!editing && form.parentId === "none" && form.tipe === "fakultas" && (
+              <div className="flex items-center gap-2 rounded-md p-2 bg-primary/10 border border-primary/30 mb-3 animate-in fade-in slide-in-from-top-1 duration-150">
+                <div className="h-4 w-4 flex items-center justify-center text-primary font-bold">+</div>
+                {getIcon("fakultas")}
+                <Input
+                  ref={inputRef}
+                  placeholder="Nama Fakultas Utama Baru..."
+                  className="h-8 text-sm flex-1 bg-background"
+                  value={form.nama}
+                  onChange={(e) => setForm({ ...form, nama: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") save();
+                    if (e.key === "Escape") resetForm();
+                  }}
+                />
+                <Button size="sm" className="h-8 px-3 text-xs" onClick={save}>Simpan</Button>
+                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" onClick={resetForm}>Batal</Button>
+              </div>
+            )}
+
             {units.length === 0 ? (
               <div className="flex h-[300px] flex-col items-center justify-center text-muted-foreground">
                 <Folder className="mb-2 h-10 w-10 opacity-20" />
@@ -279,11 +312,12 @@ function UnitAkademikExplorer() {
         </CardContent>
       </Card>
 
-      <div className="space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>{editing ? "Edit Unit Akademik" : "Tambah Unit Akademik"}</CardTitle>
-          </CardHeader>
+      {editing && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-right-2 duration-200">
+          <Card>
+            <CardHeader>
+              <CardTitle>Edit Unit Akademik</CardTitle>
+            </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
               <Label>Nama Unit Akademik</Label>
@@ -323,12 +357,13 @@ function UnitAkademikExplorer() {
             </div>
             
             <div className="flex gap-2 pt-2">
-              <Button onClick={save} className="flex-1">{editing ? "Simpan Perubahan" : "Tambah Unit"}</Button>
-              {(editing || form.nama || form.parentId !== "none") && <Button variant="outline" onClick={resetForm}>Reset</Button>}
+              <Button onClick={save} className="flex-1">Simpan Perubahan</Button>
+              <Button variant="outline" onClick={resetForm}>Batal</Button>
             </div>
           </CardContent>
         </Card>
       </div>
+      )}
     </div>
   );
 }

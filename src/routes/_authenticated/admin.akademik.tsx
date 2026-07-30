@@ -53,57 +53,35 @@ function AkademikLayout() {
         </Alert>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8 items-start">
-        
-        {/* Sidebar Navigation */}
-        <aside className="w-full lg:w-64 shrink-0 space-y-6">
-          {TREE_MENU.map((group, idx) => (
-            <div key={idx} className="space-y-2">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2">
-                {group.section}
-              </h4>
-              <nav className="flex flex-col space-y-1">
-                {group.items.map((item) => {
-                  const active = item.to === "/admin/akademik"
-                    ? (pathname === "/admin/akademik" || pathname === "/admin/akademik/")
-                    : pathname.startsWith(item.to);
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.to}
-                      to={item.to}
-                      className={cn(
-                        "group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                        active
-                          ? "bg-accent text-accent-foreground font-semibold"
-                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                      )}
-                      style={{ marginLeft: `${item.indent * 12}px` }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Icon className={cn(
-                          "h-4 w-4 shrink-0", 
-                          active ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
-                        )} />
-                        {item.label}
-                      </div>
-                      {active && <ChevronRight className="h-4 w-4 opacity-50" />}
-                    </Link>
-                  );
-                })}
-              </nav>
-            </div>
-          ))}
-        </aside>
-
-        {/* Content Outlet */}
-        <main className="flex-1 w-full min-h-[500px]">
-          <div className="py-1">
-            <Outlet />
-          </div>
-        </main>
-
+      {/* Top Sub-Navigation Tabs */}
+      <div className="flex flex-wrap items-center gap-2 border-b pb-3">
+        {TREE_MENU.flatMap(group => group.items).map((item) => {
+          const active = item.to === "/admin/akademik"
+            ? (pathname === "/admin/akademik" || pathname === "/admin/akademik/")
+            : pathname.startsWith(item.to);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={cn(
+                "inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium rounded-md transition-all",
+                active
+                  ? "bg-primary text-primary-foreground font-semibold shadow-sm"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              {item.label}
+            </Link>
+          );
+        })}
       </div>
+
+      {/* Content Outlet (Full Width) */}
+      <main className="w-full min-h-[500px]">
+        <Outlet />
+      </main>
     </div>
   );
 }
