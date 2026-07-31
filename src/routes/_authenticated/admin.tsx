@@ -319,39 +319,37 @@ function AdminLayout() {
                         <span className="truncate">{group.label}</span>
                       </div>
                       <div className="flex items-center shrink-0 ml-2">
-                        {isOpen ? (
-                          <ChevronDown className="h-3.5 w-3.5 text-slate-400 transition-transform duration-200" />
-                        ) : (
-                          <ChevronRight className="h-3.5 w-3.5 text-slate-400 transition-transform duration-200" />
-                        )}
+                        <ChevronDown className={cn("h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ease-in-out", isOpen ? "rotate-0 text-slate-700 dark:text-slate-200" : "-rotate-90")} />
                       </div>
                     </button>
 
-                    {/* Dropdown Items */}
-                    {isOpen && (
-                      <div className="flex flex-col gap-1 mt-1 pl-3 border-l-2 border-slate-200/80 dark:border-slate-800 ml-3.5 py-1">
-                        {visibleItems.map((n) => {
-                          const Icon = n.icon;
-                          return (
-                            <Link
-                              key={n.to}
-                              to={n.to as never}
-                              activeOptions={{ exact: n.exact }}
-                              activeProps={{
-                                className: "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-semibold shadow-sm"
-                              }}
-                              inactiveProps={{
-                                className: "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100"
-                              }}
-                              className="flex items-center gap-2.5 px-3 py-2 text-xs md:text-sm rounded-lg transition-colors duration-150"
-                            >
-                              <Icon className="h-4 w-4 shrink-0" />
-                              <span className="leading-snug truncate">{n.label}</span>
-                            </Link>
-                          );
-                        })}
+                    {/* Smooth Dropdown Animation Container */}
+                    <div className={cn("grid transition-all duration-200 ease-in-out", isOpen ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0 mt-0")}>
+                      <div className="overflow-hidden">
+                        <div className="flex flex-col gap-1 pl-3 border-l-2 border-slate-200/80 dark:border-slate-800 ml-3.5 py-1">
+                          {visibleItems.map((n) => {
+                            const Icon = n.icon;
+                            return (
+                              <Link
+                                key={n.to}
+                                to={n.to as never}
+                                activeOptions={{ exact: n.exact }}
+                                activeProps={{
+                                  className: "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-semibold shadow-sm"
+                                }}
+                                inactiveProps={{
+                                  className: "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100"
+                                }}
+                                className="flex items-center gap-2.5 px-3 py-2 text-xs md:text-sm rounded-lg transition-colors duration-150"
+                              >
+                                <Icon className="h-4 w-4 shrink-0" />
+                                <span className="leading-snug truncate">{n.label}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
                       </div>
-                    )}
+                    </div>
                   </div>
                 );
               })}
