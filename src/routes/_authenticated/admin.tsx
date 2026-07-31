@@ -186,6 +186,18 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminLayout,
 });
 
+function isNavItemActive(item: NavItem, pathname: string) {
+  if (item.exact) return pathname === item.to;
+  if (pathname === item.to || pathname.startsWith(`${item.to}/`)) return true;
+  const rule = resolveAdminRouteRule(pathname);
+  const itemRule = resolveAdminRouteRule(item.to);
+  return !!(rule && itemRule && itemRule.key === rule.key);
+}
+
+function isGroupActive(group: NavGroup, pathname: string) {
+  return group.items.some((item) => isNavItemActive(item, pathname));
+}
+
 function AdminLayout() {
   const user = useAuthStore((s) => s.user)!;
   const logout = useAuthStore((s) => s.logout);
@@ -199,26 +211,14 @@ function AdminLayout() {
 
   // Track open state for dropdown groups (Single-open accordion mode)
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
-    const activeGroup = navGroups.find((group) =>
-      group.items.some((item) =>
-        item.exact
-          ? pathname === item.to
-          : pathname === item.to || pathname.startsWith(`${item.to}/`)
-      )
-    );
+    const activeGroup = navGroups.find((group) => isGroupActive(group, pathname));
     const targetId = activeGroup?.id || "utama";
     return { [targetId]: true };
   });
 
   // Auto expand active group (and close others) when navigating
   useEffect(() => {
-    const activeGroup = navGroups.find((group) =>
-      group.items.some((item) =>
-        item.exact
-          ? pathname === item.to
-          : pathname === item.to || pathname.startsWith(`${item.to}/`)
-      )
-    );
+    const activeGroup = navGroups.find((group) => isGroupActive(group, pathname));
     if (activeGroup) {
       setOpenGroups({ [activeGroup.id]: true });
     }
@@ -296,16 +296,15 @@ function AdminLayout() {
 
                 const isOpen = !!openGroups[group.id];
                 const GroupIcon = group.icon;
-                const hasActiveChild = visibleItems.some((item) => 
-                  item.exact 
-                    ? pathname === item.to 
-                    : pathname === item.to || pathname.startsWith(`${item.to}/`)
-                );
+                const hasActiveChild = isGroupActive(group, pathname);
 
                 return (
                   <div key={group.id} className="flex flex-col rounded-xl overflow-hidden transition-all">
                     {/* Main Dropdown Header / Poin Utama */}
                     <button
+                      id={`nav-group-${group.id}-button`}
+                      aria-expanded={isOpen}
+                      aria-controls={`nav-group-${group.id}-panel`}
                       onClick={() => toggleGroup(group.id)}
                       className={cn(
                         "flex items-center justify-between w-full px-3 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-colors duration-150 select-none text-left",
@@ -324,7 +323,12 @@ function AdminLayout() {
                     </button>
 
                     {/* Smooth Dropdown Animation Container */}
-                    <div className={cn("grid transition-all duration-200 ease-in-out", isOpen ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0 mt-0")}>
+                    <div 
+                      id={`nav-group-${group.id}-panel`}
+                      role="region"
+                      aria-labelledby={`nav-group-${group.id}-button`}
+                      className={cn("grid transition-all duration-200 ease-in-out", isOpen ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0 mt-0")}
+                    >
                       <div className="overflow-hidden">
                         <div className="flex flex-col gap-1 pl-3 border-l-2 border-slate-200/80 dark:border-slate-800 ml-3.5 py-1">
                           {visibleItems.map((n) => {
