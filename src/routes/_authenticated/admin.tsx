@@ -197,38 +197,36 @@ function AdminLayout() {
   const [theme, setTheme] = useState("light");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Track open state for dropdown groups
+  // Track open state for dropdown groups (Single-open accordion mode)
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
-    // Initial state: expand all groups or the active one
-    const initial: Record<string, boolean> = {};
-    navGroups.forEach((group) => {
-      const hasActiveChild = group.items.some((item) => 
-        item.exact 
-          ? pathname === item.to 
+    const activeGroup = navGroups.find((group) =>
+      group.items.some((item) =>
+        item.exact
+          ? pathname === item.to
           : pathname === item.to || pathname.startsWith(`${item.to}/`)
-      );
-      initial[group.id] = hasActiveChild || group.id === "utama";
-    });
-    return initial;
+      )
+    );
+    const targetId = activeGroup?.id || "utama";
+    return { [targetId]: true };
   });
 
-  // Auto expand group when navigating to a route inside it
+  // Auto expand active group (and close others) when navigating
   useEffect(() => {
-    navGroups.forEach((group) => {
-      const hasActiveChild = group.items.some((item) => 
-        item.exact 
-          ? pathname === item.to 
+    const activeGroup = navGroups.find((group) =>
+      group.items.some((item) =>
+        item.exact
+          ? pathname === item.to
           : pathname === item.to || pathname.startsWith(`${item.to}/`)
-      );
-      if (hasActiveChild) {
-        setOpenGroups((prev) => ({ ...prev, [group.id]: true }));
-      }
-    });
+      )
+    );
+    if (activeGroup) {
+      setOpenGroups({ [activeGroup.id]: true });
+    }
     setMobileMenuOpen(false);
   }, [pathname]);
 
   const toggleGroup = (groupId: string) => {
-    setOpenGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
+    setOpenGroups((prev) => (prev[groupId] ? {} : { [groupId]: true }));
   };
 
   useEffect(() => {
