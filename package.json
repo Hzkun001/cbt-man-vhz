@@ -57,6 +57,7 @@
     "embla-carousel-react": "^8.6.0",
     "idb": "^8.0.3",
     "input-otp": "^1.4.2",
+    "ioredis": "^5.11.1",
     "isomorphic-dompurify": "3.18.0",
     "katex": "^0.17.0",
     "lucide-react": "^0.575.0",
@@ -80,6 +81,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "@types/ioredis": "^4.28.10",
     "@types/katex": "^0.16.8",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",

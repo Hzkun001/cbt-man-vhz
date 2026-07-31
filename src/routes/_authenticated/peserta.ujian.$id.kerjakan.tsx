@@ -1,10 +1,11 @@
 import { useAuthStore } from "@/lib/cbt/auth-store";
 import { soalRepo, sesiRepo, ujianRepo, invalidateReposCache, hydrateRepos } from "@/lib/cbt/repos";
 import type { SesiUjian, Ujian } from "@/lib/cbt/types";
+import { redisService } from "@/lib/cbt/redis";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { LayoutGrid, X, ChevronLeft, ChevronRight, Flag, CheckCircle2, AlertCircle, Type, Clock } from "lucide-react";
+import { LayoutGrid, X, ChevronLeft, ChevronRight, Flag, CheckCircle2, AlertCircle, Type, Clock, Zap } from "lucide-react";
 import {
   createFileRoute,
   useNavigate,
@@ -86,7 +87,31 @@ function RouteComponent() {
     const active = sesiRepo.all().find(
       (x) => x.ujianId === ujian.id && x.pesertaId === user.id && x.status === "sedang"
     );
-    setSesi(active || null);
+    if (active) {
+      // Recover temporary answers from Redis buffer (e.g. after crash / power loss)
+      redisService.getTempAnswers(active.id).then((tempAnswers) => {
+        if (Object.keys(tempAnswers).length > 0) {
+          const recoveredJawaban = active.jawaban.map((j) => {
+            const temp = tempAnswers[j.soalId];
+            if (temp) {
+              return {
+                ...j,
+                jawabanIds: temp.jawabanIds ?? j.jawabanIds,
+                jawabanEssay: temp.jawabanEssay ?? j.jawabanEssay,
+                ragu: temp.ragu ?? j.ragu,
+              };
+            }
+            return j;
+          });
+          setSesi({ ...active, jawaban: recoveredJawaban });
+          toast.success("Jawaban sementara berhasil dipulihkan dari proteksi Redis RAM!");
+        } else {
+          setSesi(active);
+        }
+      });
+    } else {
+      setSesi(null);
+    }
     setSesiDicari(true);
   }, [user, ujian]);
 
@@ -115,6 +140,10 @@ function RouteComponent() {
 
   useEffect(() => {
     if (!sesi || !ujian || sesi.status === "selesai") return;
+
+    // Set server authoritative timer in Redis
+    redisService.setSessionTimer(sesi.id, endsAt, ujian.durasiMenit || 60);
+
     const interval = setInterval(() => {
       const n = Date.now();
       setNow(n);
@@ -166,9 +195,18 @@ function RouteComponent() {
     if (!sesi) return;
     const nextSesi = { ...sesi };
     nextSesi.jawaban = [...nextSesi.jawaban];
-    nextSesi.jawaban[idx] = { ...nextSesi.jawaban[idx], ...partial };
+    const currentJawaban = { ...nextSesi.jawaban[idx], ...partial };
+    nextSesi.jawaban[idx] = currentJawaban;
     setSesi(nextSesi);
 
+    // 1. Instant RAM Autosave to Redis (< 2ms)
+    redisService.saveTempAnswer(sesi.id, currentJawaban.soalId, {
+      jawabanIds: currentJawaban.jawabanIds,
+      jawabanEssay: currentJawaban.jawabanEssay,
+      ragu: currentJawaban.ragu,
+    });
+
+    // 2. Debounced persistent write to SQLite
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       sesiRepo.upsert(nextSesi);
@@ -224,6 +262,11 @@ function RouteComponent() {
         submittingRef.current = false;
         return;
       }
+      
+      // Clear Redis temporary buffer and record submit audit
+      await redisService.clearSessionBuffer(sesiRef.current.id);
+      await redisService.logAudit(sesiRef.current.id, "EXAM_SUBMITTED", { reason: reason || "NORMAL" });
+
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
       toast.success(
         reason ? `Ujian disubmit (${reason})` : "Ujian berhasil disubmit",

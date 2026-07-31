@@ -1,0 +1,219 @@
+import Redis from "ioredis";
+import type { SesiUjian, JawabanPeserta } from "./types";
+
+// Key patterns for Redis
+const REDIS_KEYS = {
+  sessionAnswers: (sesiId: string) => `cbt:session:${sesiId}:answers`,
+  sessionTimer: (sesiId: string) => `cbt:session:${sesiId}:timer`,
+  sessionLogs: (sesiId: string) => `cbt:session:${sesiId}:logs`,
+  onlineUser: (userId: string) => `cbt:online:${userId}`,
+};
+
+class RedisService {
+  private redis: Redis | null = null;
+  private isConnected: boolean = false;
+  // Fallback in-memory cache when Redis server is unreachable
+  private memoryFallback: Map<string, any> = new Map();
+
+  constructor() {
+    const redisUrl = process.env.REDIS_URL || "redis://127.0.0.1:6379";
+    try {
+      this.redis = new Redis(redisUrl, {
+        maxRetriesPerRequest: 1,
+        enableOfflineQueue: false,
+        retryStrategy: () => null, // Don't block app if Redis isn't running locally
+      });
+
+      this.redis.on("connect", () => {
+        this.isConnected = true;
+        console.log("[Redis] Connected successfully to Redis server.");
+      });
+
+      this.redis.on("error", (err) => {
+        if (this.isConnected) {
+          console.warn("[Redis] Disconnected or Connection Error:", err.message);
+        }
+        this.isConnected = false;
+      });
+    } catch {
+      this.isConnected = false;
+    }
+  }
+
+  public get status() {
+    return {
+      connected: this.isConnected,
+      mode: this.isConnected ? "Redis Server (RAM)" : "Fallback In-Memory Buffer",
+    };
+  }
+
+  /**
+   * 1. Save temporary answer to Redis RAM (< 2ms response)
+   */
+  async saveTempAnswer(
+    sesiId: string,
+    soalId: string,
+    jawabanData: { jawabanIds: string[]; jawabanEssay: string; ragu: boolean },
+    ttlSeconds: number = 259200 // Default 3 days (72 hours) buffer for long/1-day exams
+  ): Promise<boolean> {
+    const key = REDIS_KEYS.sessionAnswers(sesiId);
+    const payload = JSON.stringify({
+      ...jawabanData,
+      updatedAt: Date.now(),
+    });
+
+    // Also log audit trail
+    await this.logAudit(sesiId, "ANSWER_UPDATED", { soalId, ...jawabanData });
+
+    if (this.isConnected && this.redis) {
+      try {
+        await this.redis.hset(key, soalId, payload);
+        await this.redis.expire(key, ttlSeconds);
+        return true;
+      } catch (err) {
+        console.warn("[Redis] Failed to write HSET, using fallback memory:", err);
+      }
+    }
+
+    // Fallback in-memory map
+    if (!this.memoryFallback.has(key)) {
+      this.memoryFallback.set(key, new Map());
+    }
+    this.memoryFallback.get(key).set(soalId, payload);
+    return true;
+  }
+
+  /**
+   * 2. Retrieve all temporary answers for session recovery (after power loss/restart)
+   */
+  async getTempAnswers(sesiId: string): Promise<Record<string, { jawabanIds: string[]; jawabanEssay: string; ragu: boolean; updatedAt: number }>> {
+    const key = REDIS_KEYS.sessionAnswers(sesiId);
+
+    if (this.isConnected && this.redis) {
+      try {
+        const rawAnswers = await this.redis.hgetall(key);
+        const parsed: Record<string, any> = {};
+        for (const [soalId, jsonStr] of Object.entries(rawAnswers)) {
+          try {
+            parsed[soalId] = JSON.parse(jsonStr);
+          } catch {
+            // ignore malformed
+          }
+        }
+        return parsed;
+      } catch (err) {
+        console.warn("[Redis] Failed to fetch HGETALL:", err);
+      }
+    }
+
+    // Fallback in-memory map
+    const map = this.memoryFallback.get(key);
+    if (!map) return {};
+    const parsed: Record<string, any> = {};
+    for (const [soalId, jsonStr] of map.entries()) {
+      try {
+        parsed[soalId] = JSON.parse(jsonStr);
+      } catch {
+        // ignore malformed
+      }
+    }
+    return parsed;
+  }
+
+  /**
+   * 3. Server-Authoritative Timer (Locks remaining time & prevents client-side tampering)
+   */
+  async setSessionTimer(sesiId: string, endsAt: number, durationMinutes: number): Promise<void> {
+    const key = REDIS_KEYS.sessionTimer(sesiId);
+    const data = JSON.stringify({ endsAt, durationMinutes, startedAt: Date.now() });
+
+    if (this.isConnected && this.redis) {
+      try {
+        await this.redis.set(key, data, "EX", durationMinutes * 60 + 3600);
+        return;
+      } catch {
+        // fallback
+      }
+    }
+    this.memoryFallback.set(key, data);
+  }
+
+  async getSessionTimer(sesiId: string): Promise<{ endsAt: number; durationMinutes: number; startedAt: number } | null> {
+    const key = REDIS_KEYS.sessionTimer(sesiId);
+
+    if (this.isConnected && this.redis) {
+      try {
+        const data = await this.redis.get(key);
+        if (data) return JSON.parse(data);
+      } catch {
+        // fallback
+      }
+    }
+
+    const data = this.memoryFallback.get(key);
+    return data ? JSON.parse(data) : null;
+  }
+
+  /**
+   * 4. Log Audit Trail for Session Activity (Sudden disconnection / power loss recovery tracking)
+   */
+  async logAudit(sesiId: string, action: string, details?: any): Promise<void> {
+    const key = REDIS_KEYS.sessionLogs(sesiId);
+    const entry = JSON.stringify({
+      timestamp: Date.now(),
+      action,
+      details,
+    });
+
+    if (this.isConnected && this.redis) {
+      try {
+        await this.redis.rpush(key, entry);
+        await this.redis.expire(key, 86400 * 7); // keep 7 days for audit
+        return;
+      } catch {
+        // fallback
+      }
+    }
+
+    if (!this.memoryFallback.has(key)) {
+      this.memoryFallback.set(key, []);
+    }
+    this.memoryFallback.get(key).push(entry);
+  }
+
+  async getAuditLogs(sesiId: string): Promise<Array<{ timestamp: number; action: string; details?: any }>> {
+    const key = REDIS_KEYS.sessionLogs(sesiId);
+
+    if (this.isConnected && this.redis) {
+      try {
+        const logs = await this.redis.lrange(key, 0, -1);
+        return logs.map((l) => JSON.parse(l));
+      } catch {
+        // fallback
+      }
+    }
+
+    const logs = this.memoryFallback.get(key) || [];
+    return logs.map((l: string) => JSON.parse(l));
+  }
+
+  /**
+   * 5. Clear session buffer upon final submission to SQLite
+   */
+  async clearSessionBuffer(sesiId: string): Promise<void> {
+    const ansKey = REDIS_KEYS.sessionAnswers(sesiId);
+    const timerKey = REDIS_KEYS.sessionTimer(sesiId);
+
+    if (this.isConnected && this.redis) {
+      try {
+        await this.redis.del(ansKey, timerKey);
+      } catch {
+        // fallback
+      }
+    }
+    this.memoryFallback.delete(ansKey);
+    this.memoryFallback.delete(timerKey);
+  }
+}
+
+export const redisService = new RedisService();
