@@ -209,25 +209,33 @@ function AdminLayout() {
   const [theme, setTheme] = useState("light");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Memoize visible nav items per user role & permissions to avoid recalculation on render
+  const memoizedNavGroups = React.useMemo(() => {
+    return navGroups.map((group) => ({
+      ...group,
+      visibleItems: group.items.filter((item) => canAccessAdminPath(user, item.to, cfg)),
+    })).filter((group) => group.visibleItems.length > 0);
+  }, [user, cfg]);
+
   // Track open state for dropdown groups (Single-open accordion mode)
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
-    const activeGroup = navGroups.find((group) => isGroupActive(group, pathname));
+    const activeGroup = memoizedNavGroups.find((group) => isGroupActive(group, pathname));
     const targetId = activeGroup?.id || "utama";
     return { [targetId]: true };
   });
 
   // Auto expand active group (and close others) when navigating
   useEffect(() => {
-    const activeGroup = navGroups.find((group) => isGroupActive(group, pathname));
+    const activeGroup = memoizedNavGroups.find((group) => isGroupActive(group, pathname));
     if (activeGroup) {
       setOpenGroups({ [activeGroup.id]: true });
     }
     setMobileMenuOpen(false);
-  }, [pathname]);
+  }, [pathname, memoizedNavGroups]);
 
-  const toggleGroup = (groupId: string) => {
+  const toggleGroup = React.useCallback((groupId: string) => {
     setOpenGroups((prev) => (prev[groupId] ? {} : { [groupId]: true }));
-  };
+  }, []);
 
   useEffect(() => {
     const stored = localStorage.getItem("theme");
@@ -285,21 +293,15 @@ function AdminLayout() {
               )}
             </div>
 
-            {/* Navigation Menu with Dropdowns */}
-            <nav className="flex flex-col gap-2 p-3">
-              {navGroups.map((group) => {
-                const visibleItems = group.items.filter((item) =>
-                  canAccessAdminPath(user, item.to, cfg)
-                );
-
-                if (visibleItems.length === 0) return null;
-
+            {/* Navigation Menu with Dropdowns (High Performance) */}
+            <nav className="flex flex-col gap-1.5 p-3">
+              {memoizedNavGroups.map((group) => {
                 const isOpen = !!openGroups[group.id];
                 const GroupIcon = group.icon;
                 const hasActiveChild = isGroupActive(group, pathname);
 
                 return (
-                  <div key={group.id} className="flex flex-col rounded-xl overflow-hidden transition-all">
+                  <div key={group.id} className="flex flex-col rounded-xl">
                     {/* Main Dropdown Header / Poin Utama */}
                     <button
                       id={`nav-group-${group.id}-button`}
@@ -318,20 +320,20 @@ function AdminLayout() {
                         <span className="truncate">{group.label}</span>
                       </div>
                       <div className="flex items-center shrink-0 ml-2">
-                        <ChevronDown className={cn("h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ease-in-out", isOpen ? "rotate-0 text-slate-700 dark:text-slate-200" : "-rotate-90")} />
+                        <ChevronDown className={cn("h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ease-out", isOpen ? "rotate-0 text-slate-700 dark:text-slate-200" : "-rotate-90")} />
                       </div>
                     </button>
 
-                    {/* Smooth Dropdown Animation Container */}
+                    {/* GPU-Accelerated Smooth Dropdown Animation */}
                     <div 
                       id={`nav-group-${group.id}-panel`}
                       role="region"
                       aria-labelledby={`nav-group-${group.id}-button`}
-                      className={cn("grid transition-all duration-200 ease-in-out", isOpen ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0 mt-0")}
+                      className={cn("grid transition-[grid-template-rows,opacity] duration-200 ease-out", isOpen ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0 mt-0 pointer-events-none")}
                     >
                       <div className="overflow-hidden">
                         <div className="flex flex-col gap-1 pl-3 border-l-2 border-slate-200/80 dark:border-slate-800 ml-3.5 py-1">
-                          {visibleItems.map((n) => {
+                          {group.visibleItems.map((n) => {
                             const Icon = n.icon;
                             return (
                               <Link
