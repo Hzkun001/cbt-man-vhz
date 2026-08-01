@@ -82,7 +82,7 @@ function RolesPage() {
   }
 
   return (
-    <AdminPage>
+    <AdminPage className="neo-ready">
       <div>
         <Link to="/admin/users" className="text-sm text-slate-500 hover:underline">
           ← Pengguna
