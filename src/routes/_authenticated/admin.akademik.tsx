@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { Network, Calendar, Clock, BookOpen, ChevronRight, AlertTriangle } from "lucide-react";
-import { AdminPageHeader } from "@/components/cbt/AdminPage";
+import { AdminPage, AdminPageHeader } from "@/components/cbt/AdminPage";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export const Route = createFileRoute("/_authenticated/admin/akademik")({
@@ -34,7 +34,8 @@ function AkademikLayout() {
   const { pathname } = useLocation();
 
   return (
-    <div className="w-full space-y-6">
+    <AdminPage className="neo-ready">
+      <div className="w-full space-y-6">
       
       {/* Header */}
       <div className="space-y-4">
@@ -105,5 +106,6 @@ function AkademikLayout() {
 
       </div>
     </div>
+    </AdminPage>
   );
 }
