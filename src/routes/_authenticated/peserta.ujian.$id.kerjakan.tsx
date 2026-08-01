@@ -14,6 +14,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AudioPlayer } from "@/components/cbt/AudioPlayer";
 import { RichView } from "@/components/cbt/RichEditor";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Calculator, FileText } from "lucide-react";
+import { ScientificCalculator, NormalValuesTable } from "@/components/cbt/CheatSheets";
 
 export const Route = createFileRoute(
   "/_authenticated/peserta/ujian/$id/kerjakan",
@@ -62,6 +65,48 @@ function gradeSesi(sesi: SesiUjian, ujian: Ujian) {
   }
 
   return currentSesi;
+}
+
+function CheatSheetAction({ ujian }: { ujian: Ujian }) {
+  if (!ujian?.allowCalculator && !ujian?.allowNormalValues) return null;
+
+  return (
+    <div className="flex gap-2 w-full mt-2 mb-4">
+      {ujian.allowCalculator && (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="flex-1 text-xs border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-900 dark:text-indigo-400 dark:hover:bg-indigo-950/50">
+              <Calculator className="w-4 h-4 mr-1.5" />
+              Kalkulator
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[340px]">
+            <DialogHeader>
+              <DialogTitle className="text-center">Kalkulator Ilmiah</DialogTitle>
+            </DialogHeader>
+            <ScientificCalculator />
+          </DialogContent>
+        </Dialog>
+      )}
+      
+      {ujian.allowNormalValues && (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="flex-1 text-xs border-rose-200 text-rose-700 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950/50">
+              <FileText className="w-4 h-4 mr-1.5" />
+              Nilai Normal
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Tabel Nilai Normal Kesehatan</DialogTitle>
+            </DialogHeader>
+            <NormalValuesTable />
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
+  );
 }
 
 function RouteComponent() {
@@ -469,6 +514,8 @@ function RouteComponent() {
           <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
             <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-lg tracking-tight">Navigasi Soal</h3>
             
+            <CheatSheetAction ujian={ujian} />
+
             <div className="mt-4 flex flex-col gap-2">
               <div className="flex items-center gap-3 text-sm font-medium text-slate-600 dark:text-slate-400">
                 <div className="w-4 h-4 rounded-full bg-primary shadow-sm" /> Sudah Dijawab
@@ -545,6 +592,8 @@ function RouteComponent() {
           <div className="flex-1 overflow-y-auto p-6">
             <div className="max-w-xl mx-auto">
               
+              <CheatSheetAction ujian={ujian} />
+
               <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 mb-8 shadow-sm">
                 <div className="flex flex-col items-center">
                   <div className="w-4 h-4 rounded-full bg-primary shadow-sm mb-1" />

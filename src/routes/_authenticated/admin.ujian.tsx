@@ -60,6 +60,8 @@ function UjianList() {
       maxPindahTab: 3,
       blokirShortcut: true,
       mode: "online",
+      allowCalculator: false,
+      allowNormalValues: false,
       createdBy: user.id,
       createdAt: Date.now(),
     };
