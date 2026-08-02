@@ -538,6 +538,29 @@ function UjianEditor() {
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <h3 className="font-medium">Alat Bantu & Cheat Sheet</h3>
+          <p className="text-xs text-slate-500">
+            Izinkan peserta mengakses alat bantu ini selama ujian berlangsung.
+          </p>
+          <div className="flex items-center justify-between rounded border p-2">
+            <Label>Kalkulator Ilmiah</Label>
+            <Switch
+              checked={u.allowCalculator}
+              onCheckedChange={(v) => set("allowCalculator", v)}
+            />
+          </div>
+          <div className="flex items-center justify-between rounded border p-2">
+            <Label>Tabel Nilai Normal Kesehatan</Label>
+            <Switch
+              checked={u.allowNormalValues}
+              onCheckedChange={(v) => set("allowNormalValues", v)}
+            />
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
