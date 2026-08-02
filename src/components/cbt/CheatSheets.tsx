@@ -80,6 +80,56 @@ export function NormalValuesTable() {
   );
 }
 
+function evaluateMathExpression(expr: string): number {
+  const sanitized = expr.replace(/÷/g, "/").replace(/×/g, "*").replace(/−/g, "-");
+  if (!/^[0-9\s.+\-*/%()]+$/.test(sanitized)) {
+    throw new Error("Invalid math expression");
+  }
+
+  const expanded = sanitized.replace(/(\d+(?:\.\d+)?)%/g, "($1/100)");
+  const tokens = expanded.match(/\d+(?:\.\d+)?|[+\-*/()]/g);
+  if (!tokens) throw new Error("No tokens");
+
+  let pos = 0;
+
+  function parsePrimary(): number {
+    if (pos >= tokens!.length) throw new Error("Unexpected end");
+    const token = tokens![pos++];
+    if (token === "(") {
+      const val = parseExpr();
+      if (tokens![pos++] !== ")") throw new Error("Missing closing paren");
+      return val;
+    }
+    const num = parseFloat(token);
+    if (isNaN(num)) throw new Error("Invalid number: " + token);
+    return num;
+  }
+
+  function parseMultiplicative(): number {
+    let left = parsePrimary();
+    while (pos < tokens!.length && (tokens![pos] === "*" || tokens![pos] === "/")) {
+      const op = tokens![pos++];
+      const right = parsePrimary();
+      left = op === "*" ? left * right : (right !== 0 ? left / right : NaN);
+    }
+    return left;
+  }
+
+  function parseExpr(): number {
+    let left = parseMultiplicative();
+    while (pos < tokens!.length && (tokens![pos] === "+" || tokens![pos] === "-")) {
+      const op = tokens![pos++];
+      const right = parseMultiplicative();
+      left = op === "+" ? left + right : left - right;
+    }
+    return left;
+  }
+
+  const result = parseExpr();
+  if (isNaN(result) || !isFinite(result)) throw new Error("Math error");
+  return result;
+}
+
 // --- KALKULATOR ILMIAH ---
 export function ScientificCalculator() {
   const [display, setDisplay] = useState('0');
@@ -103,11 +153,9 @@ export function ScientificCalculator() {
 
   const calculate = () => {
     try {
-      // Basic safe eval equivalent using Function for simple math
-      // Note: In a real app, use math.js, but this is a simple approximation
-      const evalResult = new Function(`return ${display}`)();
+      const evalResult = evaluateMathExpression(display);
       setEquation(display + ' =');
-      setDisplay(String(evalResult));
+      setDisplay(String(Math.round(evalResult * 1000000) / 1000000));
     } catch (err) {
       setDisplay('Error');
     }

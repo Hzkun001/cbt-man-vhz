@@ -153,11 +153,12 @@ function RouteComponent() {
         } else {
           setSesi(active);
         }
+        setSesiDicari(true);
       });
     } else {
       setSesi(null);
+      setSesiDicari(true);
     }
-    setSesiDicari(true);
   }, [user, ujian]);
 
   useEffect(() => {
