@@ -106,7 +106,7 @@ function CommandCenter() {
               Pusat Kendali CBT Administrasi
             </h1>
             <p className="text-sm text-slate-400 max-w-xl">
-              Selamat datang kembali, <span className="text-slate-200 font-medium">{user.nama}</span>. Ringkasan performa dan pengawasan ujian kampus tersedia seketika.
+              Selamat datang kembali, <span className="text-slate-200 font-medium">{user.namaLengkap}</span>. Ringkasan performa dan pengawasan ujian kampus tersedia seketika.
             </p>
           </div>
 

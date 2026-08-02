@@ -154,8 +154,8 @@ export function mapUjian(
 		maxPindahTab: row.maxPindahTab,
 		blokirShortcut: row.blokirShortcut,
 		mode: (row.mode ?? "online") as "online" | "offline",
-		allowCalculator: row.allowCalculator,
-		allowNormalValues: row.allowNormalValues,
+		allowCalculator: (row as { allowCalculator?: boolean }).allowCalculator ?? false,
+		allowNormalValues: (row as { allowNormalValues?: boolean }).allowNormalValues ?? false,
 		createdBy: row.createdBy,
 		createdAt: Number(row.createdAt),
 	};
