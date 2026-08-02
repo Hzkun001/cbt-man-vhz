@@ -13,7 +13,7 @@ class RedisService {
   private redis: Redis | null = null;
   private isConnected: boolean = false;
   // Fallback in-memory cache when Redis server is unreachable
-  private memoryFallback: Map<string, any> = new Map();
+  private memoryFallback: Map<string, unknown> = new Map();
 
   constructor() {
     const redisUrl = process.env.REDIS_URL || "redis://127.0.0.1:6379";
@@ -79,7 +79,7 @@ class RedisService {
     if (!this.memoryFallback.has(key)) {
       this.memoryFallback.set(key, new Map());
     }
-    this.memoryFallback.get(key).set(soalId, payload);
+    (this.memoryFallback.get(key) as Map<string, string>).set(soalId, payload);
     return true;
   }
 
@@ -92,7 +92,7 @@ class RedisService {
     if (this.isConnected && this.redis) {
       try {
         const rawAnswers = await this.redis.hgetall(key);
-        const parsed: Record<string, any> = {};
+        const parsed: Record<string, { jawabanIds: string[]; jawabanEssay: string; ragu: boolean; updatedAt: number }> = {};
         for (const [soalId, jsonStr] of Object.entries(rawAnswers)) {
           try {
             parsed[soalId] = JSON.parse(jsonStr);
@@ -107,9 +107,9 @@ class RedisService {
     }
 
     // Fallback in-memory map
-    const map = this.memoryFallback.get(key);
+    const map = this.memoryFallback.get(key) as Map<string, string> | undefined;
     if (!map) return {};
-    const parsed: Record<string, any> = {};
+    const parsed: Record<string, { jawabanIds: string[]; jawabanEssay: string; ragu: boolean; updatedAt: number }> = {};
     for (const [soalId, jsonStr] of map.entries()) {
       try {
         parsed[soalId] = JSON.parse(jsonStr);
@@ -150,14 +150,14 @@ class RedisService {
       }
     }
 
-    const data = this.memoryFallback.get(key);
+    const data = this.memoryFallback.get(key) as string | undefined;
     return data ? JSON.parse(data) : null;
   }
 
   /**
    * 4. Log Audit Trail for Session Activity (Sudden disconnection / power loss recovery tracking)
    */
-  async logAudit(sesiId: string, action: string, details?: any): Promise<void> {
+  async logAudit(sesiId: string, action: string, details?: Record<string, unknown>): Promise<void> {
     const key = REDIS_KEYS.sessionLogs(sesiId);
     const entry = JSON.stringify({
       timestamp: Date.now(),
@@ -178,10 +178,10 @@ class RedisService {
     if (!this.memoryFallback.has(key)) {
       this.memoryFallback.set(key, []);
     }
-    this.memoryFallback.get(key).push(entry);
+    (this.memoryFallback.get(key) as string[]).push(entry);
   }
 
-  async getAuditLogs(sesiId: string): Promise<Array<{ timestamp: number; action: string; details?: any }>> {
+  async getAuditLogs(sesiId: string): Promise<Array<{ timestamp: number; action: string; details?: Record<string, unknown> }>> {
     const key = REDIS_KEYS.sessionLogs(sesiId);
 
     if (this.isConnected && this.redis) {
@@ -193,7 +193,7 @@ class RedisService {
       }
     }
 
-    const logs = this.memoryFallback.get(key) || [];
+    const logs = (this.memoryFallback.get(key) as string[]) || [];
     return logs.map((l: string) => JSON.parse(l));
   }
 
