@@ -1,5 +1,5 @@
 import Redis from "ioredis";
-import type { SesiUjian, JawabanPeserta } from "./types";
+import type { SesiUjian } from "./types";
 
 // Key patterns for Redis
 const REDIS_KEYS = {
