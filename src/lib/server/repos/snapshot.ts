@@ -152,27 +152,22 @@ export function pesertaSnapshot(rows: SnapshotRows, caller: UserRow): Snapshot {
 		sesi.flatMap((item) => parseJson<string[]>(item.soalIds, [])),
 	);
 	
-	// Issue fix: Participants need the exam bank to generate the session locally.
-	// We must include all Soal related to the topicSets of their assigned exams.
-	const allowedTopikIds = new Set(
-		ujian.flatMap((u) =>
-			parseJson<{ topikId: string }[]>(u.topicSets, []).map((ts) => ts.topikId),
-		),
-	);
-	
-	const soal = rows.soal.filter((item) => soalIds.has(item.id) || allowedTopikIds.has(item.topikId));
+	const soal = rows.soal.filter((item) => soalIds.has(item.id));
 	const token = rows.token.filter((item) => ujianIds.has(item.ujianId));
 
 	return {
 		users: [publicUser(caller)],
 		unitAkademik: rows.unitAkademik as any,
-
 		tahunAkademik: [],
 		semester: [],
 		mataKuliah: [],
 		modul: [],
 		topik: [],
-		soal: soal.map(mapSoal),
+		soal: soal.map(mapSoal).map((s) => ({
+			...s,
+			pembahasan: "",
+			jawaban: s.jawaban.map((j) => ({ ...j, benar: false })),
+		})),
 		ujian: ujian.map(mapUjian),
 		token: token.map(mapToken),
 		sesi: sesi.map(mapSesi),

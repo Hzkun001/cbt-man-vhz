@@ -143,6 +143,7 @@ function RouteComponent() {
   const [now, setNow] = useState(Date.now());
   const submittingRef = useRef(false);
   const saveTimer = useRef<NodeJS.Timeout | null>(null);
+  const redisSaveTimer = useRef<NodeJS.Timeout | null>(null);
 
   const [showList, setShowList] = useState(false);
   const [fontSize, setFontSize] = useState<"sm" | "base" | "lg">("base");
@@ -173,6 +174,9 @@ function RouteComponent() {
         } else {
           setSesi(active);
         }
+        setSesiDicari(true);
+      }).catch(() => {
+        setSesi(active);
         setSesiDicari(true);
       });
     } else {
@@ -208,7 +212,8 @@ function RouteComponent() {
     if (!sesi || !ujian || sesi.status === "selesai") return;
 
     // Set server authoritative timer in Redis
-    setSessionTimerServer({ data: { sesiId: sesi.id, endsAt, durationMinutes: ujian.durasiMenit || 60 } });
+    setSessionTimerServer({ data: { sesiId: sesi.id, endsAt, durationMinutes: ujian.durasiMenit || 60 } })
+      .catch((err) => console.error("Redis timer sync failed", err));
 
     const interval = setInterval(() => {
       const n = Date.now();
@@ -265,16 +270,19 @@ function RouteComponent() {
     nextSesi.jawaban[idx] = currentJawaban;
     setSesi(nextSesi);
 
-    // 1. Instant RAM Autosave to Redis (< 2ms)
-    saveTempAnswerServer({ data: { 
-      sesiId: sesi.id, 
-      soalId: currentJawaban.soalId, 
-      jawabanData: {
-        jawabanIds: currentJawaban.jawabanIds,
-        jawabanEssay: currentJawaban.jawabanEssay,
-        ragu: currentJawaban.ragu,
-      } 
-    } });
+    // 1. Debounced RAM Autosave to Redis (< 2ms)
+    if (redisSaveTimer.current) clearTimeout(redisSaveTimer.current);
+    redisSaveTimer.current = setTimeout(() => {
+      saveTempAnswerServer({ data: { 
+        sesiId: sesi.id, 
+        soalId: currentJawaban.soalId, 
+        jawabanData: {
+          jawabanIds: currentJawaban.jawabanIds,
+          jawabanEssay: currentJawaban.jawabanEssay,
+          ragu: currentJawaban.ragu,
+        } 
+      } }).catch((err) => console.error("Redis temp save failed", err));
+    }, 500);
 
     // 2. Debounced persistent write to SQLite
     if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -313,6 +321,10 @@ function RouteComponent() {
         sesiRepo.flush().catch(() => {});
       }
     }
+    if (redisSaveTimer.current) {
+      clearTimeout(redisSaveTimer.current);
+      redisSaveTimer.current = null;
+    }
     setIdx(newIdx);
   }
 
@@ -334,8 +346,12 @@ function RouteComponent() {
       }
       
       // Clear Redis temporary buffer and record submit audit
-      await clearSessionBufferServer({ data: sesiRef.current.id });
-      await logAuditServer({ data: { sesiId: sesiRef.current.id, action: "EXAM_SUBMITTED", details: { reason: reason || "NORMAL" } } });
+      try {
+        await clearSessionBufferServer({ data: sesiRef.current.id });
+        await logAuditServer({ data: { sesiId: sesiRef.current.id, action: "EXAM_SUBMITTED", details: { reason: reason || "NORMAL" } } });
+      } catch (err) {
+        console.error("Cleanup failed", err);
+      }
 
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
       toast.success(

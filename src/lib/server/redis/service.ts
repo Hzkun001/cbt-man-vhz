@@ -13,7 +13,22 @@ class RedisService {
   private redis: Redis | null = null;
   private isConnected: boolean = false;
   // Fallback in-memory cache when Redis server is unreachable
-  private memoryFallback: Map<string, unknown> = new Map();
+  private memoryFallback: Map<string, { data: unknown, expiresAt: number | null }> = new Map();
+
+  private setFallback(key: string, data: unknown, ttlSeconds?: number) {
+    const expiresAt = ttlSeconds ? Date.now() + ttlSeconds * 1000 : null;
+    this.memoryFallback.set(key, { data, expiresAt });
+  }
+
+  private getFallback(key: string): unknown | null {
+    const entry = this.memoryFallback.get(key);
+    if (!entry) return null;
+    if (entry.expiresAt && Date.now() > entry.expiresAt) {
+      this.memoryFallback.delete(key);
+      return null;
+    }
+    return entry.data;
+  }
 
   constructor() {
     const redisUrl = process.env.REDIS_URL || "redis://127.0.0.1:6379";
@@ -21,7 +36,10 @@ class RedisService {
       this.redis = new Redis(redisUrl, {
         maxRetriesPerRequest: 1,
         enableOfflineQueue: false,
-        retryStrategy: () => null, // Don't block app if Redis isn't running locally
+        retryStrategy: (times) => {
+          if (times > 5) return null; // stop retrying after 5 attempts to avoid blocking
+          return Math.min(times * 100, 3000);
+        },
       });
 
       this.redis.on("connect", () => {
@@ -76,10 +94,12 @@ class RedisService {
     }
 
     // Fallback in-memory map
-    if (!this.memoryFallback.has(key)) {
-      this.memoryFallback.set(key, new Map());
+    let map = this.getFallback(key) as Map<string, string> | null;
+    if (!map) {
+      map = new Map();
     }
-    (this.memoryFallback.get(key) as Map<string, string>).set(soalId, payload);
+    map.set(soalId, payload);
+    this.setFallback(key, map, ttlSeconds);
     return true;
   }
 
@@ -107,7 +127,7 @@ class RedisService {
     }
 
     // Fallback in-memory map
-    const map = this.memoryFallback.get(key) as Map<string, string> | undefined;
+    const map = this.getFallback(key) as Map<string, string> | null;
     if (!map) return {};
     const parsed: Record<string, { jawabanIds: string[]; jawabanEssay: string; ragu: boolean; updatedAt: number }> = {};
     for (const [soalId, jsonStr] of map.entries()) {
@@ -135,7 +155,7 @@ class RedisService {
         // fallback
       }
     }
-    this.memoryFallback.set(key, data);
+    this.setFallback(key, data, durationMinutes * 60 + 3600);
   }
 
   async getSessionTimer(sesiId: string): Promise<{ endsAt: number; durationMinutes: number; startedAt: number } | null> {
@@ -150,7 +170,7 @@ class RedisService {
       }
     }
 
-    const data = this.memoryFallback.get(key) as string | undefined;
+    const data = this.getFallback(key) as string | null;
     return data ? JSON.parse(data) : null;
   }
 
@@ -175,10 +195,12 @@ class RedisService {
       }
     }
 
-    if (!this.memoryFallback.has(key)) {
-      this.memoryFallback.set(key, []);
+    let logs = this.getFallback(key) as string[] | null;
+    if (!logs) {
+      logs = [];
     }
-    (this.memoryFallback.get(key) as string[]).push(entry);
+    logs.push(entry);
+    this.setFallback(key, logs, 86400 * 7);
   }
 
   async getAuditLogs(sesiId: string): Promise<Array<{ timestamp: number; action: string; details?: Record<string, unknown> }>> {
@@ -193,7 +215,7 @@ class RedisService {
       }
     }
 
-    const logs = (this.memoryFallback.get(key) as string[]) || [];
+    const logs = (this.getFallback(key) as string[]) || [];
     return logs.map((l: string) => JSON.parse(l));
   }
 
