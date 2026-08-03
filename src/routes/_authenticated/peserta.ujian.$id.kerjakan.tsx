@@ -1,7 +1,13 @@
 import { useAuthStore } from "@/lib/cbt/auth-store";
 import { soalRepo, sesiRepo, ujianRepo, invalidateReposCache, hydrateRepos } from "@/lib/cbt/repos";
 import type { SesiUjian, Ujian } from "@/lib/cbt/types";
-import { redisService } from "@/lib/cbt/redis";
+import { 
+  getTempAnswersServer, 
+  setSessionTimerServer, 
+  saveTempAnswerServer, 
+  clearSessionBufferServer, 
+  logAuditServer 
+} from "@/lib/server/redis/functions";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -69,42 +75,56 @@ function gradeSesi(sesi: SesiUjian, ujian: Ujian) {
 }
 
 function CheatSheetAction({ ujian }: { ujian: Ujian }) {
+  const [activeTab, setActiveTab] = useState<"calc" | "normal" | null>(null);
+
   if (!ujian?.allowCalculator && !ujian?.allowNormalValues) return null;
 
   return (
-    <div className="flex gap-2 w-full mt-2 mb-4">
-      {ujian.allowCalculator && (
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="flex-1 text-xs border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-900 dark:text-indigo-400 dark:hover:bg-indigo-950/50">
-              <Calculator className="w-4 h-4 mr-1.5" />
-              Kalkulator
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[340px]">
-            <DialogHeader>
-              <DialogTitle className="text-center">Kalkulator Ilmiah</DialogTitle>
-            </DialogHeader>
-            <ScientificCalculator />
-          </DialogContent>
-        </Dialog>
+    <div className="flex flex-col w-full mt-2 mb-4">
+      <div className="flex gap-2 w-full">
+        {ujian.allowCalculator && (
+          <Button 
+            variant={activeTab === "calc" ? "default" : "outline"}
+            size="sm" 
+            onClick={() => setActiveTab(activeTab === "calc" ? null : "calc")}
+            className={cn(
+              "flex-1 text-xs",
+              activeTab !== "calc" && "border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-900 dark:text-indigo-400 dark:hover:bg-indigo-950/50"
+            )}
+          >
+            <Calculator className="w-4 h-4 mr-1.5" />
+            Kalkulator
+          </Button>
+        )}
+        
+        {ujian.allowNormalValues && (
+          <Button 
+            variant={activeTab === "normal" ? "default" : "outline"}
+            size="sm" 
+            onClick={() => setActiveTab(activeTab === "normal" ? null : "normal")}
+            className={cn(
+              "flex-1 text-xs",
+              activeTab !== "normal" && "border-rose-200 text-rose-700 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950/50"
+            )}
+          >
+            <FileText className="w-4 h-4 mr-1.5" />
+            Nilai Normal
+          </Button>
+        )}
+      </div>
+
+      {activeTab === "calc" && (
+        <div className="mt-3 p-3 border rounded-lg bg-white dark:bg-slate-950 shadow-sm animate-in fade-in slide-in-from-top-2">
+          <p className="text-xs font-semibold text-center mb-3">Kalkulator Ilmiah</p>
+          <ScientificCalculator />
+        </div>
       )}
-      
-      {ujian.allowNormalValues && (
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="flex-1 text-xs border-rose-200 text-rose-700 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950/50">
-              <FileText className="w-4 h-4 mr-1.5" />
-              Nilai Normal
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Tabel Nilai Normal Kesehatan</DialogTitle>
-            </DialogHeader>
-            <NormalValuesTable />
-          </DialogContent>
-        </Dialog>
+
+      {activeTab === "normal" && (
+        <div className="mt-3 p-3 border rounded-lg bg-white dark:bg-slate-950 shadow-sm max-h-[60vh] overflow-y-auto animate-in fade-in slide-in-from-top-2">
+          <p className="text-xs font-semibold text-center mb-3">Tabel Nilai Normal Kesehatan</p>
+          <NormalValuesTable />
+        </div>
       )}
     </div>
   );
@@ -134,7 +154,7 @@ function RouteComponent() {
     );
     if (active) {
       // Recover temporary answers from Redis buffer (e.g. after crash / power loss)
-      redisService.getTempAnswers(active.id).then((tempAnswers) => {
+      getTempAnswersServer({ data: active.id }).then((tempAnswers) => {
         if (Object.keys(tempAnswers).length > 0) {
           const recoveredJawaban = active.jawaban.map((j) => {
             const temp = tempAnswers[j.soalId];
@@ -188,7 +208,7 @@ function RouteComponent() {
     if (!sesi || !ujian || sesi.status === "selesai") return;
 
     // Set server authoritative timer in Redis
-    redisService.setSessionTimer(sesi.id, endsAt, ujian.durasiMenit || 60);
+    setSessionTimerServer({ data: { sesiId: sesi.id, endsAt, durationMinutes: ujian.durasiMenit || 60 } });
 
     const interval = setInterval(() => {
       const n = Date.now();
@@ -246,11 +266,15 @@ function RouteComponent() {
     setSesi(nextSesi);
 
     // 1. Instant RAM Autosave to Redis (< 2ms)
-    redisService.saveTempAnswer(sesi.id, currentJawaban.soalId, {
-      jawabanIds: currentJawaban.jawabanIds,
-      jawabanEssay: currentJawaban.jawabanEssay,
-      ragu: currentJawaban.ragu,
-    });
+    saveTempAnswerServer({ data: { 
+      sesiId: sesi.id, 
+      soalId: currentJawaban.soalId, 
+      jawabanData: {
+        jawabanIds: currentJawaban.jawabanIds,
+        jawabanEssay: currentJawaban.jawabanEssay,
+        ragu: currentJawaban.ragu,
+      } 
+    } });
 
     // 2. Debounced persistent write to SQLite
     if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -310,8 +334,8 @@ function RouteComponent() {
       }
       
       // Clear Redis temporary buffer and record submit audit
-      await redisService.clearSessionBuffer(sesiRef.current.id);
-      await redisService.logAudit(sesiRef.current.id, "EXAM_SUBMITTED", { reason: reason || "NORMAL" });
+      await clearSessionBufferServer({ data: sesiRef.current.id });
+      await logAuditServer({ data: { sesiId: sesiRef.current.id, action: "EXAM_SUBMITTED", details: { reason: reason || "NORMAL" } } });
 
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
       toast.success(

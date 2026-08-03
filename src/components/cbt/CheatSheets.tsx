@@ -134,6 +134,7 @@ function evaluateMathExpression(expr: string): number {
 export function ScientificCalculator() {
   const [display, setDisplay] = useState('0');
   const [equation, setEquation] = useState('');
+  const [isRad, setIsRad] = useState(true);
 
   const handlePress = (val: string) => {
     if (display === 'Error') setDisplay(val);
@@ -166,73 +167,102 @@ export function ScientificCalculator() {
       const current = parseFloat(display);
       let res = 0;
       switch (op) {
-        case 'sin': res = Math.sin(current); break;
-        case 'cos': res = Math.cos(current); break;
-        case 'tan': res = Math.tan(current); break;
+        case 'sin': res = isRad ? Math.sin(current) : Math.sin(current * Math.PI / 180); break;
+        case 'cos': res = isRad ? Math.cos(current) : Math.cos(current * Math.PI / 180); break;
+        case 'tan': res = isRad ? Math.tan(current) : Math.tan(current * Math.PI / 180); break;
         case 'log': res = Math.log10(current); break;
         case 'ln': res = Math.log(current); break;
         case 'sqrt': res = Math.sqrt(current); break;
         case 'sq': res = Math.pow(current, 2); break;
         case 'inv': res = 1 / current; break;
+        case 'fact': 
+          res = 1; 
+          for (let i = 2; i <= Math.abs(Math.floor(current)); i++) res *= i;
+          if (current < 0) res = NaN;
+          break;
       }
       setEquation(`${op}(${display}) =`);
-      // truncate to 6 decimals to avoid crazy numbers
       setDisplay(String(Math.round(res * 1000000) / 1000000));
     } catch (e) {
       setDisplay('Error');
     }
   };
 
-  const btnClass = "h-10 text-sm font-semibold active:scale-95 transition-transform bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100";
-  const opClass = "h-10 text-sm font-bold active:scale-95 transition-transform bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/50 dark:hover:bg-blue-900 text-blue-700 dark:text-blue-300";
-  const advClass = "h-8 text-xs active:scale-95 transition-transform bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300";
+  // Google Calculator styling
+  const btnClass = "h-9 sm:h-10 text-[13px] font-medium active:scale-95 transition-transform bg-[#f1f3f4] hover:bg-[#e8eaed] text-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-100 rounded-md border-none p-0";
+  const numClass = "h-9 sm:h-10 text-[13px] font-medium active:scale-95 transition-transform bg-[#f1f3f4] hover:bg-[#e8eaed] text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100 rounded-md border-none p-0";
+  const opClass = "h-9 sm:h-10 text-[13px] font-medium active:scale-95 transition-transform bg-[#f1f3f4] hover:bg-[#e8eaed] text-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 rounded-md border-none p-0";
+  const equalsClass = "h-9 sm:h-10 text-[13px] font-medium active:scale-95 transition-transform bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white rounded-md border-none p-0 shadow-sm";
 
   return (
-    <div className="flex flex-col gap-2 w-full max-w-xs mx-auto">
+    <div className="flex flex-col w-full max-w-[480px] mx-auto bg-white dark:bg-[#202124] rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm font-sans">
+      
       {/* Display */}
-      <div className="bg-slate-900 rounded-lg p-3 flex flex-col items-end justify-end h-20 shadow-inner">
-        <div className="text-xs text-slate-400 h-4">{equation}</div>
-        <div className="text-2xl font-mono text-white tracking-wider truncate w-full text-right">{display}</div>
+      <div className="flex flex-col items-end justify-end p-3 h-24 border-b border-slate-100 dark:border-slate-700 bg-white dark:bg-[#202124]">
+        <div className="text-[13px] text-slate-500 dark:text-slate-400 h-5 mb-1">{equation}</div>
+        <div className="text-3xl sm:text-4xl font-normal text-slate-800 dark:text-slate-200 tracking-tight w-full text-right overflow-hidden text-ellipsis whitespace-nowrap">{display}</div>
       </div>
       
-      {/* Scientific Row */}
-      <div className="grid grid-cols-4 gap-1 mb-1">
-        <Button variant="ghost" className={advClass} onClick={() => advancedOp('sin')}>sin</Button>
-        <Button variant="ghost" className={advClass} onClick={() => advancedOp('cos')}>cos</Button>
-        <Button variant="ghost" className={advClass} onClick={() => advancedOp('tan')}>tan</Button>
-        <Button variant="ghost" className={advClass} onClick={() => advancedOp('log')}>log</Button>
-        
-        <Button variant="ghost" className={advClass} onClick={() => advancedOp('ln')}>ln</Button>
-        <Button variant="ghost" className={advClass} onClick={() => advancedOp('sqrt')}>√x</Button>
-        <Button variant="ghost" className={advClass} onClick={() => advancedOp('sq')}>x²</Button>
-        <Button variant="ghost" className={advClass} onClick={() => advancedOp('inv')}>1/x</Button>
+      {/* Controls Bar */}
+      <div className="flex justify-between items-center px-4 py-3">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-4 bg-slate-200 dark:bg-slate-600 rounded-full flex items-center p-0.5 cursor-pointer">
+            <div className="w-3.5 h-3.5 bg-white dark:bg-slate-300 rounded-full shadow-sm"></div>
+          </div>
+          <span className="text-[13px] font-medium text-slate-600 dark:text-slate-400">Inv</span>
+        </div>
+        <div className="flex bg-emerald-600 dark:bg-emerald-500 rounded-md overflow-hidden text-[12px] font-medium">
+          <div className="px-3 py-1.5 text-white dark:text-slate-900 bg-emerald-600 dark:bg-emerald-500 cursor-pointer">Keypad</div>
+          <div className="px-3 py-1.5 text-emerald-100 dark:text-emerald-900 bg-transparent hover:bg-emerald-700 dark:hover:bg-emerald-400 cursor-pointer">History</div>
+        </div>
       </div>
 
-      {/* Main Numpad */}
-      <div className="grid grid-cols-4 gap-1.5">
-        <Button variant="ghost" className={cn(opClass, "text-red-600 dark:text-red-400 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50")} onClick={handleClear}>AC</Button>
-        <Button variant="ghost" className={cn(opClass, "text-orange-600 dark:text-orange-400 bg-orange-100 hover:bg-orange-200 dark:bg-orange-900/30 dark:hover:bg-orange-900/50")} onClick={handleDelete}><Delete className="h-4 w-4" /></Button>
-        <Button variant="ghost" className={opClass} onClick={() => handlePress('%')}>%</Button>
-        <Button variant="ghost" className={opClass} onClick={() => handlePress('/')}>÷</Button>
+      {/* 7x5 Grid Keypad */}
+      <div className="grid grid-cols-7 gap-1.5 p-2 sm:p-3 pt-0">
+        {/* Row 1 */}
+        <Button variant="outline" className={btnClass} onClick={() => advancedOp('sin')}>sin</Button>
+        <Button variant="outline" className={btnClass} onClick={() => advancedOp('cos')}>cos</Button>
+        <Button variant="outline" className={btnClass} onClick={() => advancedOp('tan')}>tan</Button>
+        <Button variant="outline" className={opClass} onClick={() => handlePress('(')}>(</Button>
+        <Button variant="outline" className={opClass} onClick={() => handlePress(')')}>)</Button>
+        <Button variant="outline" className={opClass} onClick={() => handlePress('%')}>%</Button>
+        <Button variant="outline" className={opClass} onClick={handleClear}>AC</Button>
 
-        <Button variant="ghost" className={btnClass} onClick={() => handlePress('7')}>7</Button>
-        <Button variant="ghost" className={btnClass} onClick={() => handlePress('8')}>8</Button>
-        <Button variant="ghost" className={btnClass} onClick={() => handlePress('9')}>9</Button>
-        <Button variant="ghost" className={opClass} onClick={() => handlePress('*')}>×</Button>
+        {/* Row 2 */}
+        <Button variant="outline" className={btnClass} onClick={() => advancedOp('log')}>log</Button>
+        <Button variant="outline" className={btnClass} onClick={() => advancedOp('ln')}>ln</Button>
+        <Button variant="outline" className={btnClass} onClick={() => handlePress('^')}>xʸ</Button>
+        <Button variant="outline" className={numClass} onClick={() => handlePress('7')}>7</Button>
+        <Button variant="outline" className={numClass} onClick={() => handlePress('8')}>8</Button>
+        <Button variant="outline" className={numClass} onClick={() => handlePress('9')}>9</Button>
+        <Button variant="outline" className={opClass} onClick={() => handlePress('/')}>÷</Button>
 
-        <Button variant="ghost" className={btnClass} onClick={() => handlePress('4')}>4</Button>
-        <Button variant="ghost" className={btnClass} onClick={() => handlePress('5')}>5</Button>
-        <Button variant="ghost" className={btnClass} onClick={() => handlePress('6')}>6</Button>
-        <Button variant="ghost" className={opClass} onClick={() => handlePress('-')}>−</Button>
+        {/* Row 3 */}
+        <Button variant="outline" className={btnClass} onClick={() => handlePress(String(Math.PI))}>π</Button>
+        <Button variant="outline" className={btnClass} onClick={() => advancedOp('fact')}>x!</Button>
+        <Button variant="outline" className={btnClass} onClick={() => advancedOp('sq')}>x²</Button>
+        <Button variant="outline" className={numClass} onClick={() => handlePress('4')}>4</Button>
+        <Button variant="outline" className={numClass} onClick={() => handlePress('5')}>5</Button>
+        <Button variant="outline" className={numClass} onClick={() => handlePress('6')}>6</Button>
+        <Button variant="outline" className={opClass} onClick={() => handlePress('*')}>×</Button>
 
-        <Button variant="ghost" className={btnClass} onClick={() => handlePress('1')}>1</Button>
-        <Button variant="ghost" className={btnClass} onClick={() => handlePress('2')}>2</Button>
-        <Button variant="ghost" className={btnClass} onClick={() => handlePress('3')}>3</Button>
-        <Button variant="ghost" className={opClass} onClick={() => handlePress('+')}>+</Button>
+        {/* Row 4 */}
+        <Button variant="outline" className={btnClass} onClick={() => handlePress(String(Math.E))}>e</Button>
+        <Button variant="outline" className={btnClass} onClick={() => handlePress('%')}>mod</Button>
+        <Button variant="outline" className={btnClass} onClick={() => advancedOp('sqrt')}>√</Button>
+        <Button variant="outline" className={numClass} onClick={() => handlePress('1')}>1</Button>
+        <Button variant="outline" className={numClass} onClick={() => handlePress('2')}>2</Button>
+        <Button variant="outline" className={numClass} onClick={() => handlePress('3')}>3</Button>
+        <Button variant="outline" className={opClass} onClick={() => handlePress('-')}>−</Button>
 
-        <Button variant="ghost" className={cn(btnClass, "col-span-2")} onClick={() => handlePress('0')}>0</Button>
-        <Button variant="ghost" className={btnClass} onClick={() => handlePress('.')}>.</Button>
-        <Button variant="ghost" className={cn(opClass, "bg-emerald-500 hover:bg-emerald-600 text-white dark:bg-emerald-600 dark:hover:bg-emerald-700 dark:text-white")} onClick={calculate}>=</Button>
+        {/* Row 5 */}
+        <Button variant="outline" className={btnClass} onClick={() => {}}>Ans</Button>
+        <Button variant="outline" className={cn(btnClass, isRad && "font-bold text-slate-800 dark:text-slate-100")} onClick={() => setIsRad(true)}>Rad</Button>
+        <Button variant="outline" className={cn(btnClass, !isRad && "font-bold text-slate-800 dark:text-slate-100")} onClick={() => setIsRad(false)}>Deg</Button>
+        <Button variant="outline" className={numClass} onClick={() => handlePress('0')}>0</Button>
+        <Button variant="outline" className={numClass} onClick={() => handlePress('.')}>.</Button>
+        <Button variant="outline" className={equalsClass} onClick={calculate}>=</Button>
+        <Button variant="outline" className={opClass} onClick={() => handlePress('+')}>+</Button>
       </div>
     </div>
   );
