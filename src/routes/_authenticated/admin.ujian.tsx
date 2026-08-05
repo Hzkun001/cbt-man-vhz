@@ -3,6 +3,7 @@ import {
   Link,
   Outlet,
   useRouterState,
+  useNavigate,
 } from "@tanstack/react-router";
 import { useState } from "react";
 import { ujianRepo, sesiRepo, mataKuliahRepo } from "@/lib/cbt/repos";
@@ -33,6 +34,7 @@ function UjianRoute() {
 
 function UjianList() {
   const user = useAuthStore((s) => s.user)!;
+  const navigate = useNavigate();
   const { theme } = useThemeStore();
   const [list, setList] = useState<Ujian[]>(visibleUjians(user));
   const [activeTab, setActiveTab] = useState<"semua" | "persiapan" | "berlangsung" | "selesai">("semua");
@@ -53,6 +55,8 @@ function UjianList() {
       tokenAktif: false,
       ipRange: "",
       groupIds: [],
+      angkatanIds: [],
+      isUmum: false,
       topicSets: [],
       showResult: true,
       showResultDetail: false,
@@ -69,7 +73,7 @@ function UjianList() {
     await ujianRepo.flush();
     setList((current) => [...current, u]);
     toast.success("Ujian baru dibuat — silakan edit");
-    setIsAdding(false);
+    navigate({ to: "/admin/ujian/$id", params: { id: u.id } });
   }
 
   const now = Date.now();
