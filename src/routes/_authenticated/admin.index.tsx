@@ -3,7 +3,7 @@ import { useAuthStore } from "@/lib/cbt/auth-store";
 import {
   usersRepo,
   unitAkademikRepo,
-  modulRepo,
+
   soalRepo,
   ujianRepo,
   sesiRepo,
@@ -56,7 +56,6 @@ function CommandCenter() {
   const counts = {
     peserta: pesertaList.length,
     unit: unitAkademikRepo.all().length,
-    modul: modulRepo.all().length,
     soal: soalList.length,
     ujian: semuaUjian.length,
     sesi: sesiRepo.all().length,
@@ -157,7 +156,7 @@ function CommandCenter() {
         <KpiCard
           label="Total Sesi Ujian"
           value={formatNumber(counts.sesi)}
-          subtitle={`${counts.modul} Modul Mata Kuliah`}
+          subtitle={`${counts.unit} Unit Akademik`}
           icon={<Layers className="h-5 w-5 text-purple-500" />}
         />
       </section>

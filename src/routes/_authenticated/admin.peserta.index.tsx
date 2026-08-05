@@ -238,6 +238,7 @@ function PesertaPage() {
                   </TableHead>
                   <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Username</TableHead>
                   <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Nama Lengkap</TableHead>
+                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300 text-center">Tahun Angkatan</TableHead>
                   <TableHead className="font-semibold text-slate-700 dark:text-slate-300 text-center">Grup / Kelas</TableHead>
                   <TableHead className="font-semibold text-slate-700 dark:text-slate-300 text-center">Status</TableHead>
                   <TableHead className="font-semibold text-slate-700 dark:text-slate-300 text-center">Aksi</TableHead>
@@ -255,6 +256,7 @@ function PesertaPage() {
                     </TableCell>
                     <TableCell className="font-medium text-slate-900 dark:text-slate-100">{p.username}</TableCell>
                     <TableCell className="text-slate-600 dark:text-slate-400">{p.namaLengkap}</TableCell>
+                    <TableCell className="text-center font-mono text-sm text-slate-500">{p.angkatan || "-"}</TableCell>
                     <TableCell className="text-center">
                       <Badge variant="outline" className="bg-slate-50 dark:bg-slate-900 font-medium">
                         {units.find((g) => g.id === p.unitId)?.nama ?? "-"}

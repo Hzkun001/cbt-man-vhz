@@ -5,7 +5,7 @@
 // - peserta: tidak relevan (mereka mengikuti ujian, bukan kelola)
 
 import type { User, Ujian } from "./types";
-import { topikRepo, soalRepo, modulRepo, ujianRepo } from "./repos";
+import { topikRepo, soalRepo, ujianRepo } from "./repos";
 
 /**
  * Thrown by `buildSesi` / `findOrCreateSesi` when a participant tries to
@@ -48,13 +48,6 @@ export function isTopikAllowed(user: User | null | undefined, topikId: string): 
   const set = new Set(user?.allowedTopikIds ?? []);
   if (set.has(topikId)) return true;
   
-  // Periksa apakah topik ini berada di dalam modul mata kuliah user
-  const mkSet = new Set(user?.mataKuliahIds ?? []);
-  const topik = topikRepo.byId(topikId);
-  if (!topik) return false;
-  const modul = modulRepo.byId(topik.modulId);
-  if (modul?.mataKuliahId && mkSet.has(modul.mataKuliahId)) return true;
-  
   return false;
 }
 
@@ -68,22 +61,7 @@ export function visibleSoals(user: User | null | undefined) {
   return all.filter((s) => isTopikAllowed(user, s.topikId));
 }
 
-export function visibleModuls(user: User | null | undefined) {
-  if (isUnrestricted(user)) return modulRepo.all();
-  const topikSet = new Set(user?.allowedTopikIds ?? []);
-  const mkSet = new Set(user?.mataKuliahIds ?? []);
-  const all = modulRepo.all();
-  
-  const allowedModulIds = new Set(
-    topikRepo
-      .all()
-      .filter((t) => topikSet.has(t.id))
-      .map((t) => t.modulId),
-  );
-  return all.filter((m) => 
-    (m.mataKuliahId && mkSet.has(m.mataKuliahId)) || allowedModulIds.has(m.id)
-  );
-}
+
 
 // Ujian dianggap "touchable" (editable / manageable) oleh operator jika
 // **seluruh** topicSet-nya menyentuh topik yang diizinkan. Konsisten
@@ -108,20 +86,16 @@ export function visibleModuls(user: User | null | undefined) {
 // ditemukan di review adversarial Issue #10.
 export function ujianTouchesAllowed(user: User | null | undefined, ujian: Ujian): boolean {
   if (isUnrestricted(user)) return true;
-  const mkSet = new Set(user?.mataKuliahIds ?? []);
-  if (ujian.mataKuliahId && mkSet.has(ujian.mataKuliahId)) return true;
   const set = new Set(user?.allowedTopikIds ?? []);
-  if (set.size === 0 && mkSet.size === 0) return true; // unrestricted (though handled above)
+  if (set.size === 0) return true; // unrestricted (though handled above)
   return ujian.topicSets.length > 0 && ujian.topicSets.every((ts) => set.has(ts.topikId));
 }
 
 export function visibleUjians(user: User | null | undefined) {
   if (isUnrestricted(user)) return ujianRepo.all();
   const set = new Set(user?.allowedTopikIds ?? []);
-  const mkSet = new Set(user?.mataKuliahIds ?? []);
   const all = ujianRepo.all();
   return all.filter((u) => 
-    (u.mataKuliahId && mkSet.has(u.mataKuliahId)) || 
     u.topicSets.some((ts) => set.has(ts.topikId))
   );
 }

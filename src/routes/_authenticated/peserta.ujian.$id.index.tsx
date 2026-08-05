@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ujianRepo, sesiRepo, tokenRepo, hydrateRepos, claimExamToken, mataKuliahRepo, semesterRepo } from "@/lib/cbt/repos";
+import { ujianRepo, sesiRepo, tokenRepo, hydrateRepos, claimExamToken, semesterRepo } from "@/lib/cbt/repos";
 import { useAuthStore } from "@/lib/cbt/auth-store";
 import { findOrCreateSesi, startSesi } from "@/lib/cbt/exam";
 import {
@@ -180,7 +180,6 @@ function PreUjianContent({
     }
   }
 
-  const mk = ujian.mataKuliahId ? mataKuliahRepo.byId(ujian.mataKuliahId) : null;
   const smt = ujian.semesterId ? semesterRepo.byId(ujian.semesterId) : null;
 
   return (
@@ -202,18 +201,12 @@ function PreUjianContent({
                 <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300">
                   {ujian.nama}
                 </h1>
-                {mk && (
+                {smt && (
                   <div className="flex items-center gap-2 mt-4 text-sm sm:text-base font-medium text-blue-600 dark:text-blue-400">
                     <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
                       <BookOpen className="h-4 w-4" />
                     </div>
-                    <span>{mk.nama}</span>
-                    {smt && (
-                      <>
-                        <span className="text-slate-300 dark:text-slate-700 mx-1">•</span>
-                        <span>{smt.nama}</span>
-                      </>
-                    )}
+                    <span>{smt.nama}</span>
                   </div>
                 )}
               </div>

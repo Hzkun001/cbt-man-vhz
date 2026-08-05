@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ujianRepo, unitAkademikRepo, hydrateRepos, mataKuliahRepo, semesterRepo } from "@/lib/cbt/repos";
+import { ujianRepo, unitAkademikRepo, hydrateRepos, semesterRepo, usersRepo } from "@/lib/cbt/repos";
 
 import { uid } from "@/lib/cbt/storage";
 import type { Ujian, TopicSet } from "@/lib/cbt/types";
@@ -25,7 +25,6 @@ import {
   allowedTopikIdSet,
   isTopikAllowed,
   ujianTouchesAllowed,
-  visibleModuls,
   visibleTopiks,
 } from "@/lib/cbt/access";
 import { fetchUjianByIdServer } from "@/lib/server/ujian/functions";
@@ -46,8 +45,6 @@ function UjianEditor() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const initial = ujianRepo.byId(id);
-  
-  const mkList = mataKuliahRepo.all();
   const smtList = semesterRepo.all();
 
   // (Must-fix #2) Re-order guards so `ujianTouchesAllowed` runs BEFORE we
@@ -176,14 +173,15 @@ function UjianEditor() {
 
   const groups = unitAkademikRepo.all();
   const topiks = visibleTopiks(user);
-  const moduls = visibleModuls(user);
+  
+  const currentYear = new Date().getFullYear();
+  const defaultYears = Array.from({ length: currentYear - 2019 + 2 }, (_, i) => String(2019 + i));
+  const availableAngkatan = Array.from(new Set([
+    ...usersRepo.all().map(u => u.angkatan).filter(Boolean) as string[],
+    ...defaultYears
+  ])).sort();
   
   const sortedTopiks = [...topiks].sort((a, b) => {
-    const mA = moduls.find((m) => m.id === a.modulId);
-    const mB = moduls.find((m) => m.id === b.modulId);
-    const aIsMk = mA?.mataKuliahId === u?.mataKuliahId ? -1 : 1;
-    const bIsMk = mB?.mataKuliahId === u?.mataKuliahId ? -1 : 1;
-    if (aIsMk !== bIsMk) return aIsMk - bIsMk;
     return a.nama.localeCompare(b.nama);
   });
   
@@ -282,20 +280,6 @@ function UjianEditor() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Mata Kuliah (Opsional)</Label>
-              <Select value={u.mataKuliahId || "none"} onValueChange={(v) => set("mataKuliahId", v === "none" ? undefined : v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih Mata Kuliah" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">(Tanpa Mata Kuliah)</SelectItem>
-                  {mkList.map((mk) => (
-                    <SelectItem key={mk.id} value={mk.id}>{mk.nama}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
               <Label>Semester (Opsional)</Label>
               <Select value={u.semesterId || "none"} onValueChange={(v) => set("semesterId", v === "none" ? undefined : v)}>
                 <SelectTrigger>
@@ -359,7 +343,7 @@ function UjianEditor() {
           </div>
           {u.topicSets.map((ts, i) => {
             const t = topiks.find((tk) => tk.id === ts.topikId);
-            const m = t ? moduls.find((mm) => mm.id === t.modulId) : null;
+            const m = t ? unitAkademikRepo.byId(t.unitId) : null;
             const inScope = isTopikAllowed(user, ts.topikId);
             return (
               <div key={ts.id} className="rounded border p-3 space-y-2">
@@ -380,11 +364,10 @@ function UjianEditor() {
                       </SelectTrigger>
                       <SelectContent>
                         {sortedTopiks.map((tk) => {
-                          const mm = moduls.find((mm) => mm.id === tk.modulId);
-                          const isMatchMk = u.mataKuliahId && mm?.mataKuliahId === u.mataKuliahId;
+                          const mm = unitAkademikRepo.byId(tk.unitId);
                           return (
                             <SelectItem key={tk.id} value={tk.id}>
-                              {isMatchMk ? "★ " : ""} {mm?.nama} — {tk.nama}
+                              {mm?.nama} — {tk.nama}
                             </SelectItem>
                           );
                         })}
@@ -500,15 +483,24 @@ function UjianEditor() {
               </div>
 
               <div className="space-y-2 mt-4 pt-4 border-t">
-                <Label className="text-xs">Tahun Angkatan (Pisahkan dengan koma, misal: 2023, 2024)</Label>
-                <Input 
-                  placeholder="Kosong = Semua Angkatan"
-                  defaultValue={u.angkatanIds?.join(", ") ?? ""}
-                  onBlur={(e) => {
-                    const vals = e.target.value.split(",").map(v => v.trim()).filter(Boolean);
-                    set("angkatanIds", vals);
-                  }}
-                />
+                <Label className="text-xs">Tahun Angkatan (Kosong = Semua Angkatan)</Label>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {availableAngkatan.map((angkatan) => (
+                    <label key={angkatan} className="flex items-center gap-2 rounded border p-2 text-sm">
+                      <Checkbox
+                        checked={u.angkatanIds?.includes(angkatan) ?? false}
+                        onCheckedChange={(v) => {
+                          const current = u.angkatanIds ?? [];
+                          set(
+                            "angkatanIds",
+                            v ? [...current, angkatan] : current.filter((x) => x !== angkatan)
+                          );
+                        }}
+                      />
+                      {angkatan}
+                    </label>
+                  ))}
+                </div>
               </div>
             </>
           )}

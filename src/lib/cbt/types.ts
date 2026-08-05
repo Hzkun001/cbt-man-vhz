@@ -45,17 +45,6 @@ export const SemesterSchema = z.object({
 });
 export type Semester = z.infer<typeof SemesterSchema>;
 
-export const MataKuliahSchema = z.object({
-	id: z.string(),
-	kode: z.string(),
-	nama: z.string(),
-	sks: z.number().int().default(2),
-	unitId: z.string().optional(),
-	semesterId: z.string().optional(),
-
-});
-export type MataKuliah = z.infer<typeof MataKuliahSchema>;
-
 // ---------------- User & Role ----------------
 export const UserSchema = z.object({
 	id: z.string(),
@@ -67,7 +56,6 @@ export const UserSchema = z.object({
 	unitId: z.string().optional(),
 	angkatan: z.string().optional(),
 
-	mataKuliahIds: z.array(z.string()).default([]),
 	detail: z.string().optional(),
 	aktif: z.boolean().default(true),
 	createdAt: z.number(),
@@ -77,17 +65,9 @@ export type PublicUser = Omit<User, "passwordHash">;
 
 
 // ---------------- Bank Soal ----------------
-export const ModulSchema = z.object({
-	id: z.string(),
-	nama: z.string(),
-	aktif: z.boolean().default(true),
-	mataKuliahId: z.string().optional(),
-});
-export type Modul = z.infer<typeof ModulSchema>;
-
 export const TopikSchema = z.object({
 	id: z.string(),
-	modulId: z.string(),
+	unitId: z.string(),
 	nama: z.string(),
 });
 export type Topik = z.infer<typeof TopikSchema>;
@@ -143,7 +123,6 @@ export const UjianSchema = z.object({
 	groupIds: z.array(z.string()).default([]),
 	angkatanIds: z.array(z.string()).default([]),
 	isUmum: z.boolean().default(false),
-	mataKuliahId: z.string().optional(),
 	semesterId: z.string().optional(),
 	topicSets: z.array(TopicSetSchema).default([]),
 	showResult: z.boolean().default(true),
