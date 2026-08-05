@@ -53,6 +53,7 @@ model User {
   role            Role
   allowedTopikIds String        @default("[]")
   unitId          String?
+  angkatan        String?
   mataKuliahIds   String        @default("[]")
   detail          String?
   aktif           Boolean       @default(true)
@@ -128,6 +129,8 @@ model Ujian {
   tokenAktif       Boolean      @default(false)
   ipRange          String       @default("")
   groupIds         String       @default("[]")
+  angkatanIds      String       @default("[]")
+  isUmum           Boolean      @default(false)
   mataKuliahId     String?
   mataKuliah       MataKuliah?  @relation(fields: [mataKuliahId], references: [id], onDelete: SetNull)
   semesterId       String?
