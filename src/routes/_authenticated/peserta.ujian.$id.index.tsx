@@ -174,8 +174,8 @@ function PreUjianContent({
         navigate({ to: "/peserta" });
         return;
       }
-      const msg = err instanceof Error ? err.message : String(err);
-      toast.error(`Gagal: ${msg}`);
+      // Hide internal errors from participant
+      toast.error("Gagal memulai ujian. Silakan hubungi pengawas.");
       return;
     }
   }

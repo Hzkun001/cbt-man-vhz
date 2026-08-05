@@ -175,9 +175,12 @@ function UjianEditor() {
   const topiks = visibleTopiks(user);
   
   const currentYear = new Date().getFullYear();
-  const defaultYears = Array.from({ length: currentYear - 2019 + 2 }, (_, i) => String(2019 + i));
+  const INCEPTION_YEAR = 2019;
+  const defaultYears = Array.from({ length: currentYear - INCEPTION_YEAR + 2 }, (_, i) => String(INCEPTION_YEAR + i));
   const availableAngkatan = Array.from(new Set([
-    ...usersRepo.all().map(u => u.angkatan).filter(Boolean) as string[],
+    ...usersRepo.all()
+      .map(u => u.angkatan)
+      .filter((a): a is string => typeof a === 'string' && a.trim().length > 0),
     ...defaultYears
   ])).sort();
   

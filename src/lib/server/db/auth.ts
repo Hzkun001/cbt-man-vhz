@@ -95,6 +95,8 @@ export async function operatorCanTouchUjian(
 	return await operatorCanTouchTopicSets(caller, topicSets);
 }
 
+import { isParticipantAssignedToExam } from "@/lib/cbt/access";
+
 export async function pesertaCanTouchUjian(
 	caller: UserRow,
 	ujianId: string,
@@ -102,15 +104,16 @@ export async function pesertaCanTouchUjian(
 	if (caller.role !== "mahasiswa") return false;
 	const ujian = await prisma.ujian.findUnique({
 		where: { id: ujianId },
-		select: { groupIds: true },
+		select: { groupIds: true, isUmum: true, angkatanIds: true },
 	});
 	if (!ujian) return false;
 	const groupIds = parseJson<string[]>(ujian.groupIds, []);
-	return (
-		groupIds.length === 0 ||
-		  (!!caller.unitId && groupIds.includes(caller.unitId))
-
-	);
+	const angkatanIds = parseJson<string[]>(ujian.angkatanIds, []);
+	return isParticipantAssignedToExam(caller, {
+		isUmum: ujian.isUmum,
+		groupIds,
+		angkatanIds,
+	});
 }
 
 let seedPromise: Promise<void> | null = null;

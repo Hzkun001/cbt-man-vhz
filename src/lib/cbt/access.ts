@@ -132,8 +132,9 @@ export function isParticipantAssignedToExam(
   const angkatanIds = ujian.angkatanIds ?? [];
   const requiresAngkatanCheck = angkatanIds.length > 0;
 
-  // Jika tidak ada pembatasan sama sekali, anggap terbuka (perilaku lama)
-  if (!requiresProdiCheck && !requiresAngkatanCheck) return true;
+  // Jika tidak ada pembatasan sama sekali, tapi BUKAN ujian umum (isUmum = false), 
+  // maka ujian ini belum siap dikerjakan oleh siapapun.
+  if (!requiresProdiCheck && !requiresAngkatanCheck) return false;
 
   // Jika ada syarat prodi, tapi user tidak punya unit atau unitnya tidak cocok
   if (requiresProdiCheck && (!user.unitId || !groupIds.includes(user.unitId))) {
