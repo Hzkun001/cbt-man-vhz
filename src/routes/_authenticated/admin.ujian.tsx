@@ -5,7 +5,7 @@ import {
   useRouterState,
 } from "@tanstack/react-router";
 import { useState } from "react";
-import { ujianRepo, sesiRepo, mataKuliahRepo } from "@/lib/cbt/repos";
+import { ujianRepo, sesiRepo } from "@/lib/cbt/repos";
 import { useAuthStore } from "@/lib/cbt/auth-store";
 import { uid } from "@/lib/cbt/storage";
 import type { Ujian } from "@/lib/cbt/types";
@@ -61,6 +61,9 @@ function UjianList() {
       blokirShortcut: true,
       mode: "online",
       allowCalculator: false,
+      allowNormalValues: false,
+      isUmum: false,
+      angkatanIds: [],
       createdBy: user.id,
       createdAt: Date.now(),
     };
@@ -84,7 +87,6 @@ function UjianList() {
   const renderRow = (u: Ujian, type: "persiapan" | "berlangsung" | "selesai") => {
     const sesiCount = sesiRepo.all().filter((s) => s.ujianId === u.id).length;
     const soalCount = u.topicSets.reduce((a, b) => a + b.jumlah, 0);
-    const mk = u.mataKuliahId ? mataKuliahRepo.byId(u.mataKuliahId) : null;
 
     return (
       <div key={u.id} className={cn(
@@ -110,7 +112,6 @@ function UjianList() {
               {u.nama}
             </Link>
             <div className="flex items-center gap-2 mt-1">
-              {mk && <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 truncate max-w-[150px]">{mk.nama}</span>}
               <span className="text-[11px] text-slate-500">{soalCount} Soal • {u.durasiMenit} Menit</span>
               {sesiCount > 0 && <span className="text-[11px] font-medium text-slate-700 dark:text-slate-300">• {sesiCount} Peserta</span>}
             </div>

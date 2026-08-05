@@ -238,7 +238,7 @@ function PesertaPage() {
                       aria-label="Pilih semua peserta pada halaman ini"
                     />
                   </TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Username</TableHead>
+                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Username (NIM + Angkatan)</TableHead>
                   <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Nama Lengkap</TableHead>
                   <TableHead className="font-semibold text-slate-700 dark:text-slate-300 text-center">Tahun Angkatan</TableHead>
                   <TableHead className="font-semibold text-slate-700 dark:text-slate-300 text-center">Grup / Kelas</TableHead>
@@ -444,9 +444,9 @@ function PesertaDialog({
         <div className="space-y-4 py-2">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>NIM</Label>
+              <Label>Username (NIM + Angkatan)</Label>
               <Input 
-                placeholder="Misal: 19001234"
+                placeholder="Misal: 190012342025"
                 value={form.username} 
                 onChange={(e) => setForm({ ...form, username: e.target.value })} 
               />

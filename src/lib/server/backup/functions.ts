@@ -74,7 +74,7 @@ export const importBackupServer = createServerFn({ method: "POST" })
 						beginAt: toBigInt(item.beginAt),
 						endAt: toBigInt(item.endAt),
 						groupIds: stringifyJson(item.groupIds),
-						angkatanIds: stringifyJson(item.angkatanIds) as unknown as string[],
+						angkatanIds: stringifyJson(item.angkatanIds),
 						topicSets: stringifyJson(item.topicSets),
 						createdAt: BigInt(item.createdAt),
 					},
