@@ -65,6 +65,7 @@ export const UserSchema = z.object({
 	role: RoleEnum,
 	allowedTopikIds: z.array(z.string()).default([]),
 	unitId: z.string().optional(),
+	angkatan: z.string().optional(),
 
 	mataKuliahIds: z.array(z.string()).default([]),
 	detail: z.string().optional(),
@@ -140,6 +141,8 @@ export const UjianSchema = z.object({
 	// input exposes it today; real CIDR/IP enforcement is deferred to V2.
 	ipRange: z.string().default(""),
 	groupIds: z.array(z.string()).default([]),
+	angkatanIds: z.array(z.string()).default([]),
+	isUmum: z.boolean().default(false),
 	mataKuliahId: z.string().optional(),
 	semesterId: z.string().optional(),
 	topicSets: z.array(TopicSetSchema).default([]),

@@ -373,6 +373,7 @@ function PesertaDialog({
     username: "",
     namaLengkap: "",
     unitId: "",
+    angkatan: "",
     aktif: true,
     password: "",
   });
@@ -385,6 +386,7 @@ function PesertaDialog({
       username: editing?.username ?? "",
       namaLengkap: editing?.namaLengkap ?? "",
       unitId: editing?.unitId ?? "",
+      angkatan: editing?.angkatan ?? "",
       aktif: editing?.aktif ?? true,
       password: "",
     });
@@ -406,6 +408,7 @@ function PesertaDialog({
           role: "mahasiswa",
           allowedTopikIds: editing?.allowedTopikIds ?? [],
           unitId: form.unitId === "none" ? undefined : form.unitId || undefined,
+          angkatan: form.angkatan.trim() || undefined,
           detail: editing?.detail,
           aktif: form.aktif,
           createdAt: editing?.createdAt ?? Date.now(),
@@ -435,13 +438,23 @@ function PesertaDialog({
           <DialogTitle>{editing ? "Edit Data Peserta" : "Tambah Peserta Baru"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
-          <div className="space-y-2">
-            <Label>Username</Label>
-            <Input 
-              placeholder="Misal: 19001234"
-              value={form.username} 
-              onChange={(e) => setForm({ ...form, username: e.target.value })} 
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>NIM</Label>
+              <Input 
+                placeholder="Misal: 19001234"
+                value={form.username} 
+                onChange={(e) => setForm({ ...form, username: e.target.value })} 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Tahun Angkatan</Label>
+              <Input 
+                placeholder="Misal: 2025"
+                value={form.angkatan} 
+                onChange={(e) => setForm({ ...form, angkatan: e.target.value })} 
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label>Nama Lengkap</Label>

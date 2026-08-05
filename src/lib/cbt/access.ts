@@ -143,13 +143,36 @@ export function visibleUjians(user: User | null | undefined) {
 // participant's `user.groupId` must be a member of `ujian.groupIds`.
 export function isParticipantAssignedToExam(
   user: User | null | undefined,
-  ujian: Pick<Ujian, "groupIds">,
+  ujian: Pick<Ujian, "groupIds" | "angkatanIds" | "isUmum">,
 ): boolean {
   if (!user) return false;
+  
+  // 1. Mata Kuliah Umum (Akses untuk semua)
+  if (ujian.isUmum) return true;
+
+  // 2. Filter Program Studi / Unit
   const groupIds = ujian.groupIds ?? [];
-  if (groupIds.length === 0) return true;
-  if (!user.unitId) return false;
-  return groupIds.includes(user.unitId);
+  const requiresProdiCheck = groupIds.length > 0;
+  
+  // 3. Filter Angkatan
+  const angkatanIds = ujian.angkatanIds ?? [];
+  const requiresAngkatanCheck = angkatanIds.length > 0;
+
+  // Jika tidak ada pembatasan sama sekali, anggap terbuka (perilaku lama)
+  if (!requiresProdiCheck && !requiresAngkatanCheck) return true;
+
+  // Jika ada syarat prodi, tapi user tidak punya unit atau unitnya tidak cocok
+  if (requiresProdiCheck && (!user.unitId || !groupIds.includes(user.unitId))) {
+    return false;
+  }
+
+  // Jika ada syarat angkatan, tapi user tidak punya angkatan atau angkatannya tidak cocok
+  if (requiresAngkatanCheck && (!user.angkatan || !angkatanIds.includes(user.angkatan))) {
+    return false;
+  }
+
+  // Jika lolos semua pemeriksaan yang aktif, maka diizinkan
+  return true;
 }
 
 /**

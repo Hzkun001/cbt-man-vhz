@@ -466,25 +466,52 @@ function UjianEditor() {
       <Card>
         <CardContent className="p-4 space-y-3">
           <h3 className="font-medium">Akses peserta</h3>
-          <div className="space-y-1">
-            <Label className="text-xs">Group yang boleh ikut (kosong = semua)</Label>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {groups.map((g) => (
-                <label key={g.id} className="flex items-center gap-2 rounded border p-2 text-sm">
-                  <Checkbox
-                    checked={u.groupIds.includes(g.id)}
-                    onCheckedChange={(v) =>
-                      set(
-                        "groupIds",
-                        v ? [...u.groupIds, g.id] : u.groupIds.filter((x) => x !== g.id),
-                      )
-                    }
-                  />
-                  {g.nama}
-                </label>
-              ))}
+          
+          <div className="flex items-center justify-between rounded border p-2 bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+            <div>
+              <Label className="text-blue-700 dark:text-blue-400">Ujian Umum (Mata Kuliah Umum)</Label>
+              <p className="text-xs text-blue-600/70 dark:text-blue-400/70">
+                Bila diaktifkan, ujian ini terbuka untuk semua prodi dan angkatan
+              </p>
             </div>
+            <Switch checked={u.isUmum} onCheckedChange={(v) => set("isUmum", v)} />
           </div>
+
+          {!u.isUmum && (
+            <>
+              <div className="space-y-1 mt-4">
+                <Label className="text-xs">Program Studi / Unit (Kosong = Semua Prodi)</Label>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {groups.map((g) => (
+                    <label key={g.id} className="flex items-center gap-2 rounded border p-2 text-sm">
+                      <Checkbox
+                        checked={u.groupIds.includes(g.id)}
+                        onCheckedChange={(v) =>
+                          set(
+                            "groupIds",
+                            v ? [...u.groupIds, g.id] : u.groupIds.filter((x) => x !== g.id),
+                          )
+                        }
+                      />
+                      {g.nama}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2 mt-4 pt-4 border-t">
+                <Label className="text-xs">Tahun Angkatan (Pisahkan dengan koma, misal: 2023, 2024)</Label>
+                <Input 
+                  placeholder="Kosong = Semua Angkatan"
+                  defaultValue={u.angkatanIds?.join(", ") ?? ""}
+                  onBlur={(e) => {
+                    const vals = e.target.value.split(",").map(v => v.trim()).filter(Boolean);
+                    set("angkatanIds", vals);
+                  }}
+                />
+              </div>
+            </>
+          )}
           <div className="flex items-center justify-between rounded border p-2">
             <div>
               <Label>Token ujian wajib</Label>
