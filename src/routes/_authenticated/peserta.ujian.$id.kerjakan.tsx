@@ -1,17 +1,10 @@
 import { useAuthStore } from "@/lib/cbt/auth-store";
 import { soalRepo, sesiRepo, ujianRepo, invalidateReposCache, hydrateRepos } from "@/lib/cbt/repos";
 import type { SesiUjian, Ujian } from "@/lib/cbt/types";
-import { 
-  getTempAnswersServer, 
-  setSessionTimerServer, 
-  saveTempAnswerServer, 
-  clearSessionBufferServer, 
-  logAuditServer 
-} from "@/lib/server/redis/functions";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { LayoutGrid, X, ChevronLeft, ChevronRight, Flag, CheckCircle2, AlertCircle, Type, Clock, Zap } from "lucide-react";
+import { LayoutGrid, X, ChevronLeft, ChevronRight, Flag, CheckCircle2, AlertCircle, Type, Clock, Calculator } from "lucide-react";
 import {
   createFileRoute,
   useNavigate,
@@ -21,9 +14,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AudioPlayer } from "@/components/cbt/AudioPlayer";
 import { RichView } from "@/components/cbt/RichEditor";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calculator, FileText } from "lucide-react";
-import { ScientificCalculator, NormalValuesTable } from "@/components/cbt/CheatSheets";
+import { ExamCalculator } from "@/components/cbt/ExamCalculator";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute(
   "/_authenticated/peserta/ujian/$id/kerjakan",
@@ -74,59 +72,24 @@ function gradeSesi(sesi: SesiUjian, ujian: Ujian) {
   return currentSesi;
 }
 
-function CheatSheetAction({ ujian }: { ujian: Ujian }) {
-  const [activeTab, setActiveTab] = useState<"calc" | "normal" | null>(null);
-
-  if (!ujian?.allowCalculator && !ujian?.allowNormalValues) return null;
+function CalculatorAction({ ujian }: { ujian: Ujian }) {
+  if (!ujian.allowCalculator) return null;
 
   return (
-    <div className="flex flex-col w-full mt-2 mb-4">
-      <div className="flex gap-2 w-full">
-        {ujian.allowCalculator && (
-          <Button 
-            variant={activeTab === "calc" ? "default" : "outline"}
-            size="sm" 
-            onClick={() => setActiveTab(activeTab === "calc" ? null : "calc")}
-            className={cn(
-              "flex-1 text-xs",
-              activeTab !== "calc" && "border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-900 dark:text-indigo-400 dark:hover:bg-indigo-950/50"
-            )}
-          >
-            <Calculator className="w-4 h-4 mr-1.5" />
-            Kalkulator
-          </Button>
-        )}
-        
-        {ujian.allowNormalValues && (
-          <Button 
-            variant={activeTab === "normal" ? "default" : "outline"}
-            size="sm" 
-            onClick={() => setActiveTab(activeTab === "normal" ? null : "normal")}
-            className={cn(
-              "flex-1 text-xs",
-              activeTab !== "normal" && "border-rose-200 text-rose-700 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950/50"
-            )}
-          >
-            <FileText className="w-4 h-4 mr-1.5" />
-            Nilai Normal
-          </Button>
-        )}
-      </div>
-
-      {activeTab === "calc" && (
-        <div className="mt-3 p-3 border rounded-lg bg-white dark:bg-slate-950 shadow-sm animate-in fade-in slide-in-from-top-2">
-          <p className="text-xs font-semibold text-center mb-3">Kalkulator Ilmiah</p>
-          <ScientificCalculator />
-        </div>
-      )}
-
-      {activeTab === "normal" && (
-        <div className="mt-3 p-3 border rounded-lg bg-white dark:bg-slate-950 shadow-sm max-h-[60vh] overflow-y-auto animate-in fade-in slide-in-from-top-2">
-          <p className="text-xs font-semibold text-center mb-3">Tabel Nilai Normal Kesehatan</p>
-          <NormalValuesTable />
-        </div>
-      )}
-    </div>
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="mt-4 w-full">
+          <Calculator className="mr-2 h-4 w-4" aria-hidden="true" />
+          Buka Kalkulator
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[90dvh] w-[calc(100%_-_2rem)] max-w-sm overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Kalkulator Ujian</DialogTitle>
+        </DialogHeader>
+        <ExamCalculator />
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -143,7 +106,6 @@ function RouteComponent() {
   const [now, setNow] = useState(Date.now());
   const submittingRef = useRef(false);
   const saveTimer = useRef<NodeJS.Timeout | null>(null);
-  const redisSaveTimer = useRef<NodeJS.Timeout | null>(null);
 
   const [showList, setShowList] = useState(false);
   const [fontSize, setFontSize] = useState<"sm" | "base" | "lg">("base");
@@ -153,36 +115,8 @@ function RouteComponent() {
     const active = sesiRepo.all().find(
       (x) => x.ujianId === ujian.id && x.pesertaId === user.id && x.status === "sedang"
     );
-    if (active) {
-      // Recover temporary answers from Redis buffer (e.g. after crash / power loss)
-      getTempAnswersServer({ data: active.id }).then((tempAnswers) => {
-        if (Object.keys(tempAnswers).length > 0) {
-          const recoveredJawaban = active.jawaban.map((j) => {
-            const temp = tempAnswers[j.soalId];
-            if (temp) {
-              return {
-                ...j,
-                jawabanIds: temp.jawabanIds ?? j.jawabanIds,
-                jawabanEssay: temp.jawabanEssay ?? j.jawabanEssay,
-                ragu: temp.ragu ?? j.ragu,
-              };
-            }
-            return j;
-          });
-          setSesi({ ...active, jawaban: recoveredJawaban });
-          toast.success("Jawaban sementara berhasil dipulihkan dari proteksi Redis RAM!");
-        } else {
-          setSesi(active);
-        }
-        setSesiDicari(true);
-      }).catch(() => {
-        setSesi(active);
-        setSesiDicari(true);
-      });
-    } else {
-      setSesi(null);
-      setSesiDicari(true);
-    }
+    setSesi(active || null);
+    setSesiDicari(true);
   }, [user, ujian]);
 
   useEffect(() => {
@@ -210,11 +144,6 @@ function RouteComponent() {
 
   useEffect(() => {
     if (!sesi || !ujian || sesi.status === "selesai") return;
-
-    // Set server authoritative timer in Redis
-    setSessionTimerServer({ data: { sesiId: sesi.id, endsAt, durationMinutes: ujian.durasiMenit || 60 } })
-      .catch((err) => console.error("Redis timer sync failed", err));
-
     const interval = setInterval(() => {
       const n = Date.now();
       setNow(n);
@@ -266,25 +195,9 @@ function RouteComponent() {
     if (!sesi) return;
     const nextSesi = { ...sesi };
     nextSesi.jawaban = [...nextSesi.jawaban];
-    const currentJawaban = { ...nextSesi.jawaban[idx], ...partial };
-    nextSesi.jawaban[idx] = currentJawaban;
+    nextSesi.jawaban[idx] = { ...nextSesi.jawaban[idx], ...partial };
     setSesi(nextSesi);
 
-    // 1. Debounced RAM Autosave to Redis (< 2ms)
-    if (redisSaveTimer.current) clearTimeout(redisSaveTimer.current);
-    redisSaveTimer.current = setTimeout(() => {
-      saveTempAnswerServer({ data: { 
-        sesiId: sesi.id, 
-        soalId: currentJawaban.soalId, 
-        jawabanData: {
-          jawabanIds: currentJawaban.jawabanIds,
-          jawabanEssay: currentJawaban.jawabanEssay,
-          ragu: currentJawaban.ragu,
-        } 
-      } }).catch((err) => console.error("Redis temp save failed", err));
-    }, 500);
-
-    // 2. Debounced persistent write to SQLite
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       sesiRepo.upsert(nextSesi);
@@ -321,10 +234,6 @@ function RouteComponent() {
         sesiRepo.flush().catch(() => {});
       }
     }
-    if (redisSaveTimer.current) {
-      clearTimeout(redisSaveTimer.current);
-      redisSaveTimer.current = null;
-    }
     setIdx(newIdx);
   }
 
@@ -344,15 +253,6 @@ function RouteComponent() {
         submittingRef.current = false;
         return;
       }
-      
-      // Clear Redis temporary buffer and record submit audit
-      try {
-        await clearSessionBufferServer({ data: sesiRef.current.id });
-        await logAuditServer({ data: { sesiId: sesiRef.current.id, action: "EXAM_SUBMITTED", details: { reason: reason || "NORMAL" } } });
-      } catch (err) {
-        console.error("Cleanup failed", err);
-      }
-
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
       toast.success(
         reason ? `Ujian disubmit (${reason})` : "Ujian berhasil disubmit",
@@ -597,8 +497,7 @@ function RouteComponent() {
         <div className="hidden md:flex flex-col w-80 bg-slate-50/50 dark:bg-slate-950/30 border-l border-slate-200 dark:border-slate-800">
           <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
             <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-lg tracking-tight">Navigasi Soal</h3>
-            
-            <CheatSheetAction ujian={ujian} />
+            <CalculatorAction ujian={ujian} />
 
             <div className="mt-4 flex flex-col gap-2">
               <div className="flex items-center gap-3 text-sm font-medium text-slate-600 dark:text-slate-400">
@@ -675,10 +574,9 @@ function RouteComponent() {
           
           <div className="flex-1 overflow-y-auto p-6">
             <div className="max-w-xl mx-auto">
-              
-              <CheatSheetAction ujian={ujian} />
+              <CalculatorAction ujian={ujian} />
 
-              <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 mb-8 shadow-sm">
+              <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 mb-8 mt-6 shadow-sm">
                 <div className="flex flex-col items-center">
                   <div className="w-4 h-4 rounded-full bg-primary shadow-sm mb-1" />
                   <span className="text-xs font-semibold text-slate-500">Sudah</span>

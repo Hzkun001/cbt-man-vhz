@@ -2,35 +2,31 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuthStore } from "@/lib/cbt/auth-store";
 import {
   usersRepo,
-  unitAkademikRepo,
-
+  modulRepo,
   soalRepo,
   ujianRepo,
   sesiRepo,
+  configRepo,
 } from "@/lib/cbt/repos";
-import { 
-  Clock, 
-  Plus, 
-  ArrowRight, 
-  AlertCircle, 
-  PlayCircle, 
-  Users, 
-  BookOpen, 
-  FileText, 
+import { canAccessAdminPath } from "./admin";
+import {
+  Clock,
+  Plus,
+  ArrowRight,
+  AlertCircle,
+  Users,
+  BookOpen,
+  FileText,
   Activity,
   CalendarClock,
   MonitorPlay,
   ShieldCheck,
-  Zap,
   CheckCircle2,
   TrendingUp,
   Key,
   Layers,
   Radio,
-  Sparkles,
   ArrowUpRight,
-  Database,
-  Server
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -40,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/admin/")({
 });
 
 function CommandCenter() {
-  const user = useAuthStore((s) => s.user)!;
+  const user = useAuthStore((s) => s.user);
   const now = Date.now();
   const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
 
@@ -48,34 +44,47 @@ function CommandCenter() {
   const pesertaList = usersRepo.all().filter((u) => u.role === "mahasiswa");
   const soalList = soalRepo.all();
   const semuaUjian = ujianRepo.all();
-  
+  const cfg = configRepo.get();
+  if (!user) return null;
+  const canAccess = (path: string) => canAccessAdminPath(user, path, cfg);
+
   const newPeserta = pesertaList.filter(u => u.createdAt && (now - u.createdAt) < ONE_WEEK).length;
   const newSoal = soalList.filter(s => s.createdAt && (now - s.createdAt) < ONE_WEEK).length;
   const newUjian = semuaUjian.filter(u => u.createdAt && (now - u.createdAt) < ONE_WEEK).length;
 
   const counts = {
     peserta: pesertaList.length,
-    unit: unitAkademikRepo.all().length,
+    modul: modulRepo.all().length,
     soal: soalList.length,
     ujian: semuaUjian.length,
     sesi: sesiRepo.all().length,
   };
 
-  const activeExams = semuaUjian.filter((u) => u.beginAt && u.endAt && now >= u.beginAt && now <= u.endAt);
-  const upcomingExams = semuaUjian.filter((u) => u.beginAt && now < u.beginAt).slice(0, 4);
+  const activeExams = semuaUjian.filter(
+    (u): u is typeof u & { beginAt: number; endAt: number } =>
+      typeof u.beginAt === "number" &&
+      typeof u.endAt === "number" &&
+      now >= u.beginAt &&
+      now <= u.endAt,
+  );
+  const upcoming = semuaUjian
+    .filter((u): u is typeof u & { beginAt: number } => typeof u.beginAt === "number" && now < u.beginAt)
+    .sort((a, b) => a.beginAt - b.beginAt);
+  const upcomingExamCount = upcoming.length;
+  const upcomingExams = upcoming.slice(0, 4);
   const finishedExams = semuaUjian.filter((u) => u.endAt && now > u.endAt);
-  
-  const pendingTasks = [];
-  if (finishedExams.length > 0) {
-    pendingTasks.push({
-      id: "eval-reports",
-      title: "Ujian Selesai (Membutuhkan Evaluasi & Rekap)",
-      desc: `${finishedExams.length} ujian telah selesai dan siap dianalisis nilainya.`,
-      count: finishedExams.length,
-      route: "/admin/evaluasi",
-      icon: <ShieldCheck className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-    });
-  }
+
+  const pendingTasks = finishedExams.length > 0 && canAccess("/admin/evaluasi")
+    ? [{
+        id: "eval-reports",
+        title: "Ujian Selesai (Membutuhkan Evaluasi & Rekap)",
+        desc: `${finishedExams.length} ujian telah selesai dan siap dianalisis nilainya.`,
+        count: finishedExams.length,
+        route: "/admin/evaluasi" as const,
+        icon: <ShieldCheck className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+      }]
+    : [];
+  const hasQuickActions = ["/admin/ujian", "/admin/modul", "/admin/peserta/kartu"].some(canAccess);
 
   // Format Helper for Numbers
   const formatNumber = (num: number) => {
@@ -86,7 +95,7 @@ function CommandCenter() {
 
   return (
     <div className="w-full space-y-8 animate-in fade-in duration-500 pb-16">
-      
+
       {/* 1. TOP OPERATIONAL STATUS BAR (Z-Pattern Zone 1 - Anti-AI Slop: Clean, Functional, Semantic) */}
       <section className="rounded-2xl bg-slate-900 text-white p-6 sm:p-8 shadow-md border border-slate-800">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -96,8 +105,8 @@ function CommandCenter() {
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${activeExams.length > 0 ? "bg-emerald-400" : "bg-slate-400"}`}></span>
                 <span className={`relative inline-flex rounded-full h-2 w-2 ${activeExams.length > 0 ? "bg-emerald-500" : "bg-slate-400"}`}></span>
               </span>
-              {activeExams.length > 0 
-                ? `${activeExams.length} Ujian Sedang Berlangsung` 
+              {activeExams.length > 0
+                ? `${activeExams.length} Ujian Sedang Berlangsung`
                 : "Sistem CBT Siaga Operasional"}
             </div>
 
@@ -111,18 +120,22 @@ function CommandCenter() {
 
           {/* Quick Primary Actions */}
           <div className="flex flex-wrap items-center gap-3 shrink-0">
-            <Button size="lg" className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl shadow border border-emerald-500/30" asChild>
-              <Link to="/admin/ujian">
-                <Plus className="mr-2 h-4 w-4 stroke-[2.5]" />
-                Buat Ujian Baru
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" className="bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 font-medium rounded-xl" asChild>
-              <Link to="/admin/peserta/online">
-                <Radio className="mr-2 h-4 w-4 text-emerald-400" />
-                Pantau Peserta
-              </Link>
-            </Button>
+            {canAccess("/admin/ujian") && (
+              <Button size="lg" className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl shadow border border-emerald-500/30" asChild>
+                <Link to="/admin/ujian">
+                  <Plus className="mr-2 h-4 w-4 stroke-[2.5]" />
+                  Buat Ujian Baru
+                </Link>
+              </Button>
+            )}
+            {canAccess("/admin/peserta/online") && (
+              <Button size="lg" variant="outline" className="bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 font-medium rounded-xl" asChild>
+                <Link to="/admin/peserta/online">
+                  <Radio className="mr-2 h-4 w-4 text-emerald-400" />
+                  Pantau Peserta
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
       </section>
@@ -140,7 +153,7 @@ function CommandCenter() {
         <KpiCard
           label="Total Ujian"
           value={formatNumber(counts.ujian)}
-          subtitle={`${activeExams.length} Aktif • ${upcomingExams.length} Mendatang`}
+          subtitle={`${activeExams.length} Aktif • ${upcomingExamCount} Mendatang`}
           icon={<MonitorPlay className="h-5 w-5 text-emerald-500" />}
           trend={newUjian > 0 ? `+${newUjian} minggu ini` : null}
           trendPositive={true}
@@ -156,17 +169,17 @@ function CommandCenter() {
         <KpiCard
           label="Total Sesi Ujian"
           value={formatNumber(counts.sesi)}
-          subtitle={`${counts.unit} Unit Akademik`}
+          subtitle={`${counts.modul} Modul Mata Kuliah`}
           icon={<Layers className="h-5 w-5 text-purple-500" />}
         />
       </section>
 
       {/* 3. MAIN DASHBOARD CONTENT GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
-        
+
         {/* LEFT COLUMN: Main Workflows (8 Cols) */}
         <div className="lg:col-span-8 space-y-6">
-          
+
           {/* Live Surveillance Panel */}
           <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6">
             <div className="flex items-center justify-between pb-4 mb-5 border-b border-slate-100 dark:border-slate-800">
@@ -192,12 +205,14 @@ function CommandCenter() {
                   <CheckCircle2 className="h-6 w-6 text-emerald-500" />
                 </div>
                 <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 mb-1">Tidak Ada Ujian Aktif Saat Ini</h3>
-                <p className="text-xs text-slate-500 max-w-md mb-5">
+                <p className={`text-xs text-slate-500 max-w-md ${canAccess("/admin/ujian") ? "mb-5" : ""}`}>
                   Sistem dalam kondisi siaga penuh. Anda dapat mengecek ujian mendatang atau menyiapkan bank soal baru.
                 </p>
-                <Button variant="outline" size="sm" className="rounded-xl border-slate-300 font-medium" asChild>
-                  <Link to="/admin/ujian">Lihat Semua Jadwal Ujian</Link>
-                </Button>
+                {canAccess("/admin/ujian") && (
+                  <Button variant="outline" size="sm" className="rounded-xl border-slate-300 font-medium" asChild>
+                    <Link to="/admin/ujian">Lihat Semua Jadwal Ujian</Link>
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="space-y-3">
@@ -211,15 +226,17 @@ function CommandCenter() {
                         <h3 className="text-base font-bold text-slate-900 dark:text-white leading-tight">{exam.nama}</h3>
                         <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
                           <Clock className="h-3.5 w-3.5" />
-                          <span>Berakhir pukul {new Date(exam.endAt!).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" })} WIB</span>
+                          <span suppressHydrationWarning>Berakhir pukul {new Date(exam.endAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" })} WIB</span>
                         </div>
                       </div>
                     </div>
-                    <Button size="sm" className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg px-4" asChild>
-                      <Link to="/admin/peserta/online">
-                        Pantau Peserta <ArrowRight className="ml-2 h-4 w-4" />
-                      </Link>
-                    </Button>
+                    {canAccess("/admin/peserta/online") && (
+                      <Button size="sm" className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg px-4" asChild>
+                        <Link to="/admin/peserta/online">
+                          Pantau Peserta <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -230,30 +247,41 @@ function CommandCenter() {
           <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6">
             <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4">Konsol Aksi Cepat Administrasi</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <ShortcutCard
-                title="Buat Ujian"
-                desc="Atur jadwal & durasi"
-                icon={<Plus className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />}
-                href="/admin/ujian"
-              />
-              <ShortcutCard
-                title="Rilis Token"
-                desc="Generate token sesi"
-                icon={<Key className="h-5 w-5 text-amber-600 dark:text-amber-400" />}
-                href="/admin/ujian"
-              />
-              <ShortcutCard
-                title="Bank Soal"
-                desc="Kelola & import soal"
-                icon={<BookOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />}
-                href="/admin/modul"
-              />
-              <ShortcutCard
-                title="Kartu Peserta"
-                desc="Cetak / eksport kartu"
-                icon={<Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />}
-                href="/admin/peserta/kartu"
-              />
+              {!hasQuickActions && (
+                <p className="col-span-full text-sm text-slate-500">Tidak ada aksi cepat yang tersedia untuk peran ini.</p>
+              )}
+              {canAccess("/admin/ujian") && (
+                <>
+                  <ShortcutCard
+                    title="Buat Ujian"
+                    desc="Atur jadwal & durasi"
+                    icon={<Plus className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />}
+                    href="/admin/ujian"
+                  />
+                  <ShortcutCard
+                    title="Rilis Token"
+                    desc="Generate token sesi"
+                    icon={<Key className="h-5 w-5 text-amber-600 dark:text-amber-400" />}
+                    href="/admin/ujian"
+                  />
+                </>
+              )}
+              {canAccess("/admin/modul") && (
+                <ShortcutCard
+                  title="Bank Soal"
+                  desc="Kelola & import soal"
+                  icon={<BookOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />}
+                  href="/admin/modul"
+                />
+              )}
+              {canAccess("/admin/peserta/kartu") && (
+                <ShortcutCard
+                  title="Kartu Peserta"
+                  desc="Cetak / eksport kartu"
+                  icon={<Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />}
+                  href="/admin/peserta/kartu"
+                />
+              )}
             </div>
           </div>
 
@@ -261,7 +289,7 @@ function CommandCenter() {
 
         {/* RIGHT COLUMN: Urgent Tasks & Schedule (4 Cols) */}
         <div className="lg:col-span-4 space-y-6">
-          
+
           {/* Urgent Action / Pending Tasks Queue */}
           <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6">
             <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -308,9 +336,9 @@ function CommandCenter() {
                   <CalendarClock className="h-5 w-5 text-blue-500" />
                   <h2 className="text-base font-bold text-slate-900 dark:text-white">Ujian Mendatang</h2>
                 </div>
-                <span className="text-xs font-semibold text-slate-400">{upcomingExams.length} Terjadwal</span>
+                <span className="text-xs font-semibold text-slate-400">{upcomingExamCount} Terjadwal</span>
               </div>
-              
+
               <div className="space-y-3">
                 {upcomingExams.map((exam) => (
                   <div key={exam.id} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/60">
@@ -318,7 +346,7 @@ function CommandCenter() {
                     <div className="flex items-center gap-2 text-[11px] text-slate-500">
                       <Clock className="h-3 w-3" />
                       <span suppressHydrationWarning>
-                        {new Date(exam.beginAt!).toLocaleDateString("id-ID", { day: "numeric", month: "short", timeZone: "Asia/Jakarta" })} • {new Date(exam.beginAt!).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" })}
+                        {new Date(exam.beginAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", timeZone: "Asia/Jakarta" })} • {new Date(exam.beginAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" })}
                       </span>
                     </div>
                   </div>
@@ -326,28 +354,6 @@ function CommandCenter() {
               </div>
             </div>
           )}
-
-          {/* System Environment Telemetry */}
-          <div className="rounded-2xl bg-slate-900 text-white border border-slate-800 p-5 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span className="text-xs font-semibold text-slate-400 flex items-center gap-2">
-                <Database className="h-3.5 w-3.5 text-blue-400" /> Database
-              </span>
-              <span className="text-xs font-medium text-slate-200">SQLite Local</span>
-            </div>
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span className="text-xs font-semibold text-slate-400 flex items-center gap-2">
-                <Server className="h-3.5 w-3.5 text-purple-400" /> ORM Engine
-              </span>
-              <span className="text-xs font-medium text-slate-200">Prisma Client</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-400 flex items-center gap-2">
-                <Zap className="h-3.5 w-3.5 text-emerald-400" /> Versi Sistem
-              </span>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-800 text-emerald-400">v1.2.0</span>
-            </div>
-          </div>
 
         </div>
 
@@ -361,18 +367,18 @@ function CommandCenter() {
 // REUSABLE DASHBOARD ARCHITECTURE COMPONENTS
 // ----------------------------------------------------------------------
 
-function KpiCard({ 
-  label, 
-  value, 
-  subtitle, 
-  icon, 
-  trend, 
-  trendPositive 
-}: { 
-  label: string; 
-  value: string; 
-  subtitle: string; 
-  icon: React.ReactNode; 
+function KpiCard({
+  label,
+  value,
+  subtitle,
+  icon,
+  trend,
+  trendPositive
+}: {
+  label: string;
+  value: string;
+  subtitle: string;
+  icon: React.ReactNode;
   trend?: string | null;
   trendPositive?: boolean;
 }) {
@@ -384,13 +390,13 @@ function KpiCard({
           {icon}
         </div>
       </div>
-      
+
       <div className="flex items-baseline gap-2 mb-1">
         <span className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{value}</span>
         {trend && (
           <span className={`inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full ${
-            trendPositive 
-              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400" 
+            trendPositive
+              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
               : "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-400"
           }`}>
             <TrendingUp className="mr-1 h-3 w-3 inline" />
@@ -398,7 +404,7 @@ function KpiCard({
           </span>
         )}
       </div>
-      
+
       <p className="text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>
     </div>
   );
@@ -413,7 +419,7 @@ function ShortcutCard({
   title: string;
   desc: string;
   icon: React.ReactNode;
-  href: string;
+  href: "/admin/ujian" | "/admin/modul" | "/admin/peserta/kartu";
 }) {
   return (
     <Link to={href} className="flex flex-col p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 transition-all group">
@@ -425,5 +431,3 @@ function ShortcutCard({
     </Link>
   );
 }
-
-

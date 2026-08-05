@@ -133,7 +133,6 @@ model Ujian {
   blokirShortcut   Boolean      @default(true)
   mode             String       @default("online") // "online" | "offline"
   allowCalculator  Boolean      @default(false)
-  allowNormalValues Boolean     @default(false)
   createdBy        String
   createdAt        BigInt
   creator          User         @relation("UjianCreator", fields: [createdBy], references: [id])

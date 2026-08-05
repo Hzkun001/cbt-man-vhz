@@ -21,6 +21,7 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  Trophy,
   Wrench,
   FolderOpen,
   PenLine,
@@ -32,9 +33,6 @@ import {
   X,
   BookOpenCheck,
   ChevronDown,
-  ChevronRight,
-  Sparkles,
-  ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -72,65 +70,64 @@ type NavGroup = {
   items: NavItem[];
 };
 
+const dashboardNavItem: NavItem = {
+  to: "/admin",
+  label: "Dashboard",
+  icon: LayoutDashboard,
+  exact: true,
+};
+
 const navGroups: NavGroup[] = [
   {
-    id: "utama",
-    label: "Utama",
-    icon: LayoutDashboard,
-    items: [
-      { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-    ]
-  },
-  {
-    id: "akademik_pengguna",
+    id: "akademik-pengguna",
     label: "Akademik & Pengguna",
     icon: Landmark,
     items: [
       { to: "/admin/akademik", label: "Struktur Akademik", icon: Landmark },
       { to: "/admin/users", label: "Pengelola Sistem", icon: Users },
       { to: "/admin/peserta", label: "Mahasiswa / Peserta", icon: GraduationCap, exact: true },
-    ]
+    ],
   },
   {
-    id: "bank_soal_berkas",
+    id: "bank-soal-berkas",
     label: "Bank Soal & Berkas",
     icon: BookOpen,
     items: [
       { to: "/admin/modul", label: "Bank Soal", icon: BookOpen },
       { to: "/admin/files", label: "File Manager", icon: FolderOpen },
-    ]
+    ],
   },
   {
-    id: "ujian_pelaksanaan",
+    id: "ujian-pelaksanaan",
     label: "Ujian & Pelaksanaan",
     icon: FileText,
     items: [
       { to: "/admin/ujian", label: "Paket Ujian", icon: FileText },
       { to: "/admin/peserta/online", label: "Pantau Ujian Live", icon: Activity },
-    ]
+    ],
   },
   {
-    id: "pasca_ujian",
-    label: "Pasca Ujian",
+    id: "hasil-pelaporan",
+    label: "Hasil & Pelaporan",
     icon: BarChart3,
     items: [
       { to: "/admin/evaluasi", label: "Evaluasi Essay", icon: PenLine },
-      { to: "/admin/analitik", label: "Analitik & Laporan", icon: BarChart3 },
-    ]
+      { to: "/admin/leaderboard", label: "Leaderboard", icon: Trophy },
+    ],
   },
   {
-    id: "sistem_bantuan",
+    id: "sistem-bantuan",
     label: "Sistem & Bantuan",
     icon: Settings,
     items: [
       { to: "/admin/pengaturan", label: "Pengaturan", icon: Settings },
       { to: "/admin/tools", label: "Backup & Tools", icon: Wrench },
       { to: "/admin/panduan", label: "Panduan", icon: BookOpenCheck },
-    ]
-  }
+    ],
+  },
 ];
 
-const navItems: NavItem[] = navGroups.flatMap(g => g.items);
+const navItems: NavItem[] = [dashboardNavItem, ...navGroups.flatMap((group) => group.items)];
 
 function normalizedAdminPath(pathname: string) {
   if (pathname === "/admin") return pathname;
@@ -167,6 +164,39 @@ function firstAllowedAdminPath(user: RouteUser, cfg: AppConfig) {
   return firstVisible?.to ?? "/login";
 }
 
+function isNavItemActive(item: NavItem, pathname: string) {
+  if (item.exact) return normalizedAdminPath(pathname) === item.to;
+  const routeRule = resolveAdminRouteRule(pathname);
+  const itemRule = resolveAdminRouteRule(item.to);
+  return !!(routeRule && itemRule && routeRule.key === itemRule.key);
+}
+
+function activeGroupId(pathname: string, groups: NavGroup[]) {
+  return groups.find((group) => group.items.some((item) => isNavItemActive(item, pathname)))?.id;
+}
+
+function SidebarLink({ item }: { item: NavItem }) {
+  const Icon = item.icon;
+  return (
+    <Link
+      to={item.to as never}
+      activeOptions={{ exact: item.exact }}
+      activeProps={{
+        className:
+          "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-semibold shadow-sm",
+      }}
+      inactiveProps={{
+        className:
+          "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100",
+      }}
+      className="flex items-center gap-3 rounded-lg px-3 py-2 text-xs transition-colors duration-150 md:text-sm"
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      <span className="leading-snug">{item.label}</span>
+    </Link>
+  );
+}
+
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async ({ context, location }) => {
     const user = (context as { user: RouteUser }).user;
@@ -186,18 +216,6 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminLayout,
 });
 
-function isNavItemActive(item: NavItem, pathname: string) {
-  if (item.exact) return pathname === item.to;
-  if (pathname === item.to || pathname.startsWith(`${item.to}/`)) return true;
-  const rule = resolveAdminRouteRule(pathname);
-  const itemRule = resolveAdminRouteRule(item.to);
-  return !!(rule && itemRule && itemRule.key === rule.key);
-}
-
-function isGroupActive(group: NavGroup, pathname: string) {
-  return group.items.some((item) => isNavItemActive(item, pathname));
-}
-
 function AdminLayout() {
   const user = useAuthStore((s) => s.user)!;
   const logout = useAuthStore((s) => s.logout);
@@ -208,34 +226,19 @@ function AdminLayout() {
 
   const [theme, setTheme] = useState("light");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  // Memoize visible nav items per user role & permissions to avoid recalculation on render
-  const memoizedNavGroups = React.useMemo(() => {
-    return navGroups.map((group) => ({
-      ...group,
-      visibleItems: group.items.filter((item) => canAccessAdminPath(user, item.to, cfg)),
-    })).filter((group) => group.visibleItems.length > 0);
-  }, [user, cfg]);
-
-  // Track open state for dropdown groups (Single-open accordion mode)
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
-    const activeGroup = memoizedNavGroups.find((group) => isGroupActive(group, pathname));
-    const targetId = activeGroup?.id || "utama";
-    return { [targetId]: true };
-  });
-
-  // Auto expand active group (and close others) when navigating
-  useEffect(() => {
-    const activeGroup = memoizedNavGroups.find((group) => isGroupActive(group, pathname));
-    if (activeGroup) {
-      setOpenGroups({ [activeGroup.id]: true });
-    }
-    setMobileMenuOpen(false);
-  }, [pathname, memoizedNavGroups]);
-
-  const toggleGroup = React.useCallback((groupId: string) => {
-    setOpenGroups((prev) => (prev[groupId] ? {} : { [groupId]: true }));
-  }, []);
+  const visibleNavGroups = React.useMemo(
+    () =>
+      navGroups
+        .map((group) => ({
+          ...group,
+          items: group.items.filter((item) => canAccessAdminPath(user, item.to, cfg)),
+        }))
+        .filter((group) => group.items.length > 0),
+    [user, cfg],
+  );
+  const [openGroupId, setOpenGroupId] = useState<string | undefined>(() =>
+    activeGroupId(pathname, visibleNavGroups),
+  );
 
   useEffect(() => {
     const stored = localStorage.getItem("theme");
@@ -257,6 +260,11 @@ function AdminLayout() {
     if (next === "dark") document.documentElement.classList.add("dark");
     else document.documentElement.classList.remove("dark");
   };
+
+  useEffect(() => {
+    setOpenGroupId(activeGroupId(pathname, visibleNavGroups));
+    setMobileMenuOpen(false);
+  }, [pathname, visibleNavGroups]);
 
   return (
     <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
@@ -292,70 +300,50 @@ function AdminLayout() {
                 </Button>
               )}
             </div>
+            <nav aria-label="Navigasi administrasi" className="flex flex-col gap-2 p-3">
+              {canAccessAdminPath(user, dashboardNavItem.to, cfg) && (
+                <SidebarLink item={dashboardNavItem} />
+              )}
 
-            {/* Navigation Menu with Dropdowns (High Performance) */}
-            <nav className="flex flex-col gap-1.5 p-3">
-              {memoizedNavGroups.map((group) => {
-                const isOpen = !!openGroups[group.id];
+              {visibleNavGroups.map((group) => {
+                const isOpen = openGroupId === group.id;
                 const GroupIcon = group.icon;
-                const hasActiveChild = isGroupActive(group, pathname);
+                const panelId = `admin-nav-${group.id}`;
 
                 return (
-                  <div key={group.id} className="flex flex-col rounded-xl">
-                    {/* Main Dropdown Header / Poin Utama */}
+                  <div key={group.id}>
                     <button
-                      id={`nav-group-${group.id}-button`}
+                      type="button"
                       aria-expanded={isOpen}
-                      aria-controls={`nav-group-${group.id}-panel`}
-                      onClick={() => toggleGroup(group.id)}
+                      aria-controls={panelId}
+                      onClick={() => setOpenGroupId(isOpen ? undefined : group.id)}
                       className={cn(
-                        "flex items-center justify-between w-full px-3 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-colors duration-150 select-none text-left",
-                        hasActiveChild 
-                          ? "bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-slate-100" 
-                          : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900/50 hover:text-slate-800 dark:hover:text-slate-200"
+                        "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider transition-colors duration-150",
+                        group.items.some((item) => isNavItemActive(item, pathname))
+                          ? "bg-slate-100 text-slate-900 dark:bg-slate-900 dark:text-slate-100"
+                          : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-100",
                       )}
                     >
-                      <div className="flex items-center gap-2.5 truncate">
-                        <GroupIcon className={cn("h-4 w-4 shrink-0", hasActiveChild ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400")} />
+                      <span className="flex min-w-0 items-center gap-3">
+                        <GroupIcon className="h-4 w-4 shrink-0" />
                         <span className="truncate">{group.label}</span>
-                      </div>
-                      <div className="flex items-center shrink-0 ml-2">
-                        <ChevronDown className={cn("h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ease-out", isOpen ? "rotate-0 text-slate-700 dark:text-slate-200" : "-rotate-90")} />
-                      </div>
+                      </span>
+                      <ChevronDown
+                        aria-hidden="true"
+                        className={cn(
+                          "h-4 w-4 shrink-0 transition-transform duration-150",
+                          isOpen && "rotate-180",
+                        )}
+                      />
                     </button>
 
-                    {/* GPU-Accelerated Smooth Dropdown Animation */}
-                    <div 
-                      id={`nav-group-${group.id}-panel`}
-                      role="region"
-                      aria-labelledby={`nav-group-${group.id}-button`}
-                      className={cn("grid transition-[grid-template-rows,opacity] duration-200 ease-out", isOpen ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0 mt-0 pointer-events-none")}
-                    >
-                      <div className="overflow-hidden">
-                        <div className="flex flex-col gap-1 pl-3 border-l-2 border-slate-200/80 dark:border-slate-800 ml-3.5 py-1">
-                          {group.visibleItems.map((n) => {
-                            const Icon = n.icon;
-                            return (
-                              <Link
-                                key={n.to}
-                                to={n.to as never}
-                                activeOptions={{ exact: n.exact }}
-                                activeProps={{
-                                  className: "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-semibold shadow-sm"
-                                }}
-                                inactiveProps={{
-                                  className: "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100"
-                                }}
-                                className="flex items-center gap-2.5 px-3 py-2 text-xs md:text-sm rounded-lg transition-colors duration-150"
-                              >
-                                <Icon className="h-4 w-4 shrink-0" />
-                                <span className="leading-snug truncate">{n.label}</span>
-                              </Link>
-                            );
-                          })}
-                        </div>
+                    {isOpen && (
+                      <div id={panelId} className="ml-4 mt-1 flex flex-col gap-1 border-l border-slate-200 pl-2 dark:border-slate-800">
+                        {group.items.map((item) => (
+                          <SidebarLink key={item.to} item={item} />
+                        ))}
                       </div>
-                    </div>
+                    )}
                   </div>
                 );
               })}
@@ -414,4 +402,3 @@ function AdminLayout() {
     </div>
   );
 }
-

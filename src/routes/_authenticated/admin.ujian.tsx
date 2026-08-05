@@ -3,10 +3,9 @@ import {
   Link,
   Outlet,
   useRouterState,
-  useNavigate,
 } from "@tanstack/react-router";
 import { useState } from "react";
-import { ujianRepo, sesiRepo } from "@/lib/cbt/repos";
+import { ujianRepo, sesiRepo, mataKuliahRepo } from "@/lib/cbt/repos";
 import { useAuthStore } from "@/lib/cbt/auth-store";
 import { uid } from "@/lib/cbt/storage";
 import type { Ujian } from "@/lib/cbt/types";
@@ -16,9 +15,6 @@ import { visibleUjians } from "@/lib/cbt/access";
 import { cn } from "@/lib/utils";
 import { useThemeStore } from "@/lib/cbt/theme-store";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 import { AdminPage, AdminPageHeader } from "@/components/cbt/AdminPage";
 
@@ -37,49 +33,26 @@ function UjianRoute() {
 
 function UjianList() {
   const user = useAuthStore((s) => s.user)!;
-  const navigate = useNavigate();
   const { theme } = useThemeStore();
   const [list, setList] = useState<Ujian[]>(visibleUjians(user));
   const [activeTab, setActiveTab] = useState<"semua" | "persiapan" | "berlangsung" | "selesai">("semua");
   const [search, setSearch] = useState("");
   const [isAdding, setIsAdding] = useState(false);
 
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newUjianName, setNewUjianName] = useState("");
-  const [newUjianDuration, setNewUjianDuration] = useState<number | "">(30);
-
-  function add() {
-    setNewUjianName("");
-    setNewUjianDuration(30);
-    setIsAddDialogOpen(true);
-  }
-
-  async function submitAdd() {
-    if (!newUjianName.trim()) {
-      toast.error("Nama ujian wajib diisi");
-      return;
-    }
-    const durasi = Number(newUjianDuration);
-    if (isNaN(durasi) || durasi <= 0) {
-      toast.error("Durasi ujian tidak valid");
-      return;
-    }
-    
+  async function add() {
     if (isAdding) return;
     setIsAdding(true);
     const u: Ujian = {
       id: uid("ex_"),
-      nama: newUjianName.trim(),
+      nama: "Ujian Baru",
       deskripsi: "",
-      durasiMenit: durasi,
+      durasiMenit: 30,
       poinBenar: 1,
       poinSalah: 0,
       poinKosong: 0,
       tokenAktif: false,
       ipRange: "",
       groupIds: [],
-      angkatanIds: [],
-      isUmum: false,
       topicSets: [],
       showResult: true,
       showResultDetail: false,
@@ -88,7 +61,6 @@ function UjianList() {
       blokirShortcut: true,
       mode: "online",
       allowCalculator: false,
-      allowNormalValues: false,
       createdBy: user.id,
       createdAt: Date.now(),
     };
@@ -96,9 +68,7 @@ function UjianList() {
     await ujianRepo.flush();
     setList((current) => [...current, u]);
     toast.success("Ujian baru dibuat — silakan edit");
-    setIsAddDialogOpen(false);
     setIsAdding(false);
-    navigate({ to: "/admin/ujian/$id", params: { id: u.id } });
   }
 
   const now = Date.now();
@@ -114,7 +84,7 @@ function UjianList() {
   const renderRow = (u: Ujian, type: "persiapan" | "berlangsung" | "selesai") => {
     const sesiCount = sesiRepo.all().filter((s) => s.ujianId === u.id).length;
     const soalCount = u.topicSets.reduce((a, b) => a + b.jumlah, 0);
-    
+    const mk = u.mataKuliahId ? mataKuliahRepo.byId(u.mataKuliahId) : null;
 
     return (
       <div key={u.id} className={cn(
@@ -140,7 +110,7 @@ function UjianList() {
               {u.nama}
             </Link>
             <div className="flex items-center gap-2 mt-1">
-              
+              {mk && <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 truncate max-w-[150px]">{mk.nama}</span>}
               <span className="text-[11px] text-slate-500">{soalCount} Soal • {u.durasiMenit} Menit</span>
               {sesiCount > 0 && <span className="text-[11px] font-medium text-slate-700 dark:text-slate-300">• {sesiCount} Peserta</span>}
             </div>
@@ -274,44 +244,6 @@ function UjianList() {
         )}
       </div>
 
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Buat Paket Ujian Baru</DialogTitle>
-            <DialogDescription>
-              Masukkan nama paket ujian dan durasi pengerjaan. Pengaturan lebih lanjut dapat dilakukan setelah paket ujian dibuat.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="ujian-name">Nama Paket Ujian</Label>
-              <Input
-                id="ujian-name"
-                placeholder="Misal: Ujian Akhir Semester"
-                value={newUjianName}
-                onChange={(e) => setNewUjianName(e.target.value)}
-                autoFocus
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="ujian-duration">Durasi (Menit)</Label>
-              <Input
-                id="ujian-duration"
-                type="number"
-                placeholder="Misal: 60"
-                value={newUjianDuration}
-                onChange={(e) => setNewUjianDuration(e.target.value === "" ? "" : Number(e.target.value))}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Batal</Button>
-            <Button onClick={submitAdd} disabled={isAdding || !newUjianName.trim()}>
-              {isAdding ? "Menyimpan..." : "Buat Ujian"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
     </AdminPage>
   );
