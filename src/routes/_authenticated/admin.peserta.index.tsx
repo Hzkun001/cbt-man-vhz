@@ -102,6 +102,7 @@ function PesertaPage() {
         const nama = String(r.nama ?? r.Nama ?? r.namaLengkap ?? "").trim();
         const password = String(r.password ?? r.Password ?? "").trim();
         const unitName = String(r.group ?? r.Group ?? r.kelas ?? r.unit ?? "").trim();
+        const angkatan = String(r.angkatan ?? r.Angkatan ?? "").trim();
         if (!username || !nama || !password) {
           failed++;
           continue;
@@ -123,6 +124,7 @@ function PesertaPage() {
             id: userId, username, namaLengkap: nama, role: "mahasiswa",
             allowedTopikIds: existingUser ? existingUser.allowedTopikIds : [], unitId: unitId, aktif: true,
             createdAt: existingUser ? existingUser.createdAt : Date.now(), newPassword: password,
+            angkatan: angkatan || (existingUser?.angkatan ?? undefined),
           }
         });
         if (res.ok) {
