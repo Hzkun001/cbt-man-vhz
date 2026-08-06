@@ -97,41 +97,41 @@ function CommandCenter() {
     <div className="w-full space-y-8 animate-in fade-in duration-500 pb-16">
 
       {/* 1. TOP OPERATIONAL STATUS BAR (Neo Brutalism) */}
-      <section className="relative overflow-hidden bg-[color:var(--neo-bg)] rounded-[2rem] p-8 sm:p-12 text-[color:var(--neo-text)] border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)]">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-4 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest bg-white text-black border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)]">
-              <span className="relative flex h-2.5 w-2.5">
+      <section className="bg-[color:var(--neo-bg)] rounded-2xl p-6 sm:p-8 text-[color:var(--neo-text)] border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)]">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md text-xs font-semibold bg-white text-black border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)]">
+              <span className="relative flex h-2 w-2">
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${activeExams.length > 0 ? "bg-emerald-400" : "bg-gray-400"}`}></span>
-                <span className={`relative inline-flex rounded-full h-2.5 w-2.5 border border-black ${activeExams.length > 0 ? "bg-emerald-500" : "bg-gray-400"}`}></span>
+                <span className={`relative inline-flex rounded-full h-2 w-2 border border-black ${activeExams.length > 0 ? "bg-emerald-500" : "bg-gray-400"}`}></span>
               </span>
               {activeExams.length > 0
                 ? `${activeExams.length} Ujian Sedang Berlangsung`
                 : "Sistem CBT Siaga Operasional"}
             </div>
 
-            <h1 className="text-3xl md:text-5xl lg:text-[42px] font-black uppercase leading-[1.1] text-[color:var(--neo-text)] tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[color:var(--neo-text)]">
               Pusat Kendali CBT Administrasi
             </h1>
-            <p className="text-sm sm:text-base font-bold text-[color:var(--neo-text)]/80 max-w-xl">
-              Selamat datang kembali, <span className="font-black text-[color:var(--neo-text)]">{user.namaLengkap}</span>. Ringkasan performa dan pengawasan ujian kampus tersedia seketika.
+            <p className="text-sm font-medium text-[color:var(--neo-text)]/80 max-w-xl">
+              Selamat datang kembali, <span className="font-bold text-[color:var(--neo-text)]">{user.namaLengkap}</span>. Ringkasan performa dan pengawasan ujian kampus tersedia seketika.
             </p>
           </div>
 
           {/* Quick Primary Actions */}
-          <div className="flex flex-wrap items-center gap-4 shrink-0">
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
             {canAccess("/admin/ujian") && (
-              <Button size="lg" className="rounded-full bg-emerald-400 hover:bg-emerald-300 text-black font-black uppercase tracking-wide border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)] h-14 px-6 flex items-center gap-3 transition-transform hover:-translate-y-1" asChild>
+              <Button size="lg" className="rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)] px-5 flex items-center gap-2 transition-transform hover:-translate-y-1" asChild>
                 <Link to="/admin/ujian">
-                  <Plus className="h-5 w-5 stroke-[3]" />
+                  <Plus className="h-4 w-4 stroke-[2.5]" />
                   Buat Ujian Baru
                 </Link>
               </Button>
             )}
             {canAccess("/admin/peserta/online") && (
-              <Button size="lg" className="rounded-full bg-white hover:bg-gray-50 text-black font-black uppercase tracking-wide border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)] h-14 px-6 flex items-center gap-3 transition-transform hover:-translate-y-1" asChild>
+              <Button size="lg" className="rounded-xl bg-white hover:bg-gray-50 text-black font-bold border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)] px-5 flex items-center gap-2 transition-transform hover:-translate-y-1" asChild>
                 <Link to="/admin/peserta/online">
-                  <Radio className="h-5 w-5 text-emerald-600 stroke-[3]" />
+                  <Radio className="h-4 w-4 text-emerald-600 stroke-[2.5]" />
                   Pantau Peserta
                 </Link>
               </Button>
