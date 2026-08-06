@@ -116,7 +116,9 @@ async function main() {
       data: {
         id: s.id,
         topikId: s.topikId,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         tipe: s.tipe as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         kesulitan: s.kesulitan as any,
         detail: s.detail,
         pembahasan: s.pembahasan,

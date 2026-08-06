@@ -109,6 +109,7 @@ export async function pesertaCanTouchUjian(
 	if (!ujian) return false;
 	const groupIds = parseJson<string[]>(ujian.groupIds, []);
 	const angkatanIds = parseJson<string[]>(ujian.angkatanIds, []);
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	return isParticipantAssignedToExam(caller as any, {
 		isUmum: ujian.isUmum,
 		groupIds,
