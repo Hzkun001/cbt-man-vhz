@@ -244,6 +244,44 @@ function CommandCenter() {
             )}
           </section>
 
+          {/* Quick Access Grid */}
+          {hasQuickActions && (
+            <section className="bg-white border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)] rounded-xl p-6 sm:p-8">
+              <h2 className="text-sm font-black uppercase tracking-widest text-[color:var(--neo-text)] mb-4 px-1">Akses Cepat</h2>
+              <div className="grid grid-cols-2 gap-4">
+                {canAccess("/admin/ujian") && (
+                  <ShortcutCard 
+                    title="Ujian" 
+                    desc="Buat & atur jadwal" 
+                    icon={<MonitorPlay className="h-6 w-6 stroke-[3]" />} 
+                    href="/admin/ujian" 
+                  />
+                )}
+                {canAccess("/admin/modul") && (
+                  <ShortcutCard 
+                    title="Bank Soal" 
+                    desc="Manajemen soal" 
+                    icon={<BookOpen className="h-6 w-6 stroke-[3]" />} 
+                    href="/admin/modul" 
+                  />
+                )}
+                {canAccess("/admin/peserta/kartu") && (
+                  <ShortcutCard 
+                    title="Kartu" 
+                    desc="Cetak kartu ujian" 
+                    icon={<FileText className="h-6 w-6 stroke-[3]" />} 
+                    href="/admin/peserta/kartu" 
+                  />
+                )}
+              </div>
+            </section>
+          )}
+
+        </div>
+
+        {/* RIGHT COLUMN: Upcoming & Quick Access */}
+        <div className="lg:col-span-4 space-y-8">
+
           {/* Actionable Alerts & Tasks */}
           {pendingTasks.length > 0 && (
             <section className="bg-red-400 border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)] rounded-xl p-6 sm:p-8">
@@ -278,11 +316,6 @@ function CommandCenter() {
               </div>
             </section>
           )}
-
-        </div>
-
-        {/* RIGHT COLUMN: Upcoming & Quick Access */}
-        <div className="lg:col-span-4 space-y-8">
           
           {/* Upcoming Schedule */}
           <section className="bg-white border-[length:var(--neo-border-width)] border-[color:var(--neo-border-color)] shadow-[var(--neo-shadow)] rounded-xl p-6 sm:p-8">
@@ -327,39 +360,6 @@ function CommandCenter() {
               </div>
             )}
           </section>
-          
-          {/* Quick Access Grid */}
-          {hasQuickActions && (
-            <section>
-              <h2 className="text-sm font-black uppercase tracking-widest text-[color:var(--neo-text)] mb-4 px-1">Akses Cepat</h2>
-              <div className="grid grid-cols-2 gap-4">
-                {canAccess("/admin/ujian") && (
-                  <ShortcutCard 
-                    title="Ujian" 
-                    desc="Buat & atur jadwal" 
-                    icon={<MonitorPlay className="h-6 w-6 stroke-[3]" />} 
-                    href="/admin/ujian" 
-                  />
-                )}
-                {canAccess("/admin/modul") && (
-                  <ShortcutCard 
-                    title="Bank Soal" 
-                    desc="Manajemen soal" 
-                    icon={<BookOpen className="h-6 w-6 stroke-[3]" />} 
-                    href="/admin/modul" 
-                  />
-                )}
-                {canAccess("/admin/peserta/kartu") && (
-                  <ShortcutCard 
-                    title="Kartu" 
-                    desc="Cetak kartu ujian" 
-                    icon={<FileText className="h-6 w-6 stroke-[3]" />} 
-                    href="/admin/peserta/kartu" 
-                  />
-                )}
-              </div>
-            </section>
-          )}
         </div>
       </div>
     </div>
