@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { randomBytes } from 'crypto';
 
 const prisma = new PrismaClient();
@@ -20,15 +20,17 @@ async function main() {
     }
   });
 
-  const generateOptions = (benar: string, salah1: string, salah2: string, salah3: string, salah4: string) => [
-    { id: uid(), detail: benar, benar: true },
-    { id: uid(), detail: salah1, benar: false },
-    { id: uid(), detail: salah2, benar: false },
-    { id: uid(), detail: salah3, benar: false },
-    { id: uid(), detail: salah4, benar: false },
-  ].sort(() => Math.random() - 0.5);
+  const generateOptions = (benar: string, salah1: string, salah2: string, salah3: string, salah4: string) => ({
+    create: [
+      { id: uid(), detail: benar, benar: true },
+      { id: uid(), detail: salah1, benar: false },
+      { id: uid(), detail: salah2, benar: false },
+      { id: uid(), detail: salah3, benar: false },
+      { id: uid(), detail: salah4, benar: false },
+    ].sort(() => Math.random() - 0.5)
+  });
 
-  const soals = [];
+  const soals: Prisma.SoalCreateInput[] = [];
   for (let i = 0; i < 5; i++) {
     // 1. Infus
     const vol = (Math.floor(Math.random() * 5) + 1) * 500;
@@ -112,22 +114,7 @@ async function main() {
   }
 
   for (const s of soals) {
-    await prisma.soal.create({
-      data: {
-        id: s.id,
-        topikId: s.topikId,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        tipe: s.tipe as any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        kesulitan: s.kesulitan as any,
-        detail: s.detail,
-        pembahasan: s.pembahasan,
-        createdAt: s.createdAt,
-        jawaban: {
-          create: s.jawaban
-        }
-      }
-    });
+    await prisma.soal.create({ data: s });
   }
 
   const ujianId = uid();

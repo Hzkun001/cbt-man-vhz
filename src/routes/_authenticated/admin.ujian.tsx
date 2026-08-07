@@ -68,10 +68,14 @@ function UjianList() {
       createdAt: Date.now(),
     };
     ujianRepo.upsert(u);
-    await ujianRepo.flush();
-    setList((current) => [...current, u]);
-    toast.success("Ujian baru dibuat — silakan edit");
-    setIsAdding(false);
+    const result = await ujianRepo.flush();
+    if (result.ok) {
+      setList((current) => [...current, u]);
+      toast.success("Ujian baru dibuat — silakan edit");
+      setIsAdding(false);
+    } else {
+      toast.error("Gagal membuat ujian baru");
+    }
   }
 
   const now = Date.now();

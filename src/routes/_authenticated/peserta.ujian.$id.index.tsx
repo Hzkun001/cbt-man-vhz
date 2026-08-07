@@ -150,9 +150,15 @@ function PreUjianContent({
       }
       // Atomic claim (Issue #9): must succeed before any session is created.
       // Two participants racing the same unused token cannot both win here.
+      // Note: claimExamToken is idempotent for the same participant (it succeeds if already claimed by them).
+      // So no manual rollback is needed if startSesi fails later.
       const claim = await claimExamToken(ujian.id, kode);
       if (!claim.ok) {
-        toast.error(claim.error);
+        // Hide potential internal server errors (CWE-209)
+        const msg = typeof claim.error === "string" && claim.error.length < 100 
+          ? claim.error 
+          : "Gagal menggunakan token ujian";
+        toast.error(msg);
         return;
       }
     }
