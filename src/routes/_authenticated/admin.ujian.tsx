@@ -3,6 +3,7 @@ import {
   Link,
   Outlet,
   useRouterState,
+  useNavigate,
 } from "@tanstack/react-router";
 import { useState } from "react";
 import { ujianRepo, sesiRepo } from "@/lib/cbt/repos";
@@ -34,6 +35,7 @@ function UjianRoute() {
 function UjianList() {
   const user = useAuthStore((s) => s.user)!;
   const { theme } = useThemeStore();
+  const navigate = useNavigate();
   const [list, setList] = useState<Ujian[]>(visibleUjians(user));
   const [activeTab, setActiveTab] = useState<"semua" | "persiapan" | "berlangsung" | "selesai">("semua");
   const [search, setSearch] = useState("");
@@ -70,9 +72,8 @@ function UjianList() {
     ujianRepo.upsert(u);
     const result = await ujianRepo.flush();
     if (result.ok) {
-      setList((current) => [...current, u]);
-      toast.success("Ujian baru dibuat — silakan edit");
-      setIsAdding(false);
+      toast.success("Ujian baru dibuat — silakan isi konfigurasi");
+      navigate({ to: `/admin/ujian/${u.id}` });
     } else {
       toast.error("Gagal membuat ujian baru");
     }
