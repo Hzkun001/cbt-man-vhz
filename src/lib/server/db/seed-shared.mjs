@@ -169,7 +169,7 @@ export async function createSeedDataset({ uid, now, hashPassword }) {
       config: {
         appName: "CBT-MAN",
         appLogo: "",
-        appDeskripsi: "Sistem CBT Universitas",
+        appDeskripsi: "Sistem CBT-MAN",
         pesanLogin: "Silakan login menggunakan akun Anda.",
         mobileLock: false,
         multiDevice: false,
@@ -203,9 +203,9 @@ export async function createSeedDataset({ uid, now, hashPassword }) {
   };
 
   const guruNames = [
-    ["dosen_rpl", "Dr. Dian Puspitasari, S.Kom., M.Cs."],
-    ["dosen_db", "Prof. Andri Wijaya, Ph.D."],
-    ["dosen_algo", "Rina Marlina, M.Kom."],
+    ["guru_mtk", "Dr. Dian Puspitasari, S.Kom., M.Cs.", "guru123"],
+    ["dosen_db", "Prof. Andri Wijaya, Ph.D.", "dosen123"],
+    ["dosen_algo", "Rina Marlina, M.Kom.", "dosen123"],
   ];
 
   const pesertaSeed = [
@@ -235,11 +235,11 @@ export async function createSeedDataset({ uid, now, hashPassword }) {
   ];
 
   const users = [admin, operator, evaluator1];
-  for (const [username, namaLengkap] of guruNames) {
+  for (const [username, namaLengkap, password] of guruNames) {
     users.push({
       id: uid("u_"),
       username,
-      passwordHash: await hashPassword("dosen123"),
+      passwordHash: await hashPassword(password),
       namaLengkap,
       role: "admin_prodi",
       allowedTopikIds: [],
@@ -570,7 +570,7 @@ export async function createSeedDataset({ uid, now, hashPassword }) {
 
   const config = {
     appName: "CBT-MAN",
-    appDeskripsi: "Simulasi CBT Kampus dengan data dummy realistis untuk preview lokal.",
+    appDeskripsi: "Simulasi CBT-MAN dengan data dummy realistis untuk preview lokal.",
     pesanLogin: "Selamat datang di portal ujian Universitas Teknologi Nusantara. Gunakan akun demo sesuai peran untuk mencoba alur sistem.",
     mobileLock: false,
     multiDevice: false,
