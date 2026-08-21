@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useParams, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ujianRepo, unitAkademikRepo, hydrateRepos, mataKuliahRepo, semesterRepo } from "@/lib/cbt/repos";
 
@@ -38,8 +38,15 @@ export const Route = createFileRoute("/_authenticated/admin/ujian/$id")({
       // Fallback ke cache; jangan brick navigasi saat snapshot gagal.
     }
   },
-  component: UjianEditor,
+  component: UjianEditorRoute,
 });
+
+function UjianEditorRoute() {
+  const { id } = useParams({ from: "/_authenticated/admin/ujian/$id" });
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  if (pathname !== `/admin/ujian/${id}` && pathname !== `/admin/ujian/${id}/`) return <Outlet />;
+  return <UjianEditor />;
+}
 
 function UjianEditor() {
   const { id } = useParams({ from: "/_authenticated/admin/ujian/$id" });
