@@ -264,7 +264,7 @@ function UjianEditor() {
             </div>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline" className="h-9 text-xs">
             <Link to="/admin/ujian/$id/token" params={{ id: u.id }}>
               <KeyRound className="mr-1 h-4 w-4" />
