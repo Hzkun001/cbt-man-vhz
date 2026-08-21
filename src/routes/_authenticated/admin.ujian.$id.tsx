@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, Save, Lock } from "lucide-react";
+import { Plus, Trash2, Save, Lock, ArrowLeft, FileSignature } from "lucide-react";
 import { toast } from "sonner";
 import { RichEditor } from "@/components/cbt/RichEditor";
 import { useAuthStore } from "@/lib/cbt/auth-store";
@@ -238,28 +238,38 @@ function UjianEditor() {
     navigate({ to: "/admin/ujian" });
   }
 
+  const totalSoal = u.topicSets.reduce((total, topicSet) => total + (Number(topicSet.jumlah) || 0), 0);
+
   return (
-    <div className="space-y-4 max-w-4xl">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 w-full max-w-[1600px] mx-auto pb-12">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
         <div>
-          <Link to="/admin/ujian" className="text-sm text-muted-foreground hover:underline">
-            ← Paket ujian
+          <Link to="/admin/ujian" className="mb-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
+            <ArrowLeft className="h-3.5 w-3.5" /> Kembali ke Manajemen Ujian
           </Link>
-          <h1 className="text-2xl font-semibold tracking-tight">Editor Ujian</h1>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+              <FileSignature className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Editor Paket Ujian</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{u.nama || "Ujian Baru"}</p>
+            </div>
+          </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={hapus}>
+          <Button variant="outline" className="h-9 text-xs text-destructive border-destructive/30 hover:bg-destructive/10" onClick={hapus}>
             <Trash2 className="mr-1 h-4 w-4" />
             Hapus
           </Button>
-          <Button onClick={save}>
+          <Button onClick={save} className="h-9 text-xs font-semibold shadow-xs">
             <Save className="mr-1 h-4 w-4" />
-            Simpan
+            Simpan Perubahan
           </Button>
         </div>
       </div>
 
-      <Card>
+      <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
         <CardContent className="space-y-4 p-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -313,7 +323,7 @@ function UjianEditor() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
         <CardContent className="p-4 space-y-3">
           <h3 className="font-medium">Skoring</h3>
           <div className="grid grid-cols-3 gap-3">
@@ -348,10 +358,13 @@ function UjianEditor() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
         <CardContent className="p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-medium">Topic Set (sumber soal)</h3>
+            <div>
+              <h3 className="font-medium">Topic Set (sumber soal)</h3>
+              <p className="mt-1 text-xs text-muted-foreground">Total butir soal yang dirakit: <span className="font-semibold text-foreground">{totalSoal} soal</span></p>
+            </div>
             <Button size="sm" variant="outline" onClick={addTopicSet}>
               <Plus className="mr-1 h-4 w-4" />
               Tambah
