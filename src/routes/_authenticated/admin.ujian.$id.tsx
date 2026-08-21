@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, Save, Lock, ArrowLeft, FileSignature } from "lucide-react";
+import { Plus, Trash2, Save, Lock, ArrowLeft, FileSignature, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { RichEditor } from "@/components/cbt/RichEditor";
 import { useAuthStore } from "@/lib/cbt/auth-store";
@@ -258,6 +258,12 @@ function UjianEditor() {
           </div>
         </div>
         <div className="flex gap-2">
+          <Button asChild variant="outline" className="h-9 text-xs">
+            <Link to="/admin/ujian/$id/token" params={{ id: u.id }}>
+              <KeyRound className="mr-1 h-4 w-4" />
+              Kelola Token
+            </Link>
+          </Button>
           <Button variant="outline" className="h-9 text-xs text-destructive border-destructive/30 hover:bg-destructive/10" onClick={hapus}>
             <Trash2 className="mr-1 h-4 w-4" />
             Hapus
