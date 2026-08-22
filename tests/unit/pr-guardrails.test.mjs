@@ -57,9 +57,10 @@ test("admin exam parent renders child token routes through Outlet", () => {
 test("admin exam parent keeps editor on base route and outlet on child routes", () => {
   const examRoute = readFileSync("src/routes/_authenticated/admin.ujian.$id.tsx", "utf8");
 
-  assert.match(examRoute, /pathname !== `\/admin\/ujian\/\$\{id\}`/);
-  assert.match(examRoute, /return <Outlet\s*\/>/);
-  assert.match(examRoute, /return <UjianEditor\s*\/>/);
+  assert.match(
+    examRoute,
+    /if \(pathname !== `\/admin\/ujian\/\$\{id\}` && pathname !== `\/admin\/ujian\/\$\{id\}\/`\) return <Outlet\s*\/>;\s*return <UjianEditor\s*\/>;/,
+  );
 });
 
 test("production session cookies default secure but allow explicit private-HTTP override", () => {
