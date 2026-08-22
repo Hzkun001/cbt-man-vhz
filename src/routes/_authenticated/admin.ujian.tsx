@@ -86,7 +86,7 @@ function UjianList() {
     const mk = u.mataKuliahId ? mataKuliahRepo.byId(u.mataKuliahId) : null;
 
     return (
-      <div key={u.id} className="group flex items-center justify-between p-3 sm:p-4 transition-colors bg-card border-b border-border/80 last:border-b-0 hover:bg-muted/40">
+      <div key={u.id} className="group flex flex-col gap-3 p-3 transition-colors bg-card border-b border-border/80 last:border-b-0 hover:bg-muted/40 sm:flex-row sm:items-center sm:justify-between sm:p-4">
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <div className="hidden sm:flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
             {type === "persiapan" && <Clock className="h-5 w-5 text-slate-400" />}
@@ -111,7 +111,10 @@ function UjianList() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 ml-4">
+        <div className="flex flex-wrap items-center gap-2 shrink-0 sm:ml-4">
+          <Link to="/admin/ujian/$id/token" params={{ id: u.id }} className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+            <KeyRound className="h-3.5 w-3.5" /> Kelola Token
+          </Link>
           {type === "persiapan" && (
             <>
               <Link to="/admin/ujian/$id/peserta" params={{ id: u.id }} className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-colors">
@@ -124,9 +127,6 @@ function UjianList() {
           )}
           {type === "berlangsung" && (
             <>
-              <Link to="/admin/ujian/$id/token" params={{ id: u.id }} className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-colors">
-                <KeyRound className="h-3.5 w-3.5"/> Token
-              </Link>
               <Link to="/admin/peserta/online" search={{ ujianId: u.id }} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 dark:bg-emerald-500 text-white rounded-md text-xs font-medium hover:bg-emerald-700 transition-colors">
                 <PlayCircle className="h-3.5 w-3.5"/> Pantau
               </Link>

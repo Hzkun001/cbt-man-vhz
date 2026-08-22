@@ -46,6 +46,23 @@ test("admin layout reads the authenticated route context instead of nullable cli
   assert.doesNotMatch(adminLayout, /navigate\(\{ to: "\/login" \}\)/);
 });
 
+test("admin exam parent renders child token routes through Outlet", () => {
+  const examRoute = readFileSync("src/routes/_authenticated/admin.ujian.$id.tsx", "utf8");
+
+  assert.match(examRoute, /component:\s*UjianEditorRoute/);
+  assert.match(examRoute, /return <Outlet\s*\/>/);
+  assert.match(examRoute, /<Link to="\/admin\/ujian\/\$id\/token"/);
+});
+
+test("admin exam parent keeps editor on base route and outlet on child routes", () => {
+  const examRoute = readFileSync("src/routes/_authenticated/admin.ujian.$id.tsx", "utf8");
+
+  assert.match(
+    examRoute,
+    /if \(pathname !== `\/admin\/ujian\/\$\{id\}` && pathname !== `\/admin\/ujian\/\$\{id\}\/`\) return <Outlet\s*\/>;\s*return <UjianEditor\s*\/>;/,
+  );
+});
+
 test("production session cookies default secure but allow explicit private-HTTP override", () => {
   const session = readFileSync("src/lib/server/db/session.ts", "utf8");
   const compose = readFileSync("compose.yaml", "utf8");

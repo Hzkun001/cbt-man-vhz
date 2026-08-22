@@ -175,29 +175,31 @@ function TokenPage() {
   if (!ujian) return <div className="p-4">Tidak ditemukan</div>;
 
   return (
-    <div className="max-w-4xl space-y-6">
-      <div className="space-y-1">
-        <Link to="/admin/ujian" className="text-sm text-muted-foreground hover:underline">
-          ← Kembali ke Paket Ujian
-        </Link>
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Kelola Token: {ujian.nama}</h1>
+    <div className="w-full max-w-[1600px] mx-auto space-y-6 pb-12">
+      <div className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <Link to="/admin/ujian" className="inline-flex items-center text-xs font-semibold text-muted-foreground hover:text-foreground">
+            ← Kembali ke Paket Ujian
+          </Link>
+          <h1 className="text-xl font-bold tracking-tight">Kelola Token: {ujian.nama}</h1>
+          <p className="text-sm text-muted-foreground">
+            {ujian.tokenAktif
+              ? "Token ujian aktif. Peserta wajib memasukkan salah satu token valid sebelum memulai ujian."
+              : "Token tidak diwajibkan saat ini. Anda dapat mengaktifkannya di pengaturan ujian."}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
           <Link
             to="/admin/ujian/$id"
             params={{ id: ujian.id }}
-            className="text-xs text-primary underline"
+            className="text-xs font-semibold text-primary underline"
           >
             Buka Editor Ujian →
           </Link>
         </div>
-        <p className="text-sm text-muted-foreground">
-          {ujian.tokenAktif
-            ? "Token ujian aktif. Peserta wajib memasukkan salah satu token valid sebelum memulai ujian."
-            : "Token tidak diwajibkan saat ini. Anda dapat mengaktifkannya di pengaturan ujian."}
-        </p>
       </div>
 
-      <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+      <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
         <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 pb-4">
           <CardTitle className="text-base flex items-center gap-2">
             <KeyRound className="h-5 w-5 text-primary" />
@@ -298,7 +300,7 @@ function TokenPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
         <CardHeader className="py-3 px-4 border-b">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-medium">Daftar Token Ujian ({tokens.length})</CardTitle>
