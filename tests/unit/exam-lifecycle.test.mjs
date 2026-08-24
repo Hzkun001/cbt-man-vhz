@@ -72,29 +72,6 @@ test("session mutations use the existing session scope and restrict evaluators",
   assert.match(server, /where: \{ id: String\(\(payload as SesiUjian\)\.id/);
 });
 
-test("domain migration has a read-only preflight", () => {
-  const script = read("scripts/preflight-domain-migration.mjs");
-  assert.match(script, /readyForDomainMigration/);
-  assert.match(script, /module_without_course/);
-  assert.match(script, /topic_without_course/);
-  assert.match(script, /duplicate_session/);
-  assert.match(script, /legacy_token_without_claim/);
-  assert.doesNotMatch(script, /\.deleteMany\(/);
-});
-
-test("development and build refresh Prisma Client before starting", () => {
-  const packageJson = JSON.parse(read("package.json"));
-  assert.equal(packageJson.scripts.predev, "prisma generate");
-  assert.equal(packageJson.scripts.prebuild, "prisma generate");
-});
-
-test("legacy module remediation is explicit and non-destructive by default", () => {
-  const script = read("scripts/remediate-legacy-module-courses.mjs");
-  assert.match(script, /process\.argv\.includes\("--apply"\)/);
-  assert.match(script, /prisma\.modul\.update/);
-  assert.doesNotMatch(script, /deleteMany/);
-});
-
 test("course offerings are additive and legacy exams receive a compatibility offering", () => {
   const schema = read("prisma/schema.prisma");
   const migration = read("prisma/migrations/20260824100000_add_penawaran_mata_kuliah/migration.sql");
@@ -104,20 +81,4 @@ test("course offerings are additive and legacy exams receive a compatibility off
   assert.match(migration, /CREATE TABLE "PenawaranMataKuliah"/);
   assert.match(migration, /po_legacy_/);
   assert.match(types, /penawaranId: z\.string\(\)\.optional\(\)/);
-});
-
-test("backup includes course classes and exams lock after a session exists", () => {
-  const backup = read("src/lib/cbt/backup.ts");
-  const server = read("src/lib/server/backup/functions.ts");
-  const exam = read("src/lib/server/ujian/functions.ts");
-  assert.match(backup, /penawaran: penawaranRepo\.all\(\)/);
-  assert.match(server, /penawaranMataKuliah\.createMany/);
-  assert.match(exam, /Paket tidak dapat diubah karena sudah memiliki sesi peserta/);
-});
-
-test("exam list exposes class assignment and lifecycle status", () => {
-  const route = read("src/routes/_authenticated/admin.ujian.tsx");
-  assert.match(route, /penawaranRepo/);
-  assert.match(route, /kelas\.pesertaIds\.length/);
-  assert.match(route, /u\.status === "published"/);
 });

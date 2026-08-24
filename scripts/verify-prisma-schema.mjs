@@ -1,11 +1,16 @@
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const directory = mkdtempSync(join(tmpdir(), "cbt-man-prisma-"));
+// Keep the temporary database inside the workspace. Some restricted runners
+// allow Prisma's schema engine to execute only against workspace paths.
+const directory = mkdtempSync(join(process.cwd(), ".prisma-check-"));
 const database = join(directory, "fresh.db");
-const env = { ...process.env, DATABASE_URL: `file:${database}` };
+const env = {
+  ...process.env,
+  DATABASE_URL: `file:${database}`,
+  RUST_LOG: "trace",
+};
 
 function run(args) {
   execFileSync("npx", ["prisma", ...args], { env, stdio: "inherit" });

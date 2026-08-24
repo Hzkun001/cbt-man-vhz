@@ -121,6 +121,7 @@ export const importBackupServer = createServerFn({ method: "POST" })
 						selesaiAt: toBigInt(item.selesaiAt),
 						endsAt: toBigInt(item.endsAt),
 						soalIds: stringifyJson(item.soalIds),
+						soalSnapshot: stringifyJson(item.soalSnapshot),
 						jawabanOrder: stringifyJson(item.jawabanOrder),
 						jawaban: stringifyJson(item.jawaban),
 						gradedAt: toBigInt(item.gradedAt),
