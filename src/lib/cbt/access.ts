@@ -1,11 +1,11 @@
 // Helpers untuk membatasi akses berdasarkan `allowedTopikIds` user
 // - admin selalu boleh akses semua
-// - operator: dibatasi ke topik yang ada dalam `allowedTopikIds`
-//   (kosong = boleh akses semua, sesuai UI di /admin/users/roles)
+// - operator: dibatasi oleh gabungan `allowedTopikIds` dan `mataKuliahIds`
+//   (keduanya kosong = boleh akses semua)
 // - peserta: tidak relevan (mereka mengikuti ujian, bukan kelola)
 
 import type { User, Ujian } from "./types";
-import { topikRepo, soalRepo, modulRepo, ujianRepo } from "./repos";
+import { topikRepo, soalRepo, modulRepo, ujianRepo, penawaranRepo } from "./repos";
 
 /**
  * Thrown by `buildSesi` / `findOrCreateSesi` when a participant tries to
@@ -30,17 +30,27 @@ export class PesertaNotAssignedToExamError extends Error {
 export function isUnrestricted(user: User | null | undefined): boolean {
   if (!user) return false;
   if (user.role === "super_admin") return true;
-  if (
-    (user.role === "admin_prodi" || user.role === "evaluator") &&
-    (user.allowedTopikIds?.length ?? 0) === 0
+	if (
+		(user.role === "admin_prodi" || user.role === "evaluator") &&
+		(user.allowedTopikIds?.length ?? 0) === 0 &&
+		(user.mataKuliahIds?.length ?? 0) === 0
   )
     return true;
   return false;
 }
 
 export function allowedTopikIdSet(user: User | null | undefined): Set<string> | null {
-  if (isUnrestricted(user)) return null; // null = tanpa batasan
-  return new Set(user?.allowedTopikIds ?? []);
+	if (isUnrestricted(user)) return null; // null = tanpa batasan
+	const allowed = new Set(user?.allowedTopikIds ?? []);
+	const mataKuliahIds = new Set(user?.mataKuliahIds ?? []);
+	if (mataKuliahIds.size > 0) {
+		topikRepo.all().forEach((topik) => {
+			const modul = modulRepo.byId(topik.modulId);
+			const mataKuliahId = topik.mataKuliahId ?? modul?.mataKuliahId;
+			if (mataKuliahId && mataKuliahIds.has(mataKuliahId)) allowed.add(topik.id);
+		});
+	}
+	return allowed;
 }
 
 export function isTopikAllowed(user: User | null | undefined, topikId: string): boolean {
@@ -52,8 +62,9 @@ export function isTopikAllowed(user: User | null | undefined, topikId: string): 
   const mkSet = new Set(user?.mataKuliahIds ?? []);
   const topik = topikRepo.byId(topikId);
   if (!topik) return false;
-  const modul = modulRepo.byId(topik.modulId);
-  if (modul?.mataKuliahId && mkSet.has(modul.mataKuliahId)) return true;
+	const modul = modulRepo.byId(topik.modulId);
+	const mataKuliahId = topik.mataKuliahId ?? modul?.mataKuliahId;
+	if (mataKuliahId && mkSet.has(mataKuliahId)) return true;
   
   return false;
 }
@@ -138,18 +149,16 @@ export function visibleUjians(user: User | null | undefined) {
 //      server-side `mutateEntity` calls and stale client state cannot
 //      bypass the policy (`src/lib/cbt/exam.ts`).
 //
-// An empty `ujian.groupIds` is treated as "open to all participants"
-// (existing convention: dashboards/tests rely on it). Otherwise the
-// participant's `user.groupId` must be a member of `ujian.groupIds`.
+// A participant must be explicitly assigned to at least one exam group.
 export function isParticipantAssignedToExam(
   user: User | null | undefined,
-  ujian: Pick<Ujian, "groupIds">,
+  ujian: Pick<Ujian, "groupIds" | "status" | "penawaranId">,
 ): boolean {
   if (!user) return false;
+  if (ujian.status !== "published") return false;
   const groupIds = ujian.groupIds ?? [];
-  if (groupIds.length === 0) return true;
-  if (!user.unitId) return false;
-  return groupIds.includes(user.unitId);
+  const offering = ujian.penawaranId ? penawaranRepo.byId(ujian.penawaranId) : undefined;
+  return !!offering?.pesertaIds.includes(user.id) || (!!user.unitId && groupIds.includes(user.unitId));
 }
 
 /**

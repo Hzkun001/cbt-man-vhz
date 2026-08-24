@@ -11,7 +11,6 @@ import {
 	operatorCanTouchUjian,
 	operatorCanTouchTopicSets,
 	pesertaCanTouchUjian,
-	allowedTopikIdsForCaller
 } from "../db/auth";
 import type { Ujian, TokenUjian } from "@/lib/cbt/types";
 import { writeAuditLog } from "../db/audit";
@@ -449,22 +448,9 @@ export const fetchUjianByIdServer = createServerFn({ method: "POST" })
 		if (!row) return { ok: false as const, error: "Not found" };
 
 		if (caller.role === "admin_prodi" || caller.role === "evaluator") {
-			const allowed = allowedTopikIdsForCaller(caller);
-			if (allowed) {
-				const sets = parseJson<{ topikId: string }[]>(row.topicSets, []);
-				const topicIds = new Set(sets.map((s) => s.topikId));
-				const any = [...topicIds].some((id) => allowed.has(id));
-				if (!any) return { ok: false as const, error: "Forbidden" };
-			}
+			if (!(await operatorCanTouchUjian(caller, row.id))) return { ok: false as const, error: "Forbidden" };
 		} else if (caller.role === "mahasiswa") {
-			const groupIds = parseJson<string[]>(row.groupIds, []);
-			if (
-				groupIds.length > 0 &&
-				(!caller.unitId || !groupIds.includes(caller.unitId))
-
-			) {
-				return { ok: false as const, error: "Forbidden" };
-			}
+			if (!(await pesertaCanTouchUjian(caller, row.id))) return { ok: false as const, error: "Forbidden" };
 		}
 
 		return { ok: true as const, ujian: mapUjian(row) };

@@ -62,7 +62,8 @@ export async function operatorCanTouchTopikId(caller: UserRow, topikId: string):
 			where: { id: topikId },
 			include: { modul: true },
 		});
-		if (topik?.modul?.mataKuliahId && mkIds.includes(topik.modul.mataKuliahId)) return true;
+		const mataKuliahId = topik?.mataKuliahId ?? topik?.modul?.mataKuliahId;
+		if (mataKuliahId && mkIds.includes(mataKuliahId)) return true;
 	}
 	return false;
 }
@@ -125,19 +126,20 @@ export async function operatorCanTouchUjian(
 }
 
 export async function pesertaCanTouchUjian(
-	caller: UserRow,
+	caller: Pick<UserRow, "id" | "role" | "unitId">,
 	ujianId: string,
 ): Promise<boolean> {
 	if (caller.role !== "mahasiswa") return false;
 	const ujian = await prisma.ujian.findUnique({
 		where: { id: ujianId },
-		select: { groupIds: true },
+		select: { groupIds: true, status: true, penawaran: { select: { pesertaIds: true } } },
 	});
 	if (!ujian) return false;
+	if (ujian.status !== "published") return false;
 	const groupIds = parseJson<string[]>(ujian.groupIds, []);
+	const pesertaIds = parseJson<string[]>(ujian.penawaran?.pesertaIds, []);
 	return (
-		groupIds.length === 0 ||
-		  (!!caller.unitId && groupIds.includes(caller.unitId))
+		(pesertaIds.includes(caller.id) || (groupIds.length > 0 && !!caller.unitId && groupIds.includes(caller.unitId)))
 
 	);
 }
