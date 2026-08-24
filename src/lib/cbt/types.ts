@@ -18,6 +18,9 @@ export const StatusSesiEnum = z.enum([
 ]);
 export type StatusSesi = z.infer<typeof StatusSesiEnum>;
 
+export const StatusUjianEnum = z.enum(["draft", "published"]);
+export type StatusUjian = z.infer<typeof StatusUjianEnum>;
+
 // ---------------- Master Akademik ----------------
 export const TipeUnitAkademikEnum = z.enum(["fakultas", "jurusan", "prodi", "semester", "kelas", "kategori_bebas"]);
 export type TipeUnitAkademik = z.infer<typeof TipeUnitAkademikEnum>;
@@ -52,9 +55,19 @@ export const MataKuliahSchema = z.object({
 	sks: z.number().int().default(2),
 	unitId: z.string().optional(),
 	semesterId: z.string().optional(),
-
 });
 export type MataKuliah = z.infer<typeof MataKuliahSchema>;
+
+export const PenawaranMataKuliahSchema = z.object({
+	id: z.string(),
+	mataKuliahId: z.string().min(1),
+	semesterId: z.string().optional(),
+	kodeKelas: z.string().default(""),
+	pengampuIds: z.array(z.string()).default([]),
+	pesertaIds: z.array(z.string()).default([]),
+	createdAt: z.number(),
+});
+export type PenawaranMataKuliah = z.infer<typeof PenawaranMataKuliahSchema>;
 
 // ---------------- User & Role ----------------
 export const UserSchema = z.object({
@@ -87,6 +100,7 @@ export type Modul = z.infer<typeof ModulSchema>;
 export const TopikSchema = z.object({
 	id: z.string(),
 	modulId: z.string(),
+	mataKuliahId: z.string().optional(),
 	nama: z.string(),
 });
 export type Topik = z.infer<typeof TopikSchema>;
@@ -128,6 +142,7 @@ export type TopicSet = z.infer<typeof TopicSetSchema>;
 export const UjianSchema = z.object({
 	id: z.string(),
 	nama: z.string(),
+	status: StatusUjianEnum.default("draft"),
 	deskripsi: z.string().default(""),
 	durasiMenit: z.number().int().positive(),
 	poinBenar: z.number().default(1),
@@ -142,6 +157,7 @@ export const UjianSchema = z.object({
 	groupIds: z.array(z.string()).default([]),
 	mataKuliahId: z.string().optional(),
 	semesterId: z.string().optional(),
+	penawaranId: z.string().optional(),
 	topicSets: z.array(TopicSetSchema).default([]),
 	showResult: z.boolean().default(true),
 	showResultDetail: z.boolean().default(false),
@@ -209,6 +225,7 @@ export const SesiUjianSchema = z.object({
 	selesaiAt: z.number().optional(),
 	endsAt: z.number().optional(),
 	soalIds: z.array(z.string()).default([]),
+	soalSnapshot: z.array(SoalSchema).default([]),
 	jawabanOrder: z.record(z.string(), z.array(z.string())).default({}),
 	jawaban: z.array(JawabanSesiSchema).default([]),
 	pelanggaran: z.number().default(0),

@@ -23,6 +23,39 @@ import { checkRateLimit, clearRateLimit } from "@/lib/cbt/rate-limit";
 import { getRequestIP } from "@tanstack/start-server-core";
 import { ipInRanges } from "@/lib/cbt/cidr";
 
+async function getPublishError(item: Ujian): Promise<string | null> {
+	if (item.status !== "draft") return "Paket ujian sudah dipublikasikan.";
+	if (item.topicSets.length === 0) return "Tambahkan minimal satu sumber soal.";
+	if (item.beginAt === undefined || item.endAt === undefined) return "Atur waktu mulai dan selesai.";
+	if (item.endAt <= item.beginAt) return "Waktu selesai harus setelah waktu mulai.";
+	if (!item.penawaranId) return "Pilih kelas mata kuliah.";
+	const penawaran = await prisma.penawaranMataKuliah.findUnique({ where: { id: item.penawaranId } });
+	if (!penawaran || penawaran.mataKuliahId !== item.mataKuliahId || (penawaran.semesterId ?? undefined) !== item.semesterId) {
+		return "Kelas mata kuliah tidak sesuai dengan paket.";
+	}
+	if (item.groupIds.length === 0 && parseJson<string[]>(penawaran.pesertaIds, []).length === 0) return "Pilih peserta pada kelas mata kuliah.";
+	const topikIds = item.topicSets.map((set) => set.topikId);
+	if (new Set(topikIds).size !== topikIds.length) return "Topik sumber soal tidak boleh duplikat.";
+	const topiks = await prisma.topik.findMany({
+		where: { id: { in: topikIds } },
+		include: { modul: true, soal: true },
+	});
+	const topikById = new Map(topiks.map((topik) => [topik.id, topik]));
+	for (const set of item.topicSets) {
+		const topik = topikById.get(set.topikId);
+		if (!topik) return "Ada topik sumber soal yang tidak ditemukan.";
+		const topikMataKuliahId = topik.mataKuliahId ?? topik.modul?.mataKuliahId;
+		if (item.mataKuliahId && topikMataKuliahId !== item.mataKuliahId) {
+			return `Topik "${topik.nama}" bukan bagian dari mata kuliah paket.`;
+		}
+		const pool = topik.soal.filter((soal) =>
+			(!set.tipe || soal.tipe === set.tipe) && (!set.kesulitan || soal.kesulitan === set.kesulitan),
+		);
+		if (pool.length < set.jumlah) return `Soal pada topik "${topik.nama}" belum mencukupi.`;
+	}
+	return null;
+}
+
 function audit(caller: any, entity: string, action: string, payload: any) {
 	if (caller) {
 		writeAuditLog({
@@ -38,10 +71,23 @@ function audit(caller: any, entity: string, action: string, payload: any) {
 	}
 }
 
+function validateUjianForSave(item: Ujian) {
+	if (!item.nama.trim()) throw new Error("Nama paket ujian wajib diisi.");
+	if (!Number.isInteger(item.durasiMenit) || item.durasiMenit < 1) {
+		throw new Error("Durasi paket ujian harus minimal 1 menit.");
+	}
+	if (item.beginAt !== undefined && item.endAt !== undefined && item.endAt <= item.beginAt) {
+		throw new Error("Waktu selesai harus setelah waktu mulai.");
+	}
+	if (item.topicSets.some((set) => !Number.isInteger(set.jumlah) || set.jumlah < 1)) {
+		throw new Error("Jumlah soal pada setiap sumber harus minimal 1.");
+	}
+}
+
 export const mutateUjianServer = createServerFn({ method: "POST" })
 	.validator(
 		z.object({
-			action: z.enum(["upsert", "remove", "bulkSet"]),
+			action: z.enum(["upsert", "remove", "bulkSet", "publish"]),
 			payload: z.any(),
 		}),
 	)
@@ -56,7 +102,7 @@ export const mutateUjianServer = createServerFn({ method: "POST" })
 			if (caller.role === "admin_prodi") {
 				if (!(await operatorHasNav(caller, "ujian")))
 					return { ok: false as const, error: "Forbidden" };
-				if (action === "remove") {
+				if (action === "remove" || action === "publish") {
 					const id = String((payload as { id?: string }).id ?? "");
 					if (!(await operatorCanTouchUjian(caller, id))) return { ok: false as const, error: "Forbidden" };
 				} else {
@@ -68,6 +114,33 @@ export const mutateUjianServer = createServerFn({ method: "POST" })
 			}
 
 			audit(caller, "ujian", action, payload);
+
+			if (action === "publish") {
+				const row = await prisma.ujian.findUnique({ where: { id: String(payload.id) } });
+				if (!row) return { ok: false as const, error: "Ujian tidak ditemukan." };
+				const error = await getPublishError(mapUjian(row));
+				if (error) return { ok: false as const, error };
+				await prisma.ujian.update({ where: { id: row.id }, data: { status: "published" } });
+				audit(caller, "ujian", action, payload);
+				return { ok: true as const };
+			}
+
+			if (action === "upsert") {
+				const item = payload as Ujian;
+				const existing = await prisma.ujian.findUnique({
+					where: { id: item.id },
+					select: { id: true, status: true, createdAt: true },
+				});
+				if (existing) {
+					if (existing.status === "published") {
+						return { ok: false as const, error: "Paket published hanya dapat diubah melalui alur revisi." };
+					}
+					const sessionCount = await prisma.sesiUjian.count({ where: { ujianId: item.id } });
+					if (sessionCount > 0) {
+						return { ok: false as const, error: "Paket tidak dapat diubah karena sudah memiliki sesi peserta." };
+					}
+				}
+			}
 
 			await prisma.$transaction(async (tx) => {
 				if (action === "remove")
@@ -88,23 +161,45 @@ export const mutateUjianServer = createServerFn({ method: "POST" })
 					}
 				} else {
 					const item = payload as Ujian;
+					validateUjianForSave(item);
+					const existing = await tx.ujian.findUnique({
+						where: { id: item.id },
+						select: { createdAt: true },
+					});
+					const writeData = {
+						nama: item.nama,
+						deskripsi: item.deskripsi,
+						durasiMenit: item.durasiMenit,
+						poinBenar: item.poinBenar,
+						poinSalah: item.poinSalah,
+						poinKosong: item.poinKosong,
+						beginAt: toBigInt(item.beginAt),
+						endAt: toBigInt(item.endAt),
+						tokenAktif: item.tokenAktif,
+						ipRange: item.ipRange,
+						groupIds: stringifyJson(item.groupIds),
+						mataKuliahId: item.mataKuliahId ?? null,
+						semesterId: item.semesterId ?? null,
+						penawaranId: item.penawaranId ?? null,
+						topicSets: stringifyJson(item.topicSets),
+						showResult: item.showResult,
+						showResultDetail: item.showResultDetail,
+						fullscreenWajib: item.fullscreenWajib,
+						maxPindahTab: item.maxPindahTab,
+						blokirShortcut: item.blokirShortcut,
+						mode: item.mode,
+						allowCalculator: item.allowCalculator,
+						allowNilaiNormal: item.allowNilaiNormal,
+					};
 					await tx.ujian.upsert({
 						where: { id: item.id },
-						update: {
-							...item,
-							beginAt: toBigInt(item.beginAt),
-							endAt: toBigInt(item.endAt),
-							groupIds: stringifyJson(item.groupIds),
-							topicSets: stringifyJson(item.topicSets),
-							createdAt: BigInt(item.createdAt),
-						},
+						update: writeData,
 						create: {
-							...item,
-							beginAt: toBigInt(item.beginAt),
-							endAt: toBigInt(item.endAt),
-							groupIds: stringifyJson(item.groupIds),
-							topicSets: stringifyJson(item.topicSets),
-							createdAt: BigInt(item.createdAt),
+							id: item.id,
+							...writeData,
+							status: "draft",
+							createdBy: caller.id,
+							createdAt: existing?.createdAt ?? BigInt(Date.now()),
 						},
 					});
 				}

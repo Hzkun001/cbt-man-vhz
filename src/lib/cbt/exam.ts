@@ -58,6 +58,7 @@ export function buildSesi(ujian: Ujian, pesertaId: string, user?: User | null): 
     pesertaId,
     status: "belum",
     soalIds: soalTerpilih.map((s) => s.id),
+    soalSnapshot: soalTerpilih,
     jawabanOrder,
     jawaban: soalTerpilih.map((s) => ({
       soalId: s.id,
@@ -76,7 +77,7 @@ export function startSesi(sesi: SesiUjian, ujian: Ujian): SesiUjian {
     ...sesi,
     status: "sedang",
     mulaiAt: now,
-    endsAt: now + ujian.durasiMenit * 60_000,
+    endsAt: Math.min(now + ujian.durasiMenit * 60_000, ujian.endAt ?? Number.MAX_SAFE_INTEGER),
   };
   sesiRepo.upsert(updated);
   return updated;

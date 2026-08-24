@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { AppConfig, Modul, NavKey, Soal, SesiUjian, TokenUjian, Topik, Ujian, User, UnitAkademik, TahunAkademik, Semester, MataKuliah } from "@/lib/cbt/types";
+import type { AppConfig, Modul, NavKey, Soal, SesiUjian, TokenUjian, Topik, Ujian, User, UnitAkademik, TahunAkademik, Semester, MataKuliah, PenawaranMataKuliah } from "@/lib/cbt/types";
 import { prisma } from "@/lib/server/db/prisma";
 import { parseJson, toNumber } from "@/lib/server/db/json";
 
@@ -9,6 +9,7 @@ export type Snapshot = {
 	tahunAkademik: TahunAkademik[];
 	semester: Semester[];
 	mataKuliah: MataKuliah[];
+	penawaran: PenawaranMataKuliah[];
 	modul: Modul[];
 	topik: Topik[];
 	soal: Soal[];
@@ -33,6 +34,7 @@ export type SnapshotRows = {
 	tahunAkademik: TahunAkademik[];
 	semester: Semester[];
 	mataKuliah: MataKuliah[];
+	penawaran: PenawaranMataKuliah[];
 	modul: Modul[];
 	topik: Topik[];
 	soal: SoalRow[];
@@ -135,6 +137,7 @@ export function mapUjian(
 	return {
 		id: row.id,
 		nama: row.nama,
+		status: row.status as "draft" | "published",
 		deskripsi: row.deskripsi,
 		durasiMenit: row.durasiMenit,
 		poinBenar: row.poinBenar,
@@ -147,6 +150,7 @@ export function mapUjian(
 		groupIds: parseJson(row.groupIds, []),
 		mataKuliahId: row.mataKuliahId ?? undefined,
 		semesterId: row.semesterId ?? undefined,
+		penawaranId: row.penawaranId ?? undefined,
 		topicSets: parseJson(row.topicSets, []),
 		showResult: row.showResult,
 		showResultDetail: row.showResultDetail,
@@ -157,6 +161,18 @@ export function mapUjian(
 		allowCalculator: row.allowCalculator,
 		allowNilaiNormal: Boolean(row.allowNilaiNormal),
 		createdBy: row.createdBy,
+		createdAt: Number(row.createdAt),
+	};
+}
+
+export function mapPenawaran(row: Awaited<ReturnType<typeof prisma.penawaranMataKuliah.findMany>>[number]): PenawaranMataKuliah {
+	return {
+		id: row.id,
+		mataKuliahId: row.mataKuliahId,
+		semesterId: row.semesterId ?? undefined,
+		kodeKelas: row.kodeKelas,
+		pengampuIds: parseJson(row.pengampuIds, []),
+		pesertaIds: parseJson(row.pesertaIds, []),
 		createdAt: Number(row.createdAt),
 	};
 }
@@ -186,6 +202,7 @@ export function mapSesi(
 		selesaiAt: toNumber(row.selesaiAt),
 		endsAt: toNumber(row.endsAt),
 		soalIds: parseJson(row.soalIds, []),
+		soalSnapshot: parseJson(row.soalSnapshot, []),
 		jawabanOrder: parseJson(row.jawabanOrder, {}),
 		jawaban: parseJson(row.jawaban, []),
 		pelanggaran: row.pelanggaran,

@@ -25,6 +25,7 @@ import type {
 	TahunAkademik,
 	Semester,
 	MataKuliah,
+	PenawaranMataKuliah,
 	PublicExamSchedule,
 } from "./types";
 
@@ -40,6 +41,7 @@ type EntityName =
 	| "tahunAkademik"
 	| "semester"
 	| "mataKuliah"
+	| "penawaran"
 	| "modul"
 	| "topik"
 	| "soal"
@@ -65,6 +67,7 @@ const cache = {
 	tahunAkademik: [] as TahunAkademik[],
 	semester: [] as Semester[],
 	mataKuliah: [] as MataKuliah[],
+	penawaran: [] as PenawaranMataKuliah[],
 	modul: [] as Modul[],
 	topik: [] as Topik[],
 	soal: [] as Soal[],
@@ -103,6 +106,7 @@ function applySnapshot(snapshot: Snapshot) {
 	cache.tahunAkademik = snapshot.tahunAkademik;
 	cache.semester = snapshot.semester;
 	cache.mataKuliah = snapshot.mataKuliah;
+	cache.penawaran = snapshot.penawaran;
 	cache.modul = snapshot.modul;
 	cache.topik = snapshot.topik;
 	cache.soal = snapshot.soal;
@@ -369,6 +373,14 @@ export const ujianRepo = createRepo(
 	() => cache.ujian,
 	(items) => {
 		cache.ujian = items;
+	},
+);
+
+export const penawaranRepo = createRepo(
+	"penawaran",
+	() => cache.penawaran,
+	(items) => {
+		cache.penawaran = items;
 	},
 );
 
