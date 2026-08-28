@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import {
   usersRepo,
   unitAkademikRepo,
+  mataKuliahRepo,
+  penawaranRepo,
   modulRepo,
   topikRepo,
   soalRepo,
@@ -18,6 +20,8 @@ import {
 import {
   UserSchema,
   UnitAkademikSchema,
+  MataKuliahSchema,
+  PenawaranMataKuliahSchema,
   ModulSchema,
   TopikSchema,
   SoalSchema,
@@ -45,6 +49,8 @@ export const BackupSchema = z.object({
   exportedAt: z.number(),
   users: z.array(UserSchema),
   unitAkademik: z.array(UnitAkademikSchema),
+  mataKuliah: z.array(MataKuliahSchema).default([]),
+  penawaran: z.array(PenawaranMataKuliahSchema).default([]),
   modul: z.array(ModulSchema),
   topik: z.array(TopikSchema),
   soal: z.array(SoalSchema),
@@ -64,6 +70,8 @@ export async function exportBackup(): Promise<Backup> {
     exportedAt: Date.now(),
     users: usersRepo.all(),
     unitAkademik: unitAkademikRepo.all(),
+    mataKuliah: mataKuliahRepo.all(),
+    penawaran: penawaranRepo.all(),
     modul: modulRepo.all(),
     topik: topikRepo.all(),
     soal: soalRepo.all(),
@@ -117,6 +125,8 @@ export async function importBackup(raw: any): Promise<Backup> {
     data: {
       users: data.users,
       unitAkademik: data.unitAkademik,
+      mataKuliah: data.mataKuliah,
+      penawaran: data.penawaran,
       modul: data.modul,
       topik: data.topik,
       soal: data.soal,
@@ -142,6 +152,8 @@ export function backupSummary(b: Backup) {
   return {
     users: b.users.length,
     unitAkademik: b.unitAkademik.length,
+    mataKuliah: b.mataKuliah.length,
+    penawaran: b.penawaran.length,
     modul: b.modul.length,
     topik: b.topik.length,
     soal: b.soal.length,

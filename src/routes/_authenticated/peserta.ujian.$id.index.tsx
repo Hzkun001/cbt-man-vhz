@@ -3,7 +3,6 @@ import { useState } from "react";
 import {
   ujianRepo,
   sesiRepo,
-  tokenRepo,
   hydrateRepos,
   invalidateReposCache,
   claimExamToken,
@@ -143,18 +142,6 @@ function PreUjianContent({
       const kode = token.trim().toUpperCase();
       if (kode.length === 0) {
         toast.error("Masukkan token");
-        return;
-      }
-      // Advisory pre-check only: surface an obvious "already used by someone
-      // else" from the local cache for a snappier message. On a cache miss or
-      // any stale state we FALL THROUGH to the server — `claimExamToken` is the
-      // sole authority and must not be short-circuited by the client cache
-      // (e.g. a token generated after this client hydrated).
-      const tokenRow = tokenRepo
-        .all()
-        .find((t) => t.ujianId === ujian.id && t.kode.toUpperCase() === kode);
-      if (tokenRow?.dipakaiOleh && tokenRow.dipakaiOleh !== user.id) {
-        toast.error("Token sudah dipakai peserta lain");
         return;
       }
       // Atomic claim (Issue #9): must succeed before any session is created.

@@ -34,7 +34,8 @@ function extractFileIds(html) {
 function pesertaCanAccessFile(caller, fileId, db) {
   const assigned = db.ujian.filter((u) => {
     const g = u.groupIds ?? [];
-    return g.length === 0 || (!!caller.groupId && g.includes(caller.groupId));
+    return u.status === "published" &&
+      (u.pesertaIds?.includes(caller.id) || (g.length > 0 && !!caller.groupId && g.includes(caller.groupId)));
   });
   const assignedById = new Map(assigned.map((u) => [u.id, u]));
   const allowed = new Set();
@@ -77,12 +78,13 @@ function baseDb() {
     ujian: [
       {
         id: "uj_assigned",
+        status: "published",
         groupIds: ["g_1"],
         deskripsi: '<p>see <img src="file://f_desc"></p>',
         showResult: true,
         showResultDetail: true,
       },
-      { id: "uj_other", groupIds: ["g_2"], deskripsi: '<img src="file://f_other">' },
+      { id: "uj_other", status: "published", groupIds: ["g_2"], deskripsi: '<img src="file://f_other">' },
     ],
     sesi: [{ pesertaId: "u_1", ujianId: "uj_assigned", soalIds: ["s_1"], status: "selesai" }],
     soal: [
@@ -132,7 +134,7 @@ test("denies a soal pembahasan file when the exam hides results entirely", () =>
 
 test("redaction wins when the same soal is shared with an ongoing sesi", () => {
   const db = baseDb();
-  db.ujian.push({ id: "uj_ongoing", groupIds: ["g_1"], deskripsi: "", showResult: true, showResultDetail: true });
+  db.ujian.push({ id: "uj_ongoing", status: "published", groupIds: ["g_1"], deskripsi: "", showResult: true, showResultDetail: true });
   db.sesi.push({ pesertaId: "u_1", ujianId: "uj_ongoing", soalIds: ["s_1"], status: "berlangsung" });
   assert.equal(pesertaCanAccessFile(peserta, "f_pemb", db), false);
   // The question body itself remains accessible for the ongoing exam.
@@ -161,9 +163,9 @@ test("denies a soal file when the peserta has no sesi for that exam", () => {
   assert.equal(pesertaCanAccessFile(peserta, "f_soal", db), false);
 });
 
-test("open exam (empty groupIds) exposes its description files to any peserta", () => {
+test("empty groupIds does not bypass participant assignment", () => {
   const db = baseDb();
-  db.ujian = [{ id: "uj_open", groupIds: [], deskripsi: '<img src="file://f_open">' }];
+  db.ujian = [{ id: "uj_open", status: "published", groupIds: [], deskripsi: '<img src="file://f_open">' }];
   db.sesi = [];
-  assert.equal(pesertaCanAccessFile(peserta, "f_open", db), true);
+  assert.equal(pesertaCanAccessFile(peserta, "f_open", db), false);
 });

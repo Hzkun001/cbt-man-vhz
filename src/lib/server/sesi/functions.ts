@@ -19,6 +19,7 @@ import { gradeAnswers } from "@/lib/cbt/scoring";
 import { validateParticipantAnswers } from "@/lib/cbt/session-answers";
 import { uid } from "@/lib/cbt/storage";
 import { mapSoal, mapSesi, mapUjian } from "../repos/mappers";
+import { Prisma } from "@prisma/client";
 
 const OPERATOR_SESSION_KEYS: NavKey[] = [
 	"ujian",
@@ -27,6 +28,7 @@ const OPERATOR_SESSION_KEYS: NavKey[] = [
 	"laporan",
 	"leaderboard",
 ];
+const SUBMIT_GRACE_MS = 30_000;
 
 // Authoritative server-side grading at submit time. The participant's client
 // also computes a provisional grade for instant display, but the persisted
@@ -36,11 +38,15 @@ const OPERATOR_SESSION_KEYS: NavKey[] = [
 async function gradeSesiServerSide(item: SesiUjian): Promise<SesiUjian> {
 	const ujianRow = await prisma.ujian.findUnique({ where: { id: item.ujianId } });
 	if (!ujianRow) return { ...item, skorTotal: undefined, maxSkor: undefined };
-	const soalRows = await prisma.soal.findMany({
-		where: { id: { in: item.soalIds } },
-		include: { jawaban: true },
-	});
-	const soalById = new Map(soalRows.map((r) => [r.id, mapSoal(r)]));
+	const soalById = new Map(
+		(item.soalSnapshot.length > 0
+			? item.soalSnapshot
+			: (await prisma.soal.findMany({
+					where: { id: { in: item.soalIds } },
+					include: { jawaban: true },
+				})).map(mapSoal)
+		).map((soal) => [soal.id, soal] as const),
+	);
 	const { jawaban, skorTotal, maxSkor } = gradeAnswers(mapUjian(ujianRow), soalById, item.jawaban);
 	return {
 		...item,
@@ -92,7 +98,16 @@ export const saveParticipantSesiServer = createServerFn({ method: "POST" })
 			const now = Date.now();
 			const endsAt = toNumber(sesiRow.endsAt);
 			const examEndAt = toNumber(sesiRow.ujian.endAt);
-			if ((endsAt !== undefined && now > endsAt) || (examEndAt !== undefined && now > examEndAt)) {
+			const timedOut =
+				(endsAt !== undefined && now > endsAt) ||
+				(examEndAt !== undefined && now > examEndAt);
+			// Allow the client's final submit to arrive after the deadline; a plain
+			// autosave after the deadline must still be rejected.
+			const deadline = Math.min(
+				endsAt ?? Number.POSITIVE_INFINITY,
+				examEndAt ?? Number.POSITIVE_INFINITY,
+			);
+			if (timedOut && (data.action !== "submit" || now > deadline + SUBMIT_GRACE_MS)) {
 				return { ok: false as const, error: "Ujian sudah berakhir" };
 			}
 
@@ -107,11 +122,17 @@ export const saveParticipantSesiServer = createServerFn({ method: "POST" })
 			}
 
 			const soalIds = parseJson<string[]>(sesiRow.soalIds, []);
-			const soalRows = await prisma.soal.findMany({
-				where: { id: { in: soalIds } },
-				include: { jawaban: true },
-			});
-			const soalById = new Map(soalRows.map((row) => [row.id, mapSoal(row)]));
+			const soalById = new Map(
+			(sesiRow.soalSnapshot
+				? parseJson<ReturnType<typeof mapSoal>[]>(sesiRow.soalSnapshot, [])
+				: []
+			).length > 0
+				? parseJson<ReturnType<typeof mapSoal>[]>(sesiRow.soalSnapshot, []).map((soal) => [soal.id, soal] as const)
+				: (await prisma.soal.findMany({
+						where: { id: { in: soalIds } },
+						include: { jawaban: true },
+					})).map((row) => [row.id, mapSoal(row)] as const),
+		);
 			const jawaban = validateParticipantAnswers(soalIds, soalById, data.jawaban);
 			if (!jawaban) {
 				return { ok: false as const, error: "Jawaban ujian tidak valid." };
@@ -167,6 +188,9 @@ export const mutateSesiServer = createServerFn({ method: "POST" })
 			if (caller.role === "admin_prodi" || caller.role === "evaluator") {
 				if (!(await operatorHasAnyNav(caller, OPERATOR_SESSION_KEYS)))
 					return { ok: false as const, error: "Forbidden" };
+				if (caller.role === "evaluator" && action !== "upsert") {
+					return { ok: false as const, error: "Evaluator hanya dapat memperbarui penilaian." };
+				}
 				const ujianId =
 					action === "remove"
 						? (
@@ -175,7 +199,12 @@ export const mutateSesiServer = createServerFn({ method: "POST" })
 									select: { ujianId: true },
 								})
 							)?.ujianId
-						: (payload as SesiUjian).ujianId;
+						: action === "upsert"
+							? ((await prisma.sesiUjian.findUnique({
+									where: { id: String((payload as SesiUjian).id ?? "") },
+									select: { ujianId: true },
+								}))?.ujianId ?? (payload as SesiUjian).ujianId)
+							: undefined;
 				if (!ujianId || !(await operatorCanTouchUjian(caller, ujianId))) {
 					return { ok: false as const, error: "Forbidden" };
 				}
@@ -205,6 +234,16 @@ export const mutateSesiServer = createServerFn({ method: "POST" })
 							pelanggaran: item.pelanggaran,
 						}
 					: item;
+				if (caller.role === "evaluator") {
+					if (!existingItem || existingItem.status !== "selesai") {
+						return { ok: false as const, error: "Sesi belum selesai untuk dievaluasi." };
+					}
+					upsertItem = {
+						...upsertItem,
+						status: existingItem.status,
+						pelanggaran: existingItem.pelanggaran,
+					};
+				}
 				if (upsertItem.status === "selesai") {
 					upsertItem = {
 						...(await gradeSesiServerSide(upsertItem)),
@@ -228,6 +267,7 @@ export const mutateSesiServer = createServerFn({ method: "POST" })
 							selesaiAt: toBigInt(item.selesaiAt),
 							endsAt: toBigInt(item.endsAt),
 							soalIds: stringifyJson(item.soalIds),
+							soalSnapshot: stringifyJson(item.soalSnapshot),
 							jawabanOrder: stringifyJson(item.jawabanOrder),
 							jawaban: stringifyJson(item.jawaban),
 							gradedAt: toBigInt(item.gradedAt),
@@ -265,6 +305,7 @@ export const mutateSesiServer = createServerFn({ method: "POST" })
 						mulaiAt: toBigInt(item.mulaiAt),
 						endsAt: toBigInt(item.endsAt),
 						soalIds: stringifyJson(item.soalIds),
+						soalSnapshot: stringifyJson(item.soalSnapshot),
 						jawabanOrder: stringifyJson(item.jawabanOrder),
 						createdAt: BigInt(item.createdAt),
 					};
@@ -396,6 +437,7 @@ export const createSesiServer = createServerFn({ method: "POST" })
 			if (!ujianRow) return { ok: false as const, error: "Ujian tidak ditemukan." };
 
 			const ujian = mapUjian(ujianRow);
+			if (ujian.status !== "published") return { ok: false as const, error: "Ujian belum dipublikasikan." };
 
 			// 1. Idempotent resume: jika sudah ada sesi yang sedang berlangsung
 			const existing = await prisma.sesiUjian.findFirst({
@@ -437,8 +479,8 @@ export const createSesiServer = createServerFn({ method: "POST" })
 
 			// 5. Validasi Token
 			if (ujian.tokenAktif) {
-				const claimed = await prisma.tokenUjian.findFirst({
-					where: { ujianId: ujian.id, dipakaiOleh: caller.id },
+				const claimed = await prisma.tokenClaim.findUnique({
+					where: { ujianId_pesertaId: { ujianId: ujian.id, pesertaId: caller.id } },
 				});
 				if (!claimed) {
 					return {
@@ -463,7 +505,15 @@ export const createSesiServer = createServerFn({ method: "POST" })
 			}
 
 			const soalTerpilih = [];
+			const sourceTopikIds = new Set<string>();
 			for (const ts of ujian.topicSets) {
+				if (sourceTopikIds.has(ts.topikId)) {
+					return {
+						ok: false as const,
+						error: "Sumber topik duplikat tidak dapat digunakan untuk membuat sesi.",
+					};
+				}
+				sourceTopikIds.add(ts.topikId);
 				let pool = soalPools.get(ts.topikId) || [];
 				if (ts.tipe) pool = pool.filter((s) => s.tipe === ts.tipe);
 				if (ts.kesulitan) pool = pool.filter((s) => s.kesulitan === ts.kesulitan);
@@ -501,8 +551,14 @@ export const createSesiServer = createServerFn({ method: "POST" })
 					pesertaId: caller.id,
 					status: "sedang",
 					mulaiAt: BigInt(now),
-					endsAt: BigInt(now + ujian.durasiMenit * 60_000),
+					endsAt: BigInt(
+						Math.min(
+							now + ujian.durasiMenit * 60_000,
+							ujian.endAt ?? Number.MAX_SAFE_INTEGER,
+						),
+					),
 					soalIds: stringifyJson(soalTerpilih.map((s) => s.id)),
+					soalSnapshot: stringifyJson(soalTerpilih.map(mapSoal)),
 					jawabanOrder: stringifyJson(jawabanOrder),
 					jawaban: stringifyJson(
 						soalTerpilih.map((s) => ({
@@ -518,6 +574,16 @@ export const createSesiServer = createServerFn({ method: "POST" })
 
 			return { ok: true as const, sesiId };
 		} catch (err) {
+			if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+				const retryCaller = await requireCaller();
+				if (!retryCaller) return { ok: false as const, error: "Forbidden" };
+				const existing = await prisma.sesiUjian.findUnique({
+					where: { ujianId_pesertaId: { ujianId: data.ujianId, pesertaId: retryCaller.id } },
+					select: { id: true, status: true },
+				});
+				if (existing?.status !== "selesai") return { ok: true as const, sesiId: existing!.id };
+				return { ok: false as const, error: "Ujian sudah selesai dikerjakan." };
+			}
 			console.error("[createSesiServer]", err);
 			return { ok: false as const, error: "Gagal membuat sesi ujian." };
 		}

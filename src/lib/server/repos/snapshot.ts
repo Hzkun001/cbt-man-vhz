@@ -9,14 +9,14 @@ import {
 	mapSoal, 
 	mapUjian, 
 	mapToken, 
-	mapSesi, 
+	mapSesi, mapPenawaran,
 	buildConfig 
 } from "./mappers";
 
 export async function loadSnapshotRows(): Promise<SnapshotRows> {
 		const [
 			users, unitAkademik, tahunAkademik, semester, mataKuliah,
-			modul, topik, soal,
+			modul, topik, penawaran, soal,
 			ujian, token, sesi, config
 		] = await Promise.all([
 			prisma.user.findMany({ include: { createdUjians: false } }),
@@ -27,6 +27,7 @@ export async function loadSnapshotRows(): Promise<SnapshotRows> {
 			prisma.mataKuliah.findMany({ orderBy: { nama: "asc" } }),
 			prisma.modul.findMany({ orderBy: { nama: "asc" } }),
 			prisma.topik.findMany({ orderBy: { nama: "asc" } }),
+			prisma.penawaranMataKuliah.findMany({ orderBy: { createdAt: "asc" } }),
 			prisma.soal.findMany({
 				include: { jawaban: true },
 				orderBy: { createdAt: "asc" },
@@ -42,9 +43,10 @@ export async function loadSnapshotRows(): Promise<SnapshotRows> {
 		unitAkademik: unitAkademik as any,
 		tahunAkademik, semester, 
 		mataKuliah: mataKuliah.map(m => ({ ...m, unitId: m.unitId ?? undefined, semesterId: m.semesterId ?? undefined })),
+		penawaran: penawaran.map(mapPenawaran),
 
 		modul: modul.map(m => ({ ...m, mataKuliahId: m.mataKuliahId ?? undefined })), 
-		topik, soal, ujian, token, sesi, config 
+		topik: topik.map((item) => ({ ...item, mataKuliahId: item.mataKuliahId ?? undefined })), soal, ujian, token, sesi, config
 	};
 }
 
@@ -56,8 +58,9 @@ export function adminSnapshot(rows: SnapshotRows): Snapshot {
 		tahunAkademik: rows.tahunAkademik,
 		semester: rows.semester,
 		mataKuliah: rows.mataKuliah,
+		penawaran: rows.penawaran,
 		modul: rows.modul,
-		topik: rows.topik,
+		topik: rows.topik.map((item) => ({ ...item, mataKuliahId: item.mataKuliahId ?? undefined })),
 		soal: rows.soal.map(mapSoal),
 		ujian: rows.ujian.map(mapUjian),
 		token: rows.token.map(mapToken),
@@ -67,22 +70,31 @@ export function adminSnapshot(rows: SnapshotRows): Snapshot {
 }
 
 export function operatorSnapshot(rows: SnapshotRows, caller: UserRow): Snapshot {
-	let parsedAllowedTopikIds: string[] | null = null;
-	try {
-		const parsed = JSON.parse(caller.allowedTopikIds || "[]");
-		if (Array.isArray(parsed) && parsed.every((item) => typeof item === "string")) {
-			parsedAllowedTopikIds = parsed;
+	const parseScope = (value: string) => {
+		try {
+			const parsed = JSON.parse(value || "[]");
+			return Array.isArray(parsed) && parsed.every((item) => typeof item === "string") ? parsed : null;
+		} catch {
+			return null;
 		}
-	} catch {
-		// malformed JSON -> fail closed
-	}
-	const unrestricted = parsedAllowedTopikIds !== null && parsedAllowedTopikIds.length === 0;
-	const allowedTopikIds = unrestricted
-		? null
-		: new Set(parsedAllowedTopikIds || []);
-	const topik = allowedTopikIds
-		? rows.topik.filter((item) => allowedTopikIds.has(item.id))
-		: rows.topik;
+	};
+	const parsedAllowedTopikIds = parseScope(caller.allowedTopikIds);
+	const parsedMataKuliahIds = parseScope(caller.mataKuliahIds);
+	const unrestricted =
+		parsedAllowedTopikIds !== null &&
+		parsedMataKuliahIds !== null &&
+		parsedAllowedTopikIds.length === 0 &&
+		parsedMataKuliahIds.length === 0;
+	const allowedTopikIds = new Set(parsedAllowedTopikIds || []);
+	const allowedMataKuliahIds = new Set(parsedMataKuliahIds || []);
+	const modulById = new Map(rows.modul.map((item) => [item.id, item]));
+	const topik = unrestricted
+		? rows.topik
+		: rows.topik.filter((item) => {
+			const modul = modulById.get(item.modulId);
+			const mataKuliahId = item.mataKuliahId ?? modul?.mataKuliahId;
+			return allowedTopikIds.has(item.id) || !!mataKuliahId && allowedMataKuliahIds.has(mataKuliahId);
+		});
 	const topikIds = new Set(topik.map((item) => item.id));
 	const modulIds = new Set(topik.map((item) => item.modulId));
 	const modul = unrestricted
@@ -93,11 +105,10 @@ export function operatorSnapshot(rows: SnapshotRows, caller: UserRow): Snapshot 
 		: rows.soal.filter((item) => topikIds.has(item.topikId));
 	const ujian = unrestricted
 		? rows.ujian
-		: rows.ujian.filter((item) =>
-				parseJson<{ topikId: string }[]>(item.topicSets, []).some((set) =>
-					topikIds.has(set.topikId),
-				),
-			);
+		: rows.ujian.filter((item) => {
+			const topicMatch = parseJson<{ topikId: string }[]>(item.topicSets, []).some((set) => topikIds.has(set.topikId));
+			return topicMatch || (!!item.mataKuliahId && allowedMataKuliahIds.has(item.mataKuliahId));
+		});
 	const ujianIds = new Set(ujian.map((item) => item.id));
 	const sesi = rows.sesi.filter((item) => ujianIds.has(item.ujianId));
 	const token = rows.token.filter((item) => ujianIds.has(item.ujianId));
@@ -124,7 +135,10 @@ export function operatorSnapshot(rows: SnapshotRows, caller: UserRow): Snapshot 
 
 		tahunAkademik: rows.tahunAkademik,
 		semester: rows.semester,
-		mataKuliah: rows.mataKuliah,
+		mataKuliah: unrestricted
+			? rows.mataKuliah
+			: rows.mataKuliah.filter((item) => allowedMataKuliahIds.has(item.id)),
+		penawaran: unrestricted ? rows.penawaran : rows.penawaran.filter((item) => allowedMataKuliahIds.has(item.mataKuliahId)),
 		modul,
 		topik,
 		soal: soal.map(mapSoal),
@@ -135,10 +149,11 @@ export function operatorSnapshot(rows: SnapshotRows, caller: UserRow): Snapshot 
 	};
 }
 
-export function pesertaSnapshot(rows: SnapshotRows, caller: UserRow): Snapshot {
+	export function pesertaSnapshot(rows: SnapshotRows, caller: UserRow): Snapshot {
 	const ujian = rows.ujian.filter((item) => {
 		const groupIds = parseJson<string[]>(item.groupIds, []);
-		return groupIds.length === 0 || (!!caller.unitId && groupIds.includes(caller.unitId));
+		const offering = item.penawaranId ? rows.penawaran.find((value) => value.id === item.penawaranId) : undefined;
+		return item.status === "published" && (!!offering?.pesertaIds.includes(caller.id) || (!!caller.unitId && groupIds.includes(caller.unitId)));
 	});
 	const ujianIds = new Set(ujian.map((item) => item.id));
 	const sesi = rows.sesi.filter(
@@ -166,31 +181,58 @@ export function pesertaSnapshot(rows: SnapshotRows, caller: UserRow): Snapshot {
 	}
 	for (const id of withheld) revealed.delete(id);
 
-	const soal = rows.soal
-		.filter((item) => soalIds.has(item.id))
-		.map((row) => {
-			const mapped = mapSoal(row);
-			if (revealed.has(row.id)) return mapped;
+	const snapshotBySessionAndId = new Map(
+		sesi.flatMap((item) =>
+			parseJson<ReturnType<typeof mapSoal>[]>(item.soalSnapshot, [])
+				.map((soal) => [`${item.id}:${soal.id}`, soal] as const),
+		),
+	);
+	const soal = [...soalIds].flatMap((id) => {
+			const session = sesi.find((item) => parseJson<string[]>(item.soalIds, []).includes(id));
+			const snapshot = session ? snapshotBySessionAndId.get(`${session.id}:${id}`) : undefined;
+			const row = rows.soal.find((item) => item.id === id);
+			if (!snapshot && !row) return [];
+			const mapped = snapshot ?? mapSoal(row!);
+			if (revealed.has(id)) return mapped;
 			return {
 				...mapped,
 				jawaban: mapped.jawaban.map((j) => ({ ...j, benar: false })),
 				pembahasan: "",
 			};
-		});
-	const token = rows.token.filter((item) => ujianIds.has(item.ujianId));
-
+	});
+	const sesiForParticipant = sesi.map((row) => {
+		const mapped = mapSesi(row);
+		const exam = ujianById.get(row.ujianId);
+		const canShowScore = row.status === "selesai" && !!exam?.showResult;
+		const canShowDetail = canShowScore && !!exam?.showResultDetail;
+		return {
+			...mapped,
+			soalSnapshot: [],
+			jawaban: canShowDetail
+				? mapped.jawaban
+				: mapped.jawaban.map(({ skor: _skor, catatanGrader: _catatanGrader, ...answer }) => answer),
+			skorTotal: canShowScore ? mapped.skorTotal : undefined,
+			maxSkor: canShowScore ? mapped.maxSkor : undefined,
+			gradedAt: canShowScore ? mapped.gradedAt : undefined,
+			gradedBy: undefined,
+		};
+	});
 	return {
 		users: [publicUser(caller)],
 		unitAkademik: rows.unitAkademik as any,
 		tahunAkademik: [],
 		semester: [],
 		mataKuliah: [],
+		penawaran: [],
 		modul: [],
 		topik: [],
 		soal,
 		ujian: ujian.map(mapUjian),
-		token: token.map(mapToken),
-		sesi: sesi.map(mapSesi),
+		// Token codes are secrets shared out-of-band by the proctor. A participant
+		// may claim a code through the narrow claim action, but never receives the
+		// exam's token inventory in the general snapshot.
+		token: [],
+		sesi: sesiForParticipant,
 		config: buildConfig(rows.config),
 	};
 }

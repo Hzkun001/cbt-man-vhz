@@ -9,6 +9,7 @@ import {
 	mutateUnitAkademikServer, 
 	mutateTahunAkademikServer, mutateSemesterServer, mutateMataKuliahServer 
 } from "@/lib/server/akademik/functions";
+import { mutatePenawaranMembershipServer } from "@/lib/server/akademik/functions";
 import { toast } from "sonner";
 import type {
 	AppConfig,
@@ -25,6 +26,7 @@ import type {
 	TahunAkademik,
 	Semester,
 	MataKuliah,
+	PenawaranMataKuliah,
 	PublicExamSchedule,
 } from "./types";
 
@@ -40,6 +42,7 @@ type EntityName =
 	| "tahunAkademik"
 	| "semester"
 	| "mataKuliah"
+	| "penawaran"
 	| "modul"
 	| "topik"
 	| "soal"
@@ -65,6 +68,7 @@ const cache = {
 	tahunAkademik: [] as TahunAkademik[],
 	semester: [] as Semester[],
 	mataKuliah: [] as MataKuliah[],
+	penawaran: [] as PenawaranMataKuliah[],
 	modul: [] as Modul[],
 	topik: [] as Topik[],
 	soal: [] as Soal[],
@@ -103,6 +107,7 @@ function applySnapshot(snapshot: Snapshot) {
 	cache.tahunAkademik = snapshot.tahunAkademik;
 	cache.semester = snapshot.semester;
 	cache.mataKuliah = snapshot.mataKuliah;
+	cache.penawaran = snapshot.penawaran;
 	cache.modul = snapshot.modul;
 	cache.topik = snapshot.topik;
 	cache.soal = snapshot.soal;
@@ -237,6 +242,7 @@ function runEntityMutation(
 		case "tahunAkademik": mutationPromise = mutateTahunAkademikServer({ data: { action: action as any, payload } }); break;
 		case "semester": mutationPromise = mutateSemesterServer({ data: { action: action as any, payload } }); break;
 		case "mataKuliah": mutationPromise = mutateMataKuliahServer({ data: { action: action as any, payload } }); break;
+		case "penawaran": mutationPromise = Promise.resolve({ ok: false, error: "Gunakan updateMembership untuk penawaran." }); break;
 		default: mutationPromise = Promise.resolve({ ok: false, error: "Unknown entity" });
 	}
 
@@ -371,6 +377,19 @@ export const ujianRepo = createRepo(
 		cache.ujian = items;
 	},
 );
+
+export const penawaranRepo = {
+	all: () => cache.penawaran.slice(),
+	byId: (id: string) => cache.penawaran.find((item) => item.id === id),
+	updateMembership(item: PenawaranMataKuliah): void {
+		upsertArrayItem(cache.penawaran, item);
+		void mutatePenawaranMembershipServer({
+			data: { id: item.id, pengampuIds: item.pengampuIds, pesertaIds: item.pesertaIds },
+		}).then((result) => {
+			if (!result.ok) notifyMutationFailure("penawaran", result.error ?? "Unknown error");
+		});
+	},
+};
 
 export const tokenRepo = createRepo(
 	"token",

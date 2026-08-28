@@ -43,6 +43,7 @@ function UjianList() {
     const u: Ujian = {
       id: uid("ex_"),
       nama: "Ujian Baru",
+      status: "draft",
       deskripsi: "",
       durasiMenit: 30,
       poinBenar: 1,

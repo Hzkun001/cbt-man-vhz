@@ -112,6 +112,31 @@ test("snapshot.ts redacts benar and pembahasan server-side", () => {
   assert.match(body, /pembahasan: ""/);
 });
 
+test("participant snapshot never includes the exam token inventory", () => {
+  const src = read("src/lib/server/repos/snapshot.ts");
+  const fnIdx = src.indexOf("export function pesertaSnapshot(");
+  assert.ok(fnIdx > 0, "pesertaSnapshot must exist");
+  const body = src.slice(fnIdx, fnIdx + 4000);
+  assert.match(body, /token:\s*\[\]/);
+  assert.doesNotMatch(body, /token\.map\(mapToken\)/);
+});
+
+test("operator snapshot applies Mata Kuliah scope instead of treating empty topic scope as global", () => {
+  const snapshot = read("src/lib/server/repos/snapshot.ts");
+  const fnIdx = snapshot.indexOf("export function operatorSnapshot(");
+  assert.ok(fnIdx > 0, "operatorSnapshot must exist");
+  const body = snapshot.slice(fnIdx, snapshot.indexOf("export function pesertaSnapshot(", fnIdx));
+  assert.match(body, /caller\.mataKuliahIds/);
+  assert.match(body, /allowedMataKuliahIds/);
+  assert.match(body, /parsedAllowedTopikIds\.length === 0/);
+  assert.match(body, /parsedMataKuliahIds\.length === 0/);
+});
+
+test("question mutation awaits the server-side topic scope check", () => {
+  const src = read("src/lib/server/modul/functions.ts");
+  assert.match(src, /if \(\!\(await operatorCanTouchTopikId\(caller, item\.topikId\)\)\)/);
+});
+
 test("kerjakan submits through the narrow server action and re-hydrates authoritative results", () => {
   const src = read("src/routes/_authenticated/peserta.ujian.$id.kerjakan.tsx");
   assert.ok(!/function gradeSesi\(/.test(src), "client-side gradeSesi must be removed");

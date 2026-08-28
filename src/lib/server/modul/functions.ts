@@ -156,7 +156,9 @@ export const mutateSoalServer = createServerFn({ method: "POST" })
 					if (!(await operatorCanTouchSoal(caller, id))) return { ok: false as const, error: "Forbidden" };
 				} else {
 					const item = payload as Soal;
+					const existing = await prisma.soal.findUnique({ where: { id: item.id }, select: { topikId: true } });
 					if (!(await operatorCanTouchTopikId(caller, item.topikId))) return { ok: false as const, error: "Forbidden" };
+					if (existing && !(await operatorCanTouchTopikId(caller, existing.topikId))) return { ok: false as const, error: "Forbidden" };
 				}
 			} else if (caller.role !== "super_admin") {
 				return { ok: false as const, error: "Forbidden" };

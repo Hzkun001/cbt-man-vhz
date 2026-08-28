@@ -34,6 +34,11 @@ enum StatusSesi {
   kedaluwarsa
 }
 
+enum StatusUjian {
+  draft
+  published
+}
+
 model UnitAkademik {
   id       String         @id
   nama     String
@@ -87,11 +92,13 @@ model Modul {
 }
 
 model Topik {
-  id      String @id
-  modulId String
-  nama    String
-  modul   Modul  @relation(fields: [modulId], references: [id], onDelete: Cascade)
-  soal    Soal[]
+  id           String      @id
+  modulId      String
+  mataKuliahId String?
+  nama         String
+  modul        Modul       @relation(fields: [modulId], references: [id], onDelete: Cascade)
+  mataKuliah   MataKuliah? @relation(fields: [mataKuliahId], references: [id], onDelete: SetNull)
+  soal         Soal[]
 }
 
 model Soal {
@@ -119,6 +126,7 @@ model Jawaban {
 model Ujian {
   id               String       @id
   nama             String
+  status           StatusUjian  @default(draft)
   deskripsi        String       @default("")
   durasiMenit      Int
   poinBenar        Float        @default(1)
@@ -133,6 +141,8 @@ model Ujian {
   mataKuliah       MataKuliah?  @relation(fields: [mataKuliahId], references: [id], onDelete: SetNull)
   semesterId       String?
   semester         Semester?    @relation(fields: [semesterId], references: [id], onDelete: SetNull)
+  penawaranId      String?
+  penawaran        PenawaranMataKuliah? @relation(fields: [penawaranId], references: [id], onDelete: SetNull)
   topicSets        String       @default("[]")
   showResult       Boolean      @default(true)
   showResultDetail Boolean      @default(false)
@@ -188,6 +198,7 @@ model SesiUjian {
   selesaiAt    BigInt?
   endsAt       BigInt?
   soalIds      String     @default("[]")
+  soalSnapshot String     @default("[]")
   jawabanOrder String     @default("{}")
   jawaban      String     @default("[]")
   pelanggaran  Int        @default(0)
@@ -198,6 +209,8 @@ model SesiUjian {
   createdAt    BigInt
   ujian        Ujian      @relation(fields: [ujianId], references: [id], onDelete: Cascade)
   peserta      User       @relation("SesiPeserta", fields: [pesertaId], references: [id])
+
+  @@unique([ujianId, pesertaId])
 }
 
 model AppConfig {
@@ -241,6 +254,7 @@ model Semester {
   tahunAkademik   TahunAkademik @relation(fields: [tahunAkademikId], references: [id], onDelete: Cascade)
   mataKuliah      MataKuliah[]
   ujians          Ujian[]
+  penawaran       PenawaranMataKuliah[]
 }
 
 model MataKuliah {
@@ -253,4 +267,22 @@ model MataKuliah {
   semesterId String?
   semester   Semester?     @relation(fields: [semesterId], references: [id], onDelete: Cascade)
   ujians     Ujian[]
+  topik      Topik[]
+  penawaran  PenawaranMataKuliah[]
+}
+
+model PenawaranMataKuliah {
+  id           String      @id
+  mataKuliahId String
+  semesterId   String?
+  kodeKelas    String      @default("")
+  pengampuIds  String      @default("[]")
+  pesertaIds   String      @default("[]")
+  createdAt    BigInt
+  mataKuliah   MataKuliah  @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
+  semester     Semester?   @relation(fields: [semesterId], references: [id], onDelete: SetNull)
+  ujians       Ujian[]
+
+  @@index([mataKuliahId])
+  @@index([semesterId])
 }

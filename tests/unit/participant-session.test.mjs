@@ -82,6 +82,7 @@ test("participant route never writes through the generic session repository", ()
   assert.match(server, /status: "sedang"/);
   assert.match(server, /now > endsAt/);
   assert.match(server, /now > examEndAt/);
+  assert.match(server, /timedOut && \(data\.action !== "submit"/);
 });
 
 test("participant transport failures rehydrate optimistic session state", () => {

@@ -6,7 +6,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/server/db/prisma";
 import { parseJson } from "@/lib/server/db/json";
 import { readSessionToken, validateSession } from "@/lib/server/db/session";
-import type { NavKey } from "@/lib/cbt/types";
+import { pesertaCanTouchUjian } from "@/lib/server/db/auth";
+import type { NavKey, Role } from "@/lib/cbt/types";
 
 const uploadsDir = [process.cwd(), "data", "uploads"] as const;
 const DEFAULT_OPERATOR_ROLE_ACCESS: NavKey[] = [
@@ -156,17 +157,17 @@ function extractFileIds(html: string): string[] {
 // (repos/snapshot.ts) so authorization and visibility stay consistent, and
 // prevents a peserta from fetching arbitrary file ids.
 async function pesertaCanAccessFile(
-  caller: { id: string; role: string; unitId: string | null },
+  caller: { id: string; role: Role; unitId: string | null },
   fileId: string,
 ): Promise<boolean> {
   // Group-assigned exams: groupIds empty (open to all) OR includes the group.
   const ujianRows = await prisma.ujian.findMany({
-    select: { id: true, groupIds: true, deskripsi: true, showResult: true, showResultDetail: true },
+    select: { id: true, groupIds: true, deskripsi: true, showResult: true, showResultDetail: true, status: true },
   });
-  const assigned = ujianRows.filter((u) => {
-    const groupIds = parseJson<string[]>(u.groupIds, []);
-    return groupIds.length === 0 || (!!caller.unitId && groupIds.includes(caller.unitId));
-  });
+  const assigned = [];
+  for (const u of ujianRows) {
+    if (u.status === "published" && await pesertaCanTouchUjian(caller, u.id)) assigned.push(u);
+  }
   const assignedById = new Map(assigned.map((u) => [u.id, u]));
   const allowed = new Set<string>();
   for (const u of assigned) {

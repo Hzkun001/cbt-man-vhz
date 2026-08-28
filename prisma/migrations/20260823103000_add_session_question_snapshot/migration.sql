@@ -1,0 +1,1 @@
+ALTER TABLE "SesiUjian" ADD COLUMN "soalSnapshot" TEXT NOT NULL DEFAULT '[]';
