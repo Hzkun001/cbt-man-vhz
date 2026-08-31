@@ -23,6 +23,7 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Fixed
 
+- Kurangi polling ruang ujian peserta menjadi pembacaan status sesi sempit tanpa memuat snapshot seluruh database, dan cegah respons polling stale menurunkan deadline (#137).
 - Sinkronkan ulang data kelas setelah mutation server dan gunakan update keanggotaan yang terlindungi agar UI tidak menyimpan state lokal yang stale (#134).
 - Tolak `topicSets` legacy yang malformed sebelum remediation menulis data, gunakan ownership topik langsung, dan cegah update penawaran menimpa membership concurrent (#133).
 - Perbaiki sintaks nilai arbitrer negatif Tailwind (`translate-y-[-0.5px]`, `top-[-40%]`) agar utilitas CSS ter-generate (diekstrak dari #98).
