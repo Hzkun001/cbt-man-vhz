@@ -34,6 +34,7 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Security
 
+- Hapus endpoint daftar ujian penuh yang tidak digunakan agar tidak menjadi permukaan baca di luar scope operator (#142).
 - Perbarui SheetJS ke 0.20.3 untuk menutup prototype pollution dan ReDoS saat membaca file Excel buatan khusus (#141).
 - Batasi endpoint daftar modul dan topik untuk pengaturan role hanya kepada super admin (#140).
 - Tolak akses operator ketika data scope topik atau mata kuliah rusak atau bukan array string, alih-alih memperlakukannya sebagai akses tanpa batas.
