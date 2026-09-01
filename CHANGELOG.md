@@ -34,6 +34,7 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Security
 
+- Perbarui SheetJS ke 0.20.3 untuk menutup prototype pollution dan ReDoS saat membaca file Excel buatan khusus (#141).
 - Batasi endpoint daftar modul dan topik untuk pengaturan role hanya kepada super admin (#140).
 - Tolak akses operator ketika data scope topik atau mata kuliah rusak atau bukan array string, alih-alih memperlakukannya sebagai akses tanpa batas.
 - Tutup bypass status published melalui upsert, samakan otorisasi peserta pada fetch/file/snapshot, redaksi metadata nilai server-side, dan batasi submit terlambat dengan grace period.
