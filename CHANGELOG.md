@@ -34,6 +34,7 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Security
 
+- Sembunyikan kredensial akun demo dari halaman login admin pada build production (#143).
 - Hapus endpoint daftar ujian penuh yang tidak digunakan agar tidak menjadi permukaan baca di luar scope operator (#142).
 - Perbarui SheetJS ke 0.20.3 untuk menutup prototype pollution dan ReDoS saat membaca file Excel buatan khusus (#141).
 - Batasi endpoint daftar modul dan topik untuk pengaturan role hanya kepada super admin (#140).
