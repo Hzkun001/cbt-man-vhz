@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 const REQUIRED_HEADINGS = [
   "## Ringkasan",
   "## Issue, PR terkait, dan riwayat",
+  "## Cadence dan review",
   "## Scope dan non-goal",
   "## Keamanan, otorisasi, dan data",
   "## Prisma dan migrasi",
@@ -16,6 +17,11 @@ const REQUIRED_HISTORY_FIELDS = [
   "Issue/PR terkait",
   "Apakah ini replacement dari PR closed/stale? Jika ya, tulis nomor PR dan kontribusi yang diekstrak",
   "Mengapa perubahan ini tidak duplikat dari pekerjaan yang ada?",
+];
+
+const REQUIRED_CADENCE_CHECKS = [
+  "Saya sudah mengecek PR aktif saya dan tidak membuka PR paralel tanpa permintaan maintainer atau kebutuhan security/urgent yang jelas.",
+  "CodeRabbit dijalankan pada head final; tindak lanjut review akan tetap di PR ini.",
 ];
 
 export function contractErrors(body) {
@@ -43,6 +49,15 @@ export function contractErrors(body) {
       return suffix.replace(/^\s*:\s*/, "").trim() === "";
     });
     if (empty) errors.push(`field wajib belum diisi: ${field}`);
+  }
+
+  for (const check of REQUIRED_CADENCE_CHECKS) {
+    const line = historyLines.find((candidate) => candidate.includes(check));
+    if (!line) {
+      errors.push(`checkbox cadence wajib hilang: ${check}`);
+    } else if (!/^\[[xX]\]\s+/.test(line)) {
+      errors.push(`checkbox cadence wajib dicentang: ${check}`);
+    }
   }
   return errors;
 }

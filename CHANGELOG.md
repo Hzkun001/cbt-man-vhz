@@ -8,7 +8,7 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Added
 
-- Tambahkan aturan satu PR aktif per kontributor dan penggunaan CodeRabbit pada head final untuk mengurangi fragmentasi review.
+- Tambahkan aturan satu PR aktif per kontributor dan penggunaan CodeRabbit pada head final untuk mengurangi fragmentasi review (#146).
 - Tambahkan pilihan font SN Pro atau font sistem serta tema Neumorphism pada halaman Pengaturan admin (diekstrak dari #104).
 - Tambahkan pedoman kontribusi, instruksi agen AI, dan template pull request untuk menjaga perubahan tetap fokus, tervalidasi, dan aman.
 - Tambahkan gate CI CBT-MAN untuk kontrak PR, hygiene/artifact/branding, integritas generated route tree, dan parity Prisma migration-schema.
