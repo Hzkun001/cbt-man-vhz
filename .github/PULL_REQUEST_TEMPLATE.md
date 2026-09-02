@@ -14,6 +14,13 @@
 - Apakah ini replacement dari PR closed/stale? Jika ya, tulis nomor PR dan kontribusi yang diekstrak:
 - Mengapa perubahan ini tidak duplikat dari pekerjaan yang ada?
 
+## Cadence dan review
+
+- PR aktif lain oleh saya:
+- Jika ada PR aktif lain, alasan pekerjaan paralel dan maintainer yang memintanya:
+- [ ] Saya sudah mengecek PR aktif saya dan tidak membuka PR paralel tanpa permintaan maintainer atau kebutuhan security/urgent yang jelas.
+- [ ] CodeRabbit dijalankan pada head final; tindak lanjut review akan tetap di PR ini.
+
 ## Scope dan non-goal
 
 - Dalam scope:

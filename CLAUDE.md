@@ -132,6 +132,8 @@ Jangan menyatakan PR siap merge hanya karena build/typecheck lulus. CI hijau tid
 - Jangan merge/rebase PR yang `CONFLICTING`, `DIRTY`, stale terhadap main, atau membawa artifact terlarang.
 - Jika branch stale/aggregate memuat bagian yang masih berguna, buat replacement PR kecil dari main terbaru dan dokumentasikan kredit terhadap PR asal.
 - Semua reviewer finding harus diklasifikasikan: fixed, obsolete dengan bukti, atau refuted dengan alasan teknis. Jangan resolve thread tanpa bukti.
+- Batasi satu PR aktif per kontributor. Tunggu CI, review, dan keputusan maintainer selesai sebelum membuka PR berikutnya; pekerjaan paralel hanya jika maintainer meminta atau ada kebutuhan security/urgent yang jelas.
+- Jalankan CodeRabbit setelah diff final. Tindak lanjut review dilakukan pada PR yang sama; jangan membuat PR baru hanya untuk memecah komentar review.
 - Sebelum merge, state dan CI harus dicek lagi pada head SHA yang sama.
 
 ## Changelog

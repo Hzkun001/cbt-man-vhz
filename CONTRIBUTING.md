@@ -54,6 +54,8 @@ Aturan utama:
 - Jangan membuat PR baru di atas branch stale/aggregate/closed. Buat replacement branch bersih dari `main` terbaru dan referensikan kontribusi asal untuk kredit.
 - Jangan force-push, menonaktifkan branch protection, meminta bypass `CI`, atau menghapus branch kontributor.
 - Jangan merge PR yang konflik, dirty, belum memiliki `CI` pada head terbaru, atau masih memiliki review thread aktif.
+- Satu kontributor menjaga satu PR aktif pada satu waktu. Tunggu CI, review, dan keputusan maintainer selesai sebelum membuka PR berikutnya; pekerjaan paralel hanya untuk kebutuhan yang diminta maintainer atau security/urgent yang jelas.
+- Jalankan CodeRabbit pada head final PR. Perbaikan dari review tetap dikirim ke PR yang sama, bukan PR baru.
 
 ## Keamanan, Otorisasi, dan Data
 

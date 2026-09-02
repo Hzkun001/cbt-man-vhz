@@ -161,6 +161,11 @@ test("PR body requires CBT-MAN review evidence sections", () => {
     "- Issue/PR terkait: #1",
     "- Apakah ini replacement dari PR closed/stale? Jika ya, tulis nomor PR dan kontribusi yang diekstrak: Tidak",
     "- Mengapa perubahan ini tidak duplikat dari pekerjaan yang ada?: New guard",
+    "## Cadence dan review",
+    "- PR aktif lain oleh saya: Tidak",
+    "- Jika ada PR aktif lain, alasan pekerjaan paralel dan maintainer yang memintanya: Tidak berlaku",
+    "- [x] Saya sudah mengecek PR aktif saya dan tidak membuka PR paralel tanpa permintaan maintainer atau kebutuhan security/urgent yang jelas.",
+    "- [x] CodeRabbit dijalankan pada head final; tindak lanjut review akan tetap di PR ini.",
     "## Scope dan non-goal\nNarrow scope",
     "## Keamanan, otorisasi, dan data\nNot relevant: docs only",
     "## Prisma dan migrasi\nNot relevant: docs only",
@@ -182,5 +187,15 @@ test("PR body requires CBT-MAN review evidence sections", () => {
         "- Mengapa perubahan ini tidak duplikat dari pekerjaan yang ada?:",
       ),
     ).some((error) => error.includes("field wajib belum diisi")),
+  );
+  assert.ok(
+    contractErrors(valid.replace("- [x] CodeRabbit dijalankan", "- [ ] CodeRabbit dijalankan")).some((error) =>
+      error.includes("checkbox cadence wajib dicentang"),
+    ),
+  );
+  assert.ok(
+    contractErrors(valid.replace("- [x] Saya sudah mengecek PR aktif saya", "")).some((error) =>
+      error.includes("checkbox cadence wajib hilang"),
+    ),
   );
 });
