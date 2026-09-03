@@ -20,6 +20,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, Save, Lock, ArrowLeft, FileSignature, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { RichEditor } from "@/components/cbt/RichEditor";
+import { AdminPage, AdminPageHeader } from "@/components/cbt/AdminPage";
 import { useAuthStore } from "@/lib/cbt/auth-store";
 import {
   allowedTopikIdSet,
@@ -293,23 +294,23 @@ function UjianEditor() {
   const totalSoal = u.topicSets.reduce((total, topicSet) => total + (Number(topicSet.jumlah) || 0), 0);
 
   return (
-    <div className="space-y-6 w-full max-w-[1600px] mx-auto pb-12">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-        <div>
-          <Link to="/admin/ujian" className="mb-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
-            <ArrowLeft className="h-3.5 w-3.5" /> Kembali ke Manajemen Ujian
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-              <FileSignature className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Editor Paket Ujian</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">{u.nama || "Ujian Baru"}</p>
-            </div>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
+    <AdminPage className="mx-auto max-w-6xl pb-12">
+      <AdminPageHeader
+        title={
+          <span className="inline-flex items-center gap-2">
+            <FileSignature className="h-5 w-5 text-primary" />
+            Editor Paket Ujian
+          </span>
+        }
+        description={`${u.nama || "Ujian Baru"} · ${u.status === "published" ? "Sudah dipublikasikan" : "Draft"}`}
+        action={
+          <>
+            <Button asChild variant="ghost" className="h-9 text-xs">
+              <Link to="/admin/ujian">
+                <ArrowLeft className="mr-1 h-4 w-4" />
+                Kembali
+              </Link>
+            </Button>
           <Button asChild variant="outline" className="h-9 text-xs">
             <Link to="/admin/ujian/$id/token" params={{ id: u.id }}>
               <KeyRound className="mr-1 h-4 w-4" />
@@ -329,8 +330,9 @@ function UjianEditor() {
             <Save className="mr-1 h-4 w-4" />
             Simpan Perubahan
           </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
         <CardContent className="space-y-4 p-4">
@@ -500,8 +502,8 @@ function UjianEditor() {
             const inScope = isTopikAllowed(user, ts.topikId);
             return (
               <div key={ts.id} className="space-y-2 border-t py-3 first:border-t-0 first:pt-0">
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-                  <div className="col-span-2">
+                <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem_auto_auto] sm:items-end">
+                  <div>
                     <Label className="text-xs">Topik sumber</Label>
                     <Select
                       value={ts.topikId}
@@ -548,7 +550,7 @@ function UjianEditor() {
                       }
                     />
                   </div>
-                  <div className="flex items-center gap-2 pt-5">
+                  <div className="flex min-h-9 items-center gap-2">
                     <Checkbox
                       checked={ts.acakSoal}
                       onCheckedChange={(v) =>
@@ -560,7 +562,7 @@ function UjianEditor() {
                     />
                     <Label className="text-xs">Acak soal</Label>
                   </div>
-                  <div className="flex items-center gap-2 pt-5">
+                  <div className="flex min-h-9 items-center gap-2">
                     <Checkbox
                       checked={ts.acakJawaban}
                       onCheckedChange={(v) =>
@@ -718,6 +720,6 @@ function UjianEditor() {
         </CardContent>
         </details>
       </Card>
-    </div>
+    </AdminPage>
   );
 }
