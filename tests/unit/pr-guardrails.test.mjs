@@ -46,6 +46,27 @@ test("admin layout reads the authenticated route context instead of nullable cli
   assert.doesNotMatch(adminLayout, /navigate\(\{ to: "\/login" \}\)/);
 });
 
+test("admin navigation prioritizes the CBT exam workflow", () => {
+  const adminLayout = readFileSync("src/routes/_authenticated/admin.tsx", "utf8");
+  const groupLabels = [
+    "Persiapan Ujian",
+    "Pelaksanaan Ujian",
+    "Penilaian & Hasil",
+    "Pengaturan Lanjutan",
+  ];
+
+  let previousIndex = -1;
+  for (const label of groupLabels) {
+    const index = adminLayout.indexOf(`label: "${label}"`);
+    assert.ok(index > previousIndex, `${label} must appear after the previous navigation group`);
+    previousIndex = index;
+  }
+  assert.match(
+    adminLayout,
+    /hasil:\s*\{ key: "hasil", adminOnly: false, paths: \["\/admin\/analitik"\] \}/,
+  );
+});
+
 test("admin demo credentials are development-only", () => {
   const login = readFileSync("src/routes/login-admin.tsx", "utf8");
   assert.match(login, /import\.meta\.env\.DEV && <div[^>]*>[\s\S]{0,500}Kredensial Demo/);
