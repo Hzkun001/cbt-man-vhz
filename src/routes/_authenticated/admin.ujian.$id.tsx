@@ -215,13 +215,13 @@ function UjianEditor() {
   }
 
   function addTopicSet() {
-    if (topiks.length === 0) {
+    if (sortedTopiks.length === 0) {
       toast.error("Buat topik dulu");
       return;
     }
     const ts: TopicSet = {
       id: uid("ts_"),
-      topikId: topiks[0].id,
+      topikId: sortedTopiks[0].id,
       jumlah: 5,
       jumlahOpsi: 4,
       acakSoal: true,
@@ -481,12 +481,12 @@ function UjianEditor() {
         <CardContent className="p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-medium">Topic Set (sumber soal)</h3>
-              <p className="mt-1 text-xs text-muted-foreground">Total butir soal yang dirakit: <span className="font-semibold text-foreground">{totalSoal} soal</span></p>
+              <h3 className="font-medium">Sumber soal ujian</h3>
+              <p className="mt-1 text-xs text-muted-foreground">Tambahkan satu atau beberapa topik. Total soal: <span className="font-semibold text-foreground">{totalSoal}</span></p>
             </div>
-            <Button size="sm" variant="outline" onClick={addTopicSet}>
+            <Button size="sm" variant="outline" onClick={addTopicSet} type="button">
               <Plus className="mr-1 h-4 w-4" />
-              Tambah
+              Tambah topik
             </Button>
           </div>
           {u.topicSets.map((ts, i) => {
@@ -494,10 +494,10 @@ function UjianEditor() {
             const m = t ? moduls.find((mm) => mm.id === t.modulId) : null;
             const inScope = isTopikAllowed(user, ts.topikId);
             return (
-              <div key={ts.id} className="rounded border p-3 space-y-2">
+              <div key={ts.id} className="space-y-2 border-t py-3 first:border-t-0 first:pt-0">
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                   <div className="col-span-2">
-                    <Label className="text-xs">Topik</Label>
+                    <Label className="text-xs">Topik sumber</Label>
                     <Select
                       value={ts.topikId}
                       onValueChange={(v) =>
@@ -528,7 +528,7 @@ function UjianEditor() {
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-xs">Jumlah</Label>
+                    <Label className="text-xs">Jumlah soal</Label>
                     <Input
                       type="number"
                       min={1}

@@ -148,7 +148,7 @@ function ModulPage() {
     <AdminPage className="">
       <AdminPageHeader
         title="Bank Soal"
-        description="Mata Kuliah → Modul → Topik → Soal. Kelola soal sebelum dimasukkan ke paket ujian."
+        description="Lihat modul, topik, dan jumlah soal dalam satu halaman sebelum dirakit menjadi ujian."
         action={
           canEdit && (
             <div className="flex items-center gap-2">
@@ -186,26 +186,26 @@ function ModulPage() {
       </div>
 
       {canEdit && (
-        <AdminPageContent className="p-4">
-          <div className="mb-4">
+        <AdminPageContent className="overflow-hidden">
+          <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-800">
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Buat Modul Baru</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Tambahkan modul dan hubungkan dengan mata kuliah.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Hubungkan modul dengan mata kuliah untuk mengelompokkan topik dan soal.</p>
           </div>
           <form
             onSubmit={(e) => { e.preventDefault(); add(); }}
-            className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end"
+            className="grid gap-4 p-4 sm:grid-cols-3 sm:items-start"
           >
             <div className="space-y-1.5">
-              <Label htmlFor="new-module-name">Nama Modul</Label>
+              <Label htmlFor="new-module-name" className="block h-3.5 text-xs leading-3.5">Nama modul</Label>
               <Input
                 id="new-module-name"
                 value={nama}
                 onChange={(e) => setNama(e.target.value)}
-                placeholder="Contoh: Modul Pemrograman Dasar"
+                placeholder="Contoh: Pemrograman Dasar"
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="new-module-course">Mata Kuliah</Label>
+              <Label htmlFor="new-module-course" className="block h-3.5 text-xs leading-3.5">Mata kuliah</Label>
               <Select value={mkId} onValueChange={setMkId}>
                 <SelectTrigger id="new-module-course">
                   <SelectValue placeholder="Pilih Mata Kuliah" />
@@ -218,7 +218,7 @@ function ModulPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button type="submit" disabled={!nama.trim() || mkId === "none"}>
+            <Button type="submit" className="w-full sm:mt-5" disabled={!nama.trim() || mkId === "none"}>
               <Plus className="mr-2 h-4 w-4" />
               Buat Modul
             </Button>
@@ -227,7 +227,7 @@ function ModulPage() {
       )}
 
       <AdminPageContent className="bg-transparent border-0 p-0 shadow-none">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="space-y-3">
           {shown.map((m) => {
             const tAll = topikRepo.all().filter((t) => t.modulId === m.id);
             const t = allowedSet ? tAll.filter((x) => allowedSet.has(x.id)) : tAll;
@@ -236,58 +236,79 @@ function ModulPage() {
             const mkName = m.mataKuliahId ? mkList.find((x) => x.id === m.mataKuliahId)?.nama : null;
 
             return (
-              <div key={m.id} className="group relative flex flex-col justify-between p-5 rounded-[20px] border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 hover:border-primary/40 dark:hover:border-primary/40 shadow-sm hover:shadow-sleek transition-all duration-300 ease-spring gap-4 overflow-hidden">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary/10 text-primary group-hover:bg-primary/15 dark:group-hover:bg-primary/20 transition-colors duration-300 ease-spring">
-                    <FileText className="h-6 w-6 translate-y-[-0.5px]" />
-                  </div>
-                  <div className="flex-1 min-w-0 space-y-1.5 pt-1">
-                    <Link to="/admin/modul/$id/topik" params={{ id: m.id }} className="text-base font-semibold text-slate-900 dark:text-slate-100 hover:text-primary dark:hover:text-primary transition-colors duration-300 ease-spring line-clamp-2 after:absolute after:inset-0">
-                      {m.nama}
-                    </Link>
-                    {mkName ? (
-                      <div className="relative z-10">
-                        <span className="px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-bold tracking-widest uppercase text-slate-500">
+              <AdminPageContent key={m.id} className="overflow-hidden">
+                <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <FileText className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 space-y-1">
+                      <Link to="/admin/modul/$id/topik" params={{ id: m.id }} className="block truncate text-base font-semibold text-slate-900 hover:text-primary dark:text-slate-100 dark:hover:text-primary">
+                        {m.nama}
+                      </Link>
+                      {mkName ? (
+                        <span className="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-800">
                           {mkName}
                         </span>
-                      </div>
-                    ) : (
-                      <div className="relative z-10">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/40 text-[10px] font-bold tracking-wider uppercase text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-400">
                           <AlertTriangle className="h-3 w-3" /> Tanpa Mata Kuliah
                         </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between mt-2 pt-4 border-t border-slate-100 dark:border-slate-800/60">
-                  <div className="flex items-center gap-4 text-xs font-medium text-slate-500">
-                    <span className="flex items-center gap-1.5"><FileText className="w-4 h-4 text-slate-400 translate-y-[-0.5px]"/> {t.length} Topik</span>
-                    <span className="flex items-center gap-1.5"><ChevronRight className="w-4 h-4 text-slate-400 translate-y-[-0.5px]"/> {sCount} Soal</span>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-1 relative z-10">
+                  <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-slate-500">
+                    <span>{t.length} topik</span>
+                    <span>{sCount} soal</span>
+                    <Button size="sm" variant="outline" className="h-8" asChild>
+                      <Link to="/admin/modul/$id/topik" params={{ id: m.id }}>Kelola Topik</Link>
+                    </Button>
                     {canEdit && (
-                      <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors duration-300" onClick={() => { setEditingModul(m); setEditDialogOpen(true); }} title="Edit Modul">
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-primary" onClick={() => { setEditingModul(m); setEditDialogOpen(true); }} title="Edit Modul">
                         <Pencil className="h-4 w-4" />
                       </Button>
                     )}
-                    <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors duration-300" onClick={() => exportBank(m)} title="Export JSON">
+                    <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-primary" onClick={() => exportBank(m)} title="Export JSON">
                       <Download className="h-4 w-4" />
                     </Button>
                     {canEdit && (
-                      <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 dark:hover:text-red-400 transition-colors duration-300" onClick={() => remove(m.id)} title="Hapus">
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-red-600" onClick={() => remove(m.id)} title="Hapus">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     )}
                   </div>
                 </div>
-              </div>
+
+                <div className="border-t border-slate-100 dark:border-slate-800">
+                  {t.length > 0 ? (
+                    <div className="grid gap-px bg-slate-100 sm:grid-cols-2 dark:bg-slate-800">
+                      {t.map((topic) => {
+                        const questionCount = soalRepo.all().filter((s) => s.topikId === topic.id).length;
+                        return (
+                          <Link
+                            key={topic.id}
+                            to="/admin/topik/$id/soal"
+                            params={{ id: topic.id }}
+                            className="flex items-center justify-between gap-3 bg-white px-4 py-3 text-sm hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900"
+                          >
+                            <span className="min-w-0 truncate font-medium text-slate-700 dark:text-slate-200">{topic.nama}</span>
+                            <span className="flex shrink-0 items-center gap-1 text-xs text-slate-400">
+                              {questionCount} soal <ChevronRight className="h-3.5 w-3.5" />
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="px-4 py-3 text-sm text-muted-foreground">Belum ada topik. Buka modul untuk menambahkannya.</p>
+                  )}
+                </div>
+              </AdminPageContent>
             );
           })}
           {shown.length === 0 && (
-            <div className="col-span-full p-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[20px]">
+            <div className="p-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[20px]">
               <div className="flex flex-col items-center justify-center gap-2 text-slate-500">
                 <FileText className="h-8 w-8 text-slate-300" />
                 <p className="text-sm font-medium">Belum ada modul bank soal.</p>
