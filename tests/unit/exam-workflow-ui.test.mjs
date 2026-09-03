@@ -89,7 +89,7 @@ test("exam participant and question import pages keep visible back navigation", 
 test("exam editor uses the shared header and aligned question-source controls", () => {
   const route = read("src/routes/_authenticated/admin.ujian.$id.tsx");
 
-  assert.match(route, /<AdminPage className="mx-auto max-w-6xl pb-12">/);
+  assert.match(route, /<AdminPage className="mx-auto w-full max-w-\[1600px\] pb-12">/);
   assert.match(route, /<AdminPageHeader[\s\S]*Editor Paket Ujian/);
   assert.match(route, /sm:grid-cols-\[minmax\(0,1fr\)_8rem_auto_auto\]/);
   assert.match(route, /<ArrowLeft className="mr-1 h-4 w-4" \/>[\s\S]*Kembali/);
