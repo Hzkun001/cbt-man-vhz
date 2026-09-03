@@ -334,7 +334,7 @@ function UjianEditor() {
 
       <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
         <CardContent className="space-y-4 p-4">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label>Nama</Label>
               <Input value={u.nama} onChange={(e) => set("nama", e.target.value)} />
@@ -353,9 +353,11 @@ function UjianEditor() {
             <Label>Deskripsi / instruksi</Label>
             <RichEditor value={u.deskripsi} onChange={(v) => set("deskripsi", v)} minHeight={80} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <details className="rounded-md border">
+            <summary className="cursor-pointer px-3 py-2 text-sm font-medium">Metadata akademik (opsional)</summary>
+            <div className="grid grid-cols-1 gap-3 border-t p-3 sm:grid-cols-3">
             <div>
-              <Label>Mata Kuliah (Opsional)</Label>
+              <Label>Mata Kuliah</Label>
               <Select value={u.mataKuliahId || "none"} onValueChange={(v) => { set("mataKuliahId", v === "none" ? undefined : v); set("penawaranId", undefined); }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih Mata Kuliah" />
@@ -369,7 +371,7 @@ function UjianEditor() {
               </Select>
             </div>
             <div>
-              <Label>Semester (Opsional)</Label>
+              <Label>Semester</Label>
               <Select value={u.semesterId || "none"} onValueChange={(v) => { set("semesterId", v === "none" ? undefined : v); set("penawaranId", undefined); }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih Semester" />
@@ -383,7 +385,7 @@ function UjianEditor() {
               </Select>
             </div>
             <div>
-              <Label>Kelas Mata Kuliah (Opsional)</Label>
+              <Label>Kelas Mata Kuliah</Label>
               <Select
                 value={u.penawaranId || "none"}
                 onValueChange={(v) => {
@@ -408,6 +410,7 @@ function UjianEditor() {
               <p className="mt-1 text-xs text-muted-foreground">Gunakan jika peserta dikelola melalui kelas mata kuliah.</p>
             </div>
           </div>
+          </details>
         </CardContent>
       </Card>
 
@@ -443,8 +446,9 @@ function UjianEditor() {
       </Card>
 
       <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
-        <CardContent className="p-4 space-y-3">
-          <h3 className="font-medium">Skoring</h3>
+          <details>
+          <summary className="cursor-pointer p-4 text-sm font-medium">Pengaturan skoring</summary>
+      <CardContent className="p-4 space-y-3">
           <div className="grid grid-cols-3 gap-3">
             <div>
               <Label>Poin benar</Label>
@@ -475,6 +479,7 @@ function UjianEditor() {
             Poin salah boleh negatif untuk negative marking.
           </p>
         </CardContent>
+        </details>
       </Card>
 
       <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
@@ -637,8 +642,9 @@ function UjianEditor() {
       </Card>
 
       <Card>
-        <CardContent className="space-y-3 p-4">
-          <h3 className="font-medium">Alat bantu ujian</h3>
+          <details>
+          <summary className="cursor-pointer p-4 text-sm font-medium">Alat bantu ujian</summary>
+      <CardContent className="space-y-3 p-4">
           <div className="flex items-center justify-between rounded border p-2">
             <div>
               <Label htmlFor="allow-calculator">Kalkulator ujian</Label>
@@ -666,11 +672,13 @@ function UjianEditor() {
             />
           </div>
         </CardContent>
+        </details>
       </Card>
 
       <Card>
-        <CardContent className="p-4 space-y-3">
-          <h3 className="font-medium">Tampilan hasil & anti-cheat</h3>
+          <details>
+          <summary className="cursor-pointer p-4 text-sm font-medium">Tampilan hasil & anti-cheat</summary>
+      <CardContent className="p-4 space-y-3">
           <div className="flex items-center justify-between rounded border p-2">
             <Label>Tampilkan skor ke peserta setelah submit</Label>
             <Switch checked={u.showResult} onCheckedChange={(v) => set("showResult", v)} />
@@ -708,6 +716,7 @@ function UjianEditor() {
             </div>
           </div>
         </CardContent>
+        </details>
       </Card>
     </div>
   );

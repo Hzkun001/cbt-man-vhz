@@ -32,7 +32,7 @@ test("academic metadata is optional for question banks and exams", () => {
   assert.match(moduleRoute, /mataKuliahId: mkId === "none" \? undefined : mkId/);
   assert.match(moduleRoute, /Mata kuliah \(opsional\)/i);
   assert.doesNotMatch(moduleRoute, /Wajib memilih Mata Kuliah/);
-  assert.match(examRoute, /Kelas Mata Kuliah \(Opsional\)/);
+  assert.match(examRoute, /Metadata akademik \(opsional\)/);
   assert.doesNotMatch(examRoute, /Wajib dipilih sebelum paket dipublikasikan/);
 });
 
@@ -42,4 +42,16 @@ test("creating an exam opens its setup editor immediately", () => {
   assert.match(route, /const result = await ujianRepo\.flush\(\)/);
   assert.match(route, /if \(!result\.ok\)/);
   assert.match(route, /navigate\(\{ to: "\/admin\/ujian\/\$id", params: \{ id: u\.id \} \}\)/);
+});
+
+test("secondary exam settings use native collapsed sections", () => {
+  const route = read("src/routes/_authenticated/admin.ujian.$id.tsx");
+
+  assert.match(
+    route,
+    /<details className="rounded-md border">[\s\S]*Metadata akademik \(opsional\)/,
+  );
+  assert.match(route, /<summary[^>]*>Pengaturan skoring<\/summary>/);
+  assert.match(route, /<summary[^>]*>Alat bantu ujian<\/summary>/);
+  assert.match(route, /<summary[^>]*>\s*Tampilan hasil & anti-cheat\s*<\/summary>/);
 });
