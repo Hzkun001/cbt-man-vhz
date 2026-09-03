@@ -63,26 +63,26 @@ function PengaturanPage() {
   }
 
   return (
-    <AdminPage className="">
+    <AdminPage className="mx-auto w-full max-w-[1600px] pb-12">
       <AdminPageHeader
         title="Pengaturan Aplikasi"
         description="Konfigurasi institusi, keamanan, browser ujian, dan branding CBT."
         action={
-          <Button onClick={save} className="h-10 px-8 shadow-sm">
+          <Button onClick={save} className="h-9 px-5 text-xs font-semibold shadow-sm">
             Simpan Semua
           </Button>
         }
       />
 
       {/* Section 1: Identitas Aplikasi */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
-        <div className="space-y-2 lg:col-span-1">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(220px,0.8fr)_minmax(0,2fr)] lg:gap-12">
+        <div className="space-y-2">
           <h2 id="identitas-heading" className="text-lg font-semibold text-slate-900 dark:text-white">Identitas Aplikasi</h2>
           <p className="text-sm text-slate-500 leading-relaxed">
             Informasi ini akan ditampilkan di halaman login dan pada panel atas dasbor aplikasi.
           </p>
         </div>
-        <div role="region" aria-labelledby="identitas-heading" className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div role="region" aria-labelledby="identitas-heading" className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
           <div className="p-6 space-y-6">
 
             <div className="space-y-2.5">
@@ -152,17 +152,17 @@ function PengaturanPage() {
         </div>
       </div>
 
-      <div className="h-px w-full bg-slate-200 dark:bg-slate-800/60 my-10" />
+      <div className="h-px w-full bg-slate-200 dark:bg-slate-800/60" />
 
       {/* Section 2: Kebijakan Ujian */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
-        <div className="space-y-2 lg:col-span-1">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(220px,0.8fr)_minmax(0,2fr)] lg:gap-12">
+        <div className="space-y-2">
           <h2 id="kebijakan-heading" className="text-lg font-semibold text-slate-900 dark:text-white">Kebijakan Ujian</h2>
           <p className="text-sm text-slate-500 leading-relaxed">
             Konfigurasi keamanan dan pembatasan akses perangkat untuk melindungi integritas pelaksanaan ujian.
           </p>
         </div>
-        <div role="region" aria-labelledby="kebijakan-heading" className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+        <div role="region" aria-labelledby="kebijakan-heading" className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
 
           <ToggleRow
             label="Kunci akses dari perangkat Mobile"
@@ -183,17 +183,17 @@ function PengaturanPage() {
         </div>
       </div>
 
-      <div className="h-px w-full bg-slate-200 dark:bg-slate-800/60 my-10" />
+      <div className="h-px w-full bg-slate-200 dark:bg-slate-800/60" />
 
       {/* Section 3: Tema & Tampilan */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
-        <div className="space-y-2 lg:col-span-1">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(220px,0.8fr)_minmax(0,2fr)] lg:gap-12">
+        <div className="space-y-2">
           <h2 id="tema-heading" className="text-lg font-semibold text-slate-900 dark:text-white">Tema & Tampilan</h2>
           <p className="text-sm text-slate-500 leading-relaxed">
             Sesuaikan gaya visual dan nuansa aplikasi. Tema dan tipografi ini akan diterapkan secara global untuk Anda.
           </p>
         </div>
-        <div role="region" aria-labelledby="tema-heading" className="lg:col-span-2 space-y-8">
+        <div role="region" aria-labelledby="tema-heading" className="space-y-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
 
           {/* Pilihan Tema Visual */}
           <div className="space-y-3">

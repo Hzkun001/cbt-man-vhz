@@ -106,3 +106,12 @@ test("leaderboard pages use the full admin layout and scroll wide tables", () =>
   assert.match(detail, /overflow-x-auto/);
   assert.match(detail, /min-w-\[720px\] w-full/);
 });
+
+test("settings page keeps full width and balanced two-column sections", () => {
+  const route = read("src/routes/_authenticated/admin.pengaturan.tsx");
+
+  assert.match(route, /<AdminPage className="mx-auto w-full max-w-\[1600px\] pb-12">/);
+  assert.match(route, /lg:grid-cols-\[minmax\(220px,0\.8fr\)_minmax\(0,2fr\)\]/);
+  assert.match(route, /role="region" aria-labelledby="identitas-heading"/);
+  assert.match(route, /role="region" aria-labelledby="tema-heading"[^>]*rounded-xl border/);
+});
