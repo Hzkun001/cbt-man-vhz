@@ -383,7 +383,7 @@ function UjianEditor() {
               </Select>
             </div>
             <div>
-              <Label>Kelas Mata Kuliah</Label>
+              <Label>Kelas Mata Kuliah (Opsional)</Label>
               <Select
                 value={u.penawaranId || "none"}
                 onValueChange={(v) => {
@@ -405,7 +405,7 @@ function UjianEditor() {
                   })}
                 </SelectContent>
               </Select>
-              <p className="mt-1 text-xs text-muted-foreground">Wajib dipilih sebelum paket dipublikasikan.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Gunakan jika peserta dikelola melalui kelas mata kuliah.</p>
             </div>
           </div>
         </CardContent>

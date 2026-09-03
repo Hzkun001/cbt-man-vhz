@@ -24,3 +24,14 @@ test("class workflow refreshes authoritative core data and uses guarded membersh
   assert.match(route, /penawaranRepo\.updateMembership/);
   assert.doesNotMatch(route, /penawaranRepo\.(?:upsert|remove)/);
 });
+
+test("academic metadata is optional for question banks and exams", () => {
+  const moduleRoute = read("src/routes/_authenticated/admin.modul.tsx");
+  const examRoute = read("src/routes/_authenticated/admin.ujian.$id.tsx");
+
+  assert.match(moduleRoute, /mataKuliahId: mkId === "none" \? undefined : mkId/);
+  assert.match(moduleRoute, /Mata kuliah \(opsional\)/i);
+  assert.doesNotMatch(moduleRoute, /Wajib memilih Mata Kuliah/);
+  assert.match(examRoute, /Kelas Mata Kuliah \(Opsional\)/);
+  assert.doesNotMatch(examRoute, /Wajib dipilih sebelum paket dipublikasikan/);
+});
