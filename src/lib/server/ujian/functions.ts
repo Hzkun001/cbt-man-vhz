@@ -28,12 +28,15 @@ async function getPublishError(item: Ujian, db: any = prisma): Promise<string | 
 	if (item.topicSets.length === 0) return "Tambahkan minimal satu sumber soal.";
 	if (item.beginAt === undefined || item.endAt === undefined) return "Atur waktu mulai dan selesai.";
 	if (item.endAt <= item.beginAt) return "Waktu selesai harus setelah waktu mulai.";
-	if (!item.penawaranId) return "Pilih kelas mata kuliah.";
-	const penawaran = await db.penawaranMataKuliah.findUnique({ where: { id: item.penawaranId } });
-	if (!penawaran || penawaran.mataKuliahId !== item.mataKuliahId || (penawaran.semesterId ?? undefined) !== item.semesterId) {
-		return "Kelas mata kuliah tidak sesuai dengan paket.";
+	let penawaran = null;
+	if (item.penawaranId) {
+		penawaran = await db.penawaranMataKuliah.findUnique({ where: { id: item.penawaranId } });
+		if (!penawaran || penawaran.mataKuliahId !== item.mataKuliahId || (penawaran.semesterId ?? undefined) !== item.semesterId) {
+			return "Kelas mata kuliah tidak sesuai dengan paket.";
+		}
 	}
-	if (item.groupIds.length === 0 && parseJson<string[]>(penawaran.pesertaIds, []).length === 0) return "Pilih peserta pada kelas mata kuliah.";
+	const hasOfferingParticipants = penawaran && parseJson<string[]>(penawaran.pesertaIds, []).length > 0;
+	if (item.groupIds.length === 0 && !hasOfferingParticipants) return "Pilih minimal satu grup atau peserta ujian.";
 	const topikIds = item.topicSets.map((set) => set.topikId);
 	if (new Set(topikIds).size !== topikIds.length) return "Topik sumber soal tidak boleh duplikat.";
 	const topiks: any[] = await db.topik.findMany({

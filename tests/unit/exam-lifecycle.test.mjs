@@ -35,8 +35,9 @@ test("publish performs readiness checks before changing status", () => {
   const server = read("src/lib/server/ujian/functions.ts");
   assert.match(server, /action: z\.enum\(\["upsert", "remove", "bulkSet", "publish"\]\)/);
   assert.match(server, /if \(item\.topicSets\.length === 0\)/);
-  assert.match(server, /if \(item\.groupIds\.length === 0 && parseJson/);
-  assert.match(server, /if \(!item\.penawaranId\)/);
+  assert.match(server, /if \(item\.penawaranId\) \{[\s\S]*penawaranMataKuliah\.findUnique/);
+  assert.match(server, /item\.groupIds\.length === 0 && !hasOfferingParticipants/);
+  assert.doesNotMatch(server, /if \(!item\.penawaranId\) return/);
   assert.match(server, /if \(item\.beginAt === undefined \|\| item\.endAt === undefined\)/);
   assert.match(server, /topikMataKuliahId !== item\.mataKuliahId/);
   assert.match(server, /status: "published"/);

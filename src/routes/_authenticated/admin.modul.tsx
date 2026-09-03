@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, ChevronRight, Upload, FileText, Download, FileUp, Lock, Pencil, AlertTriangle, Search } from "lucide-react";
+import { Plus, Trash2, ChevronRight, Upload, FileText, Download, FileUp, Lock, Pencil, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -62,11 +62,7 @@ function ModulPage() {
       toast.error("Nama modul wajib diisi");
       return;
     }
-    if (mkId === "none" || !mkId) {
-      toast.error("Wajib memilih Mata Kuliah untuk modul baru!");
-      return;
-    }
-    modulRepo.upsert({ id: uid("m_"), nama: nama.trim(), aktif: true, mataKuliahId: mkId });
+    modulRepo.upsert({ id: uid("m_"), nama: nama.trim(), aktif: true, mataKuliahId: mkId === "none" ? undefined : mkId });
     setNama("");
     setMkId("none");
     setModuls(visibleModuls(user));
@@ -113,8 +109,8 @@ function ModulPage() {
       const bank = BankSchema.parse(raw);
       
       const validMkId = bank.modul.mataKuliahId;
-      if (!validMkId || !mkList.some(mk => mk.id === validMkId)) {
-        toast.error("Mata Kuliah pada file import tidak valid atau sudah dihapus. Import dibatalkan.");
+      if (validMkId && !mkList.some(mk => mk.id === validMkId)) {
+        toast.error("Mata Kuliah pada file import sudah dihapus. Import dibatalkan.");
         return;
       }
 
@@ -189,7 +185,7 @@ function ModulPage() {
         <AdminPageContent className="overflow-hidden">
           <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-800">
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Buat Modul Baru</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Hubungkan modul dengan mata kuliah untuk mengelompokkan topik dan soal.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Mata kuliah bersifat opsional untuk membantu mengelompokkan bank soal.</p>
           </div>
           <form
             onSubmit={(e) => { e.preventDefault(); add(); }}
@@ -205,20 +201,20 @@ function ModulPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="new-module-course" className="block h-3.5 text-xs leading-3.5">Mata kuliah</Label>
+              <Label htmlFor="new-module-course" className="block h-3.5 text-xs leading-3.5">Mata kuliah (opsional)</Label>
               <Select value={mkId} onValueChange={setMkId}>
                 <SelectTrigger id="new-module-course">
                   <SelectValue placeholder="Pilih Mata Kuliah" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none" disabled>Pilih Mata Kuliah</SelectItem>
+                  <SelectItem value="none">(Tanpa Mata Kuliah)</SelectItem>
                   {mkList.map(m => (
                     <SelectItem key={m.id} value={m.id}>{m.nama}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <Button type="submit" className="w-full sm:mt-5" disabled={!nama.trim() || mkId === "none"}>
+            <Button type="submit" className="w-full sm:mt-5" disabled={!nama.trim()}>
               <Plus className="mr-2 h-4 w-4" />
               Buat Modul
             </Button>
@@ -251,8 +247,8 @@ function ModulPage() {
                           {mkName}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-400">
-                          <AlertTriangle className="h-3 w-3" /> Tanpa Mata Kuliah
+                        <span className="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-800">
+                          Umum
                         </span>
                       )}
                     </div>
@@ -359,14 +355,10 @@ function EditModulDialog({
       toast.error("Nama modul tidak boleh kosong");
       return;
     }
-    if (mkId === "none" || !mkId) {
-      toast.error("Pilih Mata Kuliah yang valid");
-      return;
-    }
     modulRepo.upsert({
       ...modul,
       nama: nama.trim(),
-      mataKuliahId: mkId,
+      mataKuliahId: mkId === "none" ? undefined : mkId,
     });
     toast.success("Modul berhasil diperbarui");
     onSaved();
@@ -389,13 +381,13 @@ function EditModulDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label>Mata Kuliah *</Label>
+            <Label>Mata Kuliah (Opsional)</Label>
             <Select value={mkId} onValueChange={setMkId}>
               <SelectTrigger>
                 <SelectValue placeholder="Pilih Mata Kuliah" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none" disabled>Pilih Mata Kuliah</SelectItem>
+                <SelectItem value="none">(Tanpa Mata Kuliah)</SelectItem>
                 {mkList.map((m) => (
                   <SelectItem key={m.id} value={m.id}>
                     {m.nama}
