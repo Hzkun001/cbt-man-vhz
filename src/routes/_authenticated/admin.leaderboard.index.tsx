@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ujianRepo, sesiRepo } from "@/lib/cbt/repos";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trophy, ChevronRight } from "lucide-react";
 import { AdminPage, AdminPageHeader } from "@/components/cbt/AdminPage";
 
@@ -13,8 +12,7 @@ function LeaderboardIndex() {
   const sesi = sesiRepo.all();
 
   return (
-    <AdminPage className="">
-      <div className="max-w-4xl pb-20 w-full">
+    <AdminPage className="w-full pb-20">
       <AdminPageHeader
         title="Leaderboard"
         description="Pilih paket ujian untuk melihat peringkat."
@@ -59,7 +57,6 @@ function LeaderboardIndex() {
             })}
           </div>
         )}
-      </div>
       </div>
     </AdminPage>
   );

@@ -94,3 +94,15 @@ test("exam editor uses the shared header and aligned question-source controls", 
   assert.match(route, /sm:grid-cols-\[minmax\(0,1fr\)_8rem_auto_auto\]/);
   assert.match(route, /<ArrowLeft className="mr-1 h-4 w-4" \/>[\s\S]*Kembali/);
 });
+
+test("leaderboard pages use the full admin layout and scroll wide tables", () => {
+  const index = read("src/routes/_authenticated/admin.leaderboard.index.tsx");
+  const detail = read("src/routes/_authenticated/admin.leaderboard.$id.tsx");
+
+  assert.match(index, /<AdminPage className="w-full pb-20">/);
+  assert.doesNotMatch(index, /max-w-4xl/);
+  assert.match(detail, /<AdminPage className="w-full pb-12">/);
+  assert.match(detail, /<Card className="w-full">/);
+  assert.match(detail, /overflow-x-auto/);
+  assert.match(detail, /min-w-\[720px\] w-full/);
+});
