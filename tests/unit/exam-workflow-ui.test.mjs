@@ -60,9 +60,20 @@ test("exam participant and question import pages use responsive content widths",
   const participants = read("src/routes/_authenticated/admin.ujian.$id.peserta.tsx");
   const questionImport = read("src/routes/_authenticated/admin.modul.import.tsx");
 
-  assert.match(participants, /max-w-6xl space-y-6 pb-12/);
+  assert.match(participants, /max-w-6xl pb-12/);
   assert.match(participants, /overflow-x-auto/);
-  assert.match(questionImport, /max-w-6xl space-y-6 pb-12/);
+  assert.match(questionImport, /max-w-6xl pb-12/);
   assert.match(questionImport, /sm:grid-cols-3/);
   assert.match(questionImport, /min-w-\[840px\] w-full text-xs/);
+});
+
+test("exam participant and question import pages use the shared admin theme", () => {
+  const participants = read("src/routes/_authenticated/admin.ujian.$id.peserta.tsx");
+  const questionImport = read("src/routes/_authenticated/admin.modul.import.tsx");
+
+  assert.match(participants, /AdminPageHeader/);
+  assert.match(participants, /AdminPageContent/);
+  assert.match(questionImport, /AdminPageHeader/);
+  assert.match(questionImport, /AdminPageContent/);
+  assert.doesNotMatch(questionImport, /text-indigo-|text-amber-|bg-indigo-|bg-amber-/);
 });
