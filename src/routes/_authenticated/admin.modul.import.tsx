@@ -18,6 +18,7 @@ import { Upload, Check, Lock, AlertTriangle, Download, Info, ImagePlus, Loader2 
 import { toast } from "sonner";
 import { useAuthStore } from "@/lib/cbt/auth-store";
 import { isTopikAllowed, visibleModuls, visibleTopiks } from "@/lib/cbt/access";
+import { AdminPage, AdminPageContent, AdminPageHeader } from "@/components/cbt/AdminPage";
 
 export const Route = createFileRoute("/_authenticated/admin/modul/import")({
   component: ImportPage,
@@ -39,14 +40,9 @@ function ImportPage() {
 
   if (moduls.length === 0 || topiks.length === 0) {
     return (
-      <div className="mx-auto w-full max-w-6xl space-y-6 pb-12">
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-          <Link to="/admin/modul" className="mb-2 inline-flex text-xs font-semibold text-muted-foreground hover:text-foreground">
-            ← Kembali ke Bank Soal
-          </Link>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 sm:text-2xl">Import Soal dari Excel</h1>
-        </div>
-        <Card>
+      <AdminPage className="mx-auto max-w-6xl pb-12">
+        <AdminPageHeader title="Import Soal dari Excel" description="Pilih tujuan lalu upload spreadsheet untuk menambahkan soal ke bank." />
+        <AdminPageContent>
           <CardContent className="space-y-3 p-4">
             <div className="rounded-md border bg-muted/30 p-4 text-sm">
               <div className="flex items-center gap-2 font-medium">
@@ -60,8 +56,8 @@ function ImportPage() {
               </p>
             </div>
           </CardContent>
-        </Card>
-      </div>
+        </AdminPageContent>
+      </AdminPage>
     );
   }
 
@@ -338,21 +334,14 @@ function ImportPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6 pb-12">
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-        <Link to="/admin/modul" className="mb-2 inline-flex text-xs font-semibold text-slate-500 transition-colors hover:text-primary">
-          ← Kembali ke Bank Soal
-        </Link>
-        <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 sm:text-2xl">
-          Import Soal dari Excel
-        </h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Upload file spreadsheet Excel dengan format standar untuk menambahkan banyak soal sekaligus.
-        </p>
-      </div>
+    <AdminPage className="mx-auto max-w-6xl pb-12">
+      <AdminPageHeader
+        title="Import Soal dari Excel"
+        description="Upload file spreadsheet Excel dengan format standar untuk menambahkan banyak soal sekaligus."
+      />
 
       {/* Target Module & Topic Selection */}
-      <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+      <AdminPageContent>
         <CardContent className="space-y-4 p-5">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
@@ -395,7 +384,7 @@ function ImportPage() {
           </div>
 
           <div className="grid gap-2 pt-2 sm:grid-cols-3">
-            <Button variant="outline" onClick={downloadTemplate} className="h-10 w-full font-semibold border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-900/50 dark:text-indigo-300 dark:hover:bg-indigo-950/40">
+            <Button variant="outline" onClick={downloadTemplate} className="h-10 w-full font-semibold">
               <Download className="mr-2 h-4 w-4" /> Download Template Standar (.xlsx)
             </Button>
 
@@ -414,7 +403,7 @@ function ImportPage() {
               variant="outline"
               onClick={() => imageRef.current?.click()}
               disabled={isUploadingImages}
-              className="h-10 w-full font-semibold border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-900/50 dark:text-amber-400 dark:hover:bg-amber-950/40"
+              className="h-10 w-full font-semibold"
             >
               {isUploadingImages ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ImagePlus className="mr-2 h-4 w-4" />}
               {Object.keys(imageMap).length > 0 ? `${Object.keys(imageMap).length} Gambar Tersimpan` : "Upload Gambar (Opsional)"}
@@ -431,21 +420,21 @@ function ImportPage() {
                 e.target.value = "";
               }}
             />
-            <Button onClick={() => fileRef.current?.click()} className="h-10 w-full font-semibold bg-slate-900 hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-500">
+            <Button onClick={() => fileRef.current?.click()} className="h-10 w-full font-semibold">
               <Upload className="mr-2 h-4 w-4" /> Pilih File Excel
             </Button>
           </div>
         </CardContent>
-      </Card>
+      </AdminPageContent>
 
       {/* Prominent UX Standard & Constraint Guide */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="rounded-2xl border border-indigo-100 dark:border-indigo-950/60 bg-indigo-50/40 dark:bg-indigo-950/20 p-5 space-y-3">
-          <div className="flex items-center gap-2 font-bold text-sm text-indigo-900 dark:text-indigo-300">
-            <Info className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+        <div className="rounded-lg border border-slate-200 bg-white p-5 space-y-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <Info className="h-4 w-4 text-primary" />
             Format Standar Excel (Horizontal)
           </div>
-          <ul className="text-xs text-indigo-950/80 dark:text-indigo-200/80 space-y-1.5 list-disc pl-4 leading-relaxed">
+          <ul className="space-y-1.5 pl-4 text-xs leading-relaxed text-muted-foreground list-disc">
             <li><strong>Soal</strong>: Tuliskan teks pertanyaan soal.</li>
             <li><strong>Opsi A s/d Opsi E</strong>: Isikan teks pilihan jawaban.</li>
             <li><strong>Kunci Jawaban</strong>: Isikan <code>A</code>, <code>B</code>, <code>C</code>, <code>D</code>, atau <code>E</code>. Untuk <em>Multi Jawaban</em> isikan terpisah koma (contoh: <code>A, C</code>). Kosongkan untuk soal <em>Essay</em>.</li>
@@ -453,30 +442,30 @@ function ImportPage() {
           </ul>
         </div>
 
-        <div className="rounded-2xl border border-amber-200/60 dark:border-amber-900/50 bg-amber-50/40 dark:bg-amber-950/20 p-5 space-y-3">
-          <div className="flex items-center gap-2 font-bold text-sm text-amber-900 dark:text-amber-300">
-            <ImagePlus className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+        <div className="rounded-lg border border-slate-200 bg-white p-5 space-y-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <ImagePlus className="h-4 w-4 text-primary" />
             Cara Mudah Memasukkan Gambar
           </div>
-          <p className="text-xs text-amber-950/80 dark:text-amber-200/80 leading-relaxed">
+          <p className="text-xs leading-relaxed text-muted-foreground">
             Gambar yang di-<em>copy-paste</em> langsung ke dalam sel Excel <strong>TIDAK DAPAT DIBACA</strong> oleh sistem. 
             <strong>Solusi Praktis:</strong> 
-            Klik tombol <strong className="text-amber-700 dark:text-amber-400">Upload Gambar</strong> di atas, lalu pilih gambar-gambar dari komputer Anda. Setelah itu, cukup ketikkan <strong>nama file</strong> (contoh: <code>gambar1.jpg</code>) di kolom <strong>Gambar</strong> pada Excel. Sistem akan otomatis menyambungkannya!
+            Klik tombol <strong>Upload Gambar</strong> di atas, lalu pilih gambar-gambar dari komputer Anda. Setelah itu, cukup ketikkan <strong>nama file</strong> (contoh: <code>gambar1.jpg</code>) di kolom <strong>Gambar</strong> pada Excel. Sistem akan otomatis menyambungkannya!
           </p>
         </div>
       </div>
 
       {/* Preview Section */}
       {preview.length > 0 && (
-        <Card className="border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+        <AdminPageContent className="overflow-hidden p-0">
           <CardContent className="p-0">
-            <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/50 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 border-b border-slate-200 bg-muted/30 p-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Preview: <strong>{preview.length}</strong> baris ·{" "}
                 <span className="text-emerald-600 dark:text-emerald-400 font-bold">{preview.filter((r) => r.valid).length} valid</span> ·{" "}
                 <span className="text-rose-600 dark:text-rose-400 font-bold">{preview.filter((r) => !r.valid).length} error</span>
               </div>
-              <Button size="sm" onClick={commit} disabled={!preview.some((r) => r.valid)} className="w-full font-semibold bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto">
+              <Button size="sm" onClick={commit} disabled={!preview.some((r) => r.valid)} className="w-full font-semibold sm:w-auto">
                 <Check className="mr-1.5 h-4 w-4" />
                 Simpan Soal Valid ({preview.filter((r) => r.valid).length})
               </Button>
@@ -518,8 +507,8 @@ function ImportPage() {
               </table>
             </div>
           </CardContent>
-        </Card>
+        </AdminPageContent>
       )}
-    </div>
+    </AdminPage>
   );
 }

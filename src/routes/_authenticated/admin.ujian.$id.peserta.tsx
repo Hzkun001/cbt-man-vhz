@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { ujianRepo, usersRepo, unitAkademikRepo } from "@/lib/cbt/repos";
-import { Card, CardContent } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Printer, Search } from "lucide-react";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { AdminPage, AdminPageContent, AdminPageHeader } from "@/components/cbt/AdminPage";
 
 export const Route = createFileRoute("/_authenticated/admin/ujian/$id/peserta")({
   component: PesertaUjian,
@@ -18,7 +19,7 @@ function PesertaUjian() {
 
   const [search, setSearch] = useState("");
 
-  if (!ujian) return <div>Tidak ditemukan</div>;
+  if (!ujian) return <AdminPage><p className="text-sm text-muted-foreground">Ujian tidak ditemukan.</p></AdminPage>;
   const users = usersRepo.all();
   const units = unitAkademikRepo.all();
   const unitYangIkut = units.filter((u) => ujian.groupIds.includes(u.id));
@@ -34,35 +35,18 @@ function PesertaUjian() {
 
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6 pb-12">
-      <div className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <Link to="/admin/ujian" className="mb-2 inline-flex text-xs font-semibold text-muted-foreground hover:text-foreground">
-            ← Kembali ke paket ujian
-          </Link>
-          <h1 className="truncate text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 sm:text-2xl">
-            Peserta ujian
-          </h1>
-          <p className="mt-1 truncate text-sm text-muted-foreground">{ujian.nama}</p>
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span className="rounded-md bg-slate-100 px-2 py-1 font-medium dark:bg-slate-800">
-              {peserta.length} peserta
-            </span>
-            <span className="rounded-md bg-slate-100 px-2 py-1 font-medium dark:bg-slate-800">
-              {unitYangIkut.length} unit
-            </span>
-            {ujian.groupIds.length === 0 && <span>Belum ada unit peserta</span>}
-          </div>
-        </div>
-        <Link to="/admin/peserta/kartu" className="shrink-0">
-          <Button variant="outline" className="w-full sm:w-auto">
-            <Printer className="mr-1 h-4 w-4" />
-            Cetak Kartu
+    <AdminPage className="mx-auto max-w-6xl pb-12">
+      <AdminPageHeader
+        title={`Peserta: ${ujian.nama}`}
+        description={`${peserta.length} peserta dari ${unitYangIkut.length} unit${ujian.groupIds.length === 0 ? " (belum ditentukan)" : ""}.`}
+        action={(
+          <Button variant="outline" asChild>
+            <Link to="/admin/peserta/kartu"><Printer className="mr-1 h-4 w-4" /> Cetak Kartu</Link>
           </Button>
-        </Link>
-      </div>
+        )}
+      />
 
-      <Card>
+      <AdminPageContent>
         <CardContent className="space-y-4 p-4 sm:p-5">
           <div>
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Peserta yang berhak ikut</h2>
@@ -107,9 +91,9 @@ function PesertaUjian() {
             )}
           </div>
         </CardContent>
-      </Card>
+      </AdminPageContent>
 
-      <Card>
+      <AdminPageContent className="p-0">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
           <table className="min-w-[720px] w-full text-sm">
@@ -143,7 +127,7 @@ function PesertaUjian() {
           </table>
           </div>
         </CardContent>
-      </Card>
-    </div>
+      </AdminPageContent>
+    </AdminPage>
   );
 }
