@@ -35,3 +35,11 @@ test("academic metadata is optional for question banks and exams", () => {
   assert.match(examRoute, /Kelas Mata Kuliah \(Opsional\)/);
   assert.doesNotMatch(examRoute, /Wajib dipilih sebelum paket dipublikasikan/);
 });
+
+test("creating an exam opens its setup editor immediately", () => {
+  const route = read("src/routes/_authenticated/admin.ujian.tsx");
+
+  assert.match(route, /const result = await ujianRepo\.flush\(\)/);
+  assert.match(route, /if \(!result\.ok\)/);
+  assert.match(route, /navigate\(\{ to: "\/admin\/ujian\/\$id", params: \{ id: u\.id \} \}\)/);
+});

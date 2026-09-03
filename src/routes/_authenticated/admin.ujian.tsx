@@ -2,6 +2,7 @@ import {
   createFileRoute,
   Link,
   Outlet,
+  useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
 import { useState } from "react";
@@ -32,6 +33,7 @@ function UjianRoute() {
 
 function UjianList() {
   const user = useAuthStore((s) => s.user)!;
+  const navigate = useNavigate();
   const [list, setList] = useState<Ujian[]>(visibleUjians(user));
   const [activeTab, setActiveTab] = useState<"semua" | "persiapan" | "berlangsung" | "selesai">("semua");
   const [search, setSearch] = useState("");
@@ -65,10 +67,14 @@ function UjianList() {
       createdAt: Date.now(),
     };
     ujianRepo.upsert(u);
-    await ujianRepo.flush();
-    setList((current) => [...current, u]);
-    toast.success("Ujian baru dibuat — silakan edit");
+    const result = await ujianRepo.flush();
     setIsAdding(false);
+    if (!result.ok) {
+      toast.error(result.error || "Gagal membuat ujian");
+      return;
+    }
+    toast.success("Ujian baru dibuat");
+    navigate({ to: "/admin/ujian/$id", params: { id: u.id } });
   }
 
   const now = Date.now();
