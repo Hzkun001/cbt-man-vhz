@@ -128,7 +128,7 @@ function ToolsPage() {
   }
 
   return (
-    <AdminPage className="">
+    <AdminPage className="mx-auto w-full max-w-[1600px] pb-12">
 
       <AdminPageHeader
         title="Alat Sistem"
@@ -136,14 +136,14 @@ function ToolsPage() {
       />
 
       {/* Section 1: Backup & Restore */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
-        <div className="space-y-2 lg:col-span-1">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(220px,0.8fr)_minmax(0,2fr)] lg:gap-12">
+        <div className="space-y-2">
           <h2 id="backup-heading" className="text-lg font-semibold text-slate-900 dark:text-white">Pencadangan Data</h2>
           <p className="text-sm text-slate-500 leading-relaxed">
             Amankan data aplikasi secara berkala atau pulihkan dari cadangan sebelumnya. Cadangan mencakup seluruh pengguna, soal, ujian, dan konfigurasi.
           </p>
         </div>
-        <div role="region" aria-labelledby="backup-heading" className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+        <div role="region" aria-labelledby="backup-heading" className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
 
           
           {/* Export Backup Row */}
@@ -194,17 +194,17 @@ function ToolsPage() {
         </div>
       </div>
 
-      <div className="h-px w-full bg-slate-200 dark:bg-slate-800/60 my-10" />
+      <div className="h-px w-full bg-slate-200 dark:bg-slate-800/60" />
 
       {/* Section 2: Pemeliharaan Pangkalan Data */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
-        <div className="space-y-2 lg:col-span-1">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(220px,0.8fr)_minmax(0,2fr)] lg:gap-12">
+        <div className="space-y-2">
           <h2 id="advanced-heading" className="text-lg font-semibold text-slate-900 dark:text-white">Pengelolaan Lanjut</h2>
           <p className="text-sm text-slate-500 leading-relaxed">
             Aksi-aksi kritikal untuk memanipulasi pangkalan data sistem secara langsung.
           </p>
         </div>
-        <div role="region" aria-labelledby="advanced-heading" className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+        <div role="region" aria-labelledby="advanced-heading" className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
 
           
           {/* Seed Data Row */}

@@ -573,7 +573,7 @@ function PanduanPage() {
   }, [search]);
 
   return (
-    <AdminPage className="max-w-7xl mx-auto space-y-6 pb-28">
+    <AdminPage className="mx-auto w-full max-w-[1600px] space-y-6 pb-12">
       <AdminPageHeader
         title="Dokumentasi & Panduan"
         description={`Pusat pengetahuan resmi ${cfg.appName} — panduan alur kerja, pengelolaan ujian, dan pemecahan masalah.`}
@@ -613,20 +613,11 @@ function PanduanPage() {
       </Card>
 
       {/* 3-COLUMN DOCUSAURUS ULTRA-CLEAN LAYOUT */}
-      <div className="flex flex-col lg:flex-row gap-8 items-start">
+      <div className="grid items-start gap-6 lg:grid-cols-[16rem_minmax(0,1fr)] xl:grid-cols-[16rem_minmax(0,1fr)_14rem]">
         
         {/* COLUMN 1: LEFT DOCS CATEGORY SIDEBAR (Linear Style) */}
-        <Card className="w-full lg:w-64 shrink-0 border-border bg-card text-card-foreground shadow-none rounded-xl">
+        <Card className="w-full border-border bg-card text-card-foreground shadow-none rounded-xl lg:sticky lg:top-24">
           <CardContent className="p-4 space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input 
-                placeholder="Filter dokumen..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 h-9 text-xs bg-background border-border text-foreground focus-visible:ring-1 focus-visible:ring-slate-400 dark:focus-visible:ring-slate-600 focus-visible:border-slate-400"
-              />
-            </div>
             <nav aria-label="Kategori Panduan" className="space-y-4 text-xs">
               {filteredCategories.map((cat) => {
                 const IconComp = cat.icon;
@@ -738,7 +729,7 @@ function PanduanPage() {
 
         {/* COLUMN 3: RIGHT IN-PAGE TOC (Raycast/Linear Scrollspy) */}
         {activeDoc.toc.length > 0 && (
-          <Card className="hidden xl:block w-56 shrink-0 sticky top-24 self-start border-border bg-card text-card-foreground shadow-none rounded-xl">
+        <Card className="hidden xl:block w-full sticky top-24 self-start border-border bg-card text-card-foreground shadow-none rounded-xl">
             <CardContent className="p-4 text-xs space-y-3">
               <div className="font-semibold uppercase tracking-wider text-[10px] text-muted-foreground px-2">
                 Daftar Isi Halaman

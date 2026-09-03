@@ -115,3 +115,14 @@ test("settings page keeps full width and balanced two-column sections", () => {
   assert.match(route, /role="region" aria-labelledby="identitas-heading"/);
   assert.match(route, /role="region" aria-labelledby="tema-heading"[^>]*rounded-xl border/);
 });
+
+test("tools and guide pages use full-width structured admin layouts", () => {
+  const tools = read("src/routes/_authenticated/admin.tools.tsx");
+  const guide = read("src/routes/_authenticated/admin.panduan.tsx");
+
+  assert.match(tools, /<AdminPage className="mx-auto w-full max-w-\[1600px\] pb-12">/);
+  assert.match(tools, /lg:grid-cols-\[minmax\(220px,0\.8fr\)_minmax\(0,2fr\)\]/);
+  assert.match(guide, /<AdminPage className="mx-auto w-full max-w-\[1600px\] space-y-6 pb-12">/);
+  assert.match(guide, /lg:grid-cols-\[16rem_minmax\(0,1fr\)\]/);
+  assert.match(guide, /xl:grid-cols-\[16rem_minmax\(0,1fr\)_14rem\]/);
+});
