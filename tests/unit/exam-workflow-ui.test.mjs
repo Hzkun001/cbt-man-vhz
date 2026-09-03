@@ -55,3 +55,14 @@ test("secondary exam settings use native collapsed sections", () => {
   assert.match(route, /<summary[^>]*>Alat bantu ujian<\/summary>/);
   assert.match(route, /<summary[^>]*>\s*Tampilan hasil & anti-cheat\s*<\/summary>/);
 });
+
+test("exam participant and question import pages use responsive content widths", () => {
+  const participants = read("src/routes/_authenticated/admin.ujian.$id.peserta.tsx");
+  const questionImport = read("src/routes/_authenticated/admin.modul.import.tsx");
+
+  assert.match(participants, /max-w-6xl space-y-6 pb-12/);
+  assert.match(participants, /overflow-x-auto/);
+  assert.match(questionImport, /max-w-6xl space-y-6 pb-12/);
+  assert.match(questionImport, /sm:grid-cols-3/);
+  assert.match(questionImport, /min-w-\[840px\] w-full text-xs/);
+});
