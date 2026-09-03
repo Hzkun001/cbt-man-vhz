@@ -294,7 +294,7 @@ function UjianEditor() {
   const totalSoal = u.topicSets.reduce((total, topicSet) => total + (Number(topicSet.jumlah) || 0), 0);
 
   return (
-    <AdminPage className="mx-auto max-w-6xl pb-12">
+    <AdminPage className="mx-auto w-full max-w-[1600px] pb-12">
       <AdminPageHeader
         title={
           <span className="inline-flex items-center gap-2">
