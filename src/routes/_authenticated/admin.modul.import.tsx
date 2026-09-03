@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Upload, Check, Lock, AlertTriangle, Download, Info, ImagePlus, Loader2 } from "lucide-react";
+import { ArrowLeft, Upload, Check, Lock, AlertTriangle, Download, Info, ImagePlus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/lib/cbt/auth-store";
 import { isTopikAllowed, visibleModuls, visibleTopiks } from "@/lib/cbt/access";
@@ -41,7 +41,11 @@ function ImportPage() {
   if (moduls.length === 0 || topiks.length === 0) {
     return (
       <AdminPage className="mx-auto max-w-6xl pb-12">
-        <AdminPageHeader title="Import Soal dari Excel" description="Pilih tujuan lalu upload spreadsheet untuk menambahkan soal ke bank." />
+        <AdminPageHeader
+          title="Import Soal dari Excel"
+          description="Pilih tujuan lalu upload spreadsheet untuk menambahkan soal ke bank."
+          action={<Button variant="ghost" size="sm" asChild><Link to="/admin/modul"><ArrowLeft className="mr-1 h-4 w-4" /> Kembali</Link></Button>}
+        />
         <AdminPageContent>
           <CardContent className="space-y-3 p-4">
             <div className="rounded-md border bg-muted/30 p-4 text-sm">
@@ -338,6 +342,7 @@ function ImportPage() {
       <AdminPageHeader
         title="Import Soal dari Excel"
         description="Upload file spreadsheet Excel dengan format standar untuk menambahkan banyak soal sekaligus."
+        action={<Button variant="ghost" size="sm" asChild><Link to="/admin/modul"><ArrowLeft className="mr-1 h-4 w-4" /> Kembali</Link></Button>}
       />
 
       {/* Target Module & Topic Selection */}

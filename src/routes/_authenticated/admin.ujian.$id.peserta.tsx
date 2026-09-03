@@ -2,7 +2,7 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { ujianRepo, usersRepo, unitAkademikRepo } from "@/lib/cbt/repos";
 import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Printer, Search } from "lucide-react";
+import { ArrowLeft, Printer, Search } from "lucide-react";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -40,9 +40,14 @@ function PesertaUjian() {
         title={`Peserta: ${ujian.nama}`}
         description={`${peserta.length} peserta dari ${unitYangIkut.length} unit${ujian.groupIds.length === 0 ? " (belum ditentukan)" : ""}.`}
         action={(
-          <Button variant="outline" asChild>
-            <Link to="/admin/peserta/kartu"><Printer className="mr-1 h-4 w-4" /> Cetak Kartu</Link>
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/admin/ujian"><ArrowLeft className="mr-1 h-4 w-4" /> Kembali</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/admin/peserta/kartu"><Printer className="mr-1 h-4 w-4" /> Cetak Kartu</Link>
+            </Button>
+          </div>
         )}
       />
 

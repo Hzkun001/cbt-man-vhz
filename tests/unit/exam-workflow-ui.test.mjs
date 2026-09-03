@@ -77,3 +77,11 @@ test("exam participant and question import pages use the shared admin theme", ()
   assert.match(questionImport, /AdminPageContent/);
   assert.doesNotMatch(questionImport, /text-indigo-|text-amber-|bg-indigo-|bg-amber-/);
 });
+
+test("exam participant and question import pages keep visible back navigation", () => {
+  const participants = read("src/routes/_authenticated/admin.ujian.$id.peserta.tsx");
+  const questionImport = read("src/routes/_authenticated/admin.modul.import.tsx");
+
+  assert.match(participants, /to="\/admin\/ujian"[\s\S]*Kembali/);
+  assert.match(questionImport, /to="\/admin\/modul"[\s\S]*Kembali/);
+});
