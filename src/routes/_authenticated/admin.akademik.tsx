@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
-import { Network, Calendar, Clock, BookOpen, ChevronRight } from "lucide-react";
+import { Network, Calendar, Clock, BookOpen, GraduationCap, ChevronRight } from "lucide-react";
 import { AdminPageHeader } from "@/components/cbt/AdminPage";
 
 export const Route = createFileRoute("/_authenticated/admin/akademik")({
@@ -25,6 +25,12 @@ const TREE_MENU = [
     section: "Kurikulum",
     items: [
       { label: "Mata Kuliah", to: "/admin/akademik/mata-kuliah", icon: BookOpen, indent: 0 },
+    ]
+  },
+  {
+    section: "Kelas Perkuliahan",
+    items: [
+      { label: "Kelas Mata Kuliah", to: "/admin/akademik/kelas-mata-kuliah", icon: GraduationCap, indent: 0 },
     ]
   }
 ];
