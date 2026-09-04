@@ -11,6 +11,7 @@ import { Plus, Trash2, ChevronRight, Lock, BookOpen, Layers, Pencil } from "luci
 import { toast } from "sonner";
 import { useAuthStore } from "@/lib/cbt/auth-store";
 import { allowedTopikIdSet, isUnrestricted } from "@/lib/cbt/access";
+import { ConfirmDialog } from "@/components/cbt/ConfirmDialog";
 
 export const Route = createFileRoute("/_authenticated/admin/modul/$id/topik")({
   component: TopikPage,
@@ -29,6 +30,7 @@ function TopikPage() {
   const [editingTopik, setEditingTopik] = useState<Topik | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editNama, setEditNama] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   if (!modul) return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -47,9 +49,14 @@ function TopikPage() {
   function remove(id: string) {
     if (!canEdit) return;
     if (soalRepo.all().some((s) => s.topikId === id)) { toast.error("Hapus soal di topik ini dulu"); return; }
-    if (!confirm("Hapus topik?")) return;
-    topikRepo.remove(id); setTopiks(filterMine(topikRepo.all()));
+    setDeleteId(id);
+  }
+
+  function confirmDelete() {
+    if (!deleteId) return;
+    topikRepo.remove(deleteId); setTopiks(filterMine(topikRepo.all()));
     toast.success("Topik dihapus");
+    setDeleteId(null);
   }
 
   function openEdit(t: Topik) {
@@ -179,6 +186,13 @@ function TopikPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        title="Hapus Topik"
+        description="Apakah Anda yakin ingin menghapus topik ini secara permanen?"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }
