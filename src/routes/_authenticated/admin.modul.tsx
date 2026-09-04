@@ -57,7 +57,7 @@ function ModulPage() {
 
   const shown = filterModuls(moduls, query);
 
-  function add() {
+  async function add() {
     if (!canEdit) return;
     if (!nama.trim()) {
       toast.error("Nama modul wajib diisi");
@@ -66,7 +66,11 @@ function ModulPage() {
     const modulId = uid("m_");
     const topikId = uid("t_");
     modulRepo.upsert({ id: modulId, nama: nama.trim(), aktif: true, mataKuliahId: mkId === "none" ? undefined : mkId });
+    const modulResult = await modulRepo.flush();
+    if (!modulResult.ok) return;
     topikRepo.upsert({ id: topikId, modulId, nama: "Umum" });
+    const topikResult = await topikRepo.flush();
+    if (!topikResult.ok) return;
     setNama("");
     setMkId("none");
     setModuls(visibleModuls(user));
@@ -133,8 +137,14 @@ function ModulPage() {
         jawaban: s.jawaban.map((j) => ({ ...j, id: uid("j_") })),
       }));
       modulRepo.upsert(newModul);
+      const modulResult = await modulRepo.flush();
+      if (!modulResult.ok) return;
       newTopik.forEach((t) => topikRepo.upsert(t));
+      const topikResult = await topikRepo.flush();
+      if (!topikResult.ok) return;
       newSoal.forEach((s) => soalRepo.upsert(s));
+      const soalResult = await soalRepo.flush();
+      if (!soalResult.ok) return;
       setModuls(visibleModuls(user));
       toast.success(
         `Bank diimport: ${newModul.nama} — ${newTopik.length} topik, ${newSoal.length} soal`,
