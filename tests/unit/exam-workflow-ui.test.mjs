@@ -136,3 +136,11 @@ test("admin dashboard uses a Vercel-style full-width toolbar and searchable exam
   assert.match(dashboard, /\.filter\(\(exam\) => exam\.nama\.toLowerCase\(\)\.includes\(search/);
   assert.match(dashboard, /bg-slate-950 p-5 text-white/);
 });
+
+test("course classes are nested under the academic structure navigation", () => {
+  const admin = read("src/routes/_authenticated/admin.tsx");
+  const academic = read("src/routes/_authenticated/admin.akademik.tsx");
+
+  assert.doesNotMatch(admin, /to: "\/admin\/akademik\/kelas-mata-kuliah"/);
+  assert.match(academic, /section: "Kelas Perkuliahan"[\s\S]*to: "\/admin\/akademik\/kelas-mata-kuliah"/);
+});
