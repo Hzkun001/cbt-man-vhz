@@ -21,6 +21,7 @@ import { Plus, Trash2, Save, Lock, ArrowLeft, FileSignature, KeyRound } from "lu
 import { toast } from "sonner";
 import { RichEditor } from "@/components/cbt/RichEditor";
 import { AdminPage, AdminPageHeader } from "@/components/cbt/AdminPage";
+import { ConfirmDialog } from "@/components/cbt/ConfirmDialog";
 import { useAuthStore } from "@/lib/cbt/auth-store";
 import {
   allowedTopikIdSet,
@@ -109,6 +110,7 @@ function UjianEditor() {
   const [u, setU] = useState<Ujian | null>(initial ?? null);
   const [loadingRemote, setLoadingRemote] = useState(initial === undefined);
   const [denied, setDenied] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   // After the auth store hydrates, re-evaluate the access check. If the
   // operator is out of scope, flip to the lock screen.
   useEffect(() => {
@@ -284,9 +286,12 @@ function UjianEditor() {
   }
 
   async function hapus() {
-    if (!confirm(`Yakin ingin menghapus ujian "${u!.nama}" beserta seluruh data yang terkait?`)) return;
     ujianRepo.remove(u!.id);
-    await ujianRepo.flush();
+    const result = await ujianRepo.flush();
+    if (!result.ok) {
+      toast.error(result.error || "Gagal menghapus ujian");
+      return;
+    }
     toast.success("Ujian dihapus");
     navigate({ to: "/admin/ujian" });
   }
@@ -317,7 +322,7 @@ function UjianEditor() {
               Kelola Token
             </Link>
           </Button>
-          <Button variant="outline" className="h-9 text-xs text-destructive border-destructive/30 hover:bg-destructive/10" onClick={hapus}>
+          <Button variant="outline" className="h-9 text-xs text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setDeleteOpen(true)}>
             <Trash2 className="mr-1 h-4 w-4" />
             Hapus
           </Button>
@@ -415,6 +420,14 @@ function UjianEditor() {
           </details>
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Hapus Ujian"
+        description={`Yakin ingin menghapus ujian "${u.nama}" beserta seluruh data yang terkait?`}
+        onConfirm={hapus}
+      />
 
       <Card>
         <CardContent className="space-y-3 p-4">

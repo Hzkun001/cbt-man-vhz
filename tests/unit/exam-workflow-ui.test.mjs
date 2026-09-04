@@ -171,6 +171,14 @@ test("bank question deletion uses themed confirmation dialogs", () => {
   assert.match(questionRoute, /<ConfirmDialog[\s\S]*Hapus Soal/);
 });
 
+test("exam editor deletion uses a themed confirmation dialog", () => {
+  const route = read("src/routes/_authenticated/admin.ujian.$id.tsx");
+
+  assert.doesNotMatch(route, /\bconfirm\(/);
+  assert.match(route, /onClick=\{\(\) => setDeleteOpen\(true\)\}/);
+  assert.match(route, /<ConfirmDialog[\s\S]*title="Hapus Ujian"/);
+});
+
 test("draft exams stay in preparation even when their schedule is active", () => {
   const route = read("src/routes/_authenticated/admin.ujian.tsx");
 
