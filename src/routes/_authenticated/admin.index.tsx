@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { useAuthStore } from "@/lib/cbt/auth-store";
 import {
   usersRepo,
@@ -27,9 +28,11 @@ import {
   Layers,
   Radio,
   ArrowUpRight,
+  Search,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: CommandCenter,
@@ -37,6 +40,7 @@ export const Route = createFileRoute("/_authenticated/admin/")({
 
 function CommandCenter() {
   const user = useAuthStore((s) => s.user);
+  const [search, setSearch] = useState("");
   const now = Date.now();
   const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
 
@@ -71,7 +75,9 @@ function CommandCenter() {
     .filter((u): u is typeof u & { beginAt: number } => typeof u.beginAt === "number" && now < u.beginAt)
     .sort((a, b) => a.beginAt - b.beginAt);
   const upcomingExamCount = upcoming.length;
-  const upcomingExams = upcoming.slice(0, 4);
+  const upcomingExams = upcoming
+    .filter((exam) => exam.nama.toLowerCase().includes(search.trim().toLowerCase()))
+    .slice(0, 4);
   const finishedExams = semuaUjian.filter((u) => u.endAt && now > u.endAt);
 
   const pendingTasks = finishedExams.length > 0 && canAccess("/admin/evaluasi")
@@ -94,54 +100,54 @@ function CommandCenter() {
   };
 
   return (
-    <div className="w-full space-y-8 animate-in fade-in duration-500 pb-16">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6 animate-in fade-in duration-500 pb-12">
 
-      {/* 1. TOP OPERATIONAL STATUS BAR (Z-Pattern Zone 1 - Anti-AI Slop: Clean, Functional, Semantic) */}
-      <section className="rounded-2xl bg-slate-900 text-white p-6 sm:p-8 shadow-md border border-slate-800">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="relative min-w-0 flex-1 lg:max-w-2xl">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Cari ujian"
+            className="h-10 rounded-lg border-slate-200 bg-white pl-9 pr-12 text-sm shadow-none dark:border-slate-800 dark:bg-slate-950"
+          />
+          <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded border border-slate-200 px-1.5 py-0.5 text-[10px] text-slate-400 dark:border-slate-800">/</kbd>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
+          {canAccess("/admin/peserta/online") && (
+            <Button variant="outline" className="h-10 rounded-lg text-xs" asChild>
+              <Link to="/admin/peserta/online"><Radio className="mr-2 h-4 w-4 text-emerald-500" />Pantau Peserta</Link>
+            </Button>
+          )}
+          {canAccess("/admin/ujian") && (
+            <Button className="h-10 rounded-lg bg-slate-900 px-4 text-xs text-white hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200" asChild>
+              <Link to="/admin/ujian"><Plus className="mr-2 h-4 w-4" />Tambah Ujian</Link>
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <section className="rounded-lg border border-slate-200 bg-slate-950 p-5 text-white shadow-sm dark:border-slate-800 sm:p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md text-xs font-semibold bg-slate-800 text-slate-200 border border-slate-700">
-              <span className="relative flex h-2 w-2">
-                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${activeExams.length > 0 ? "bg-emerald-400" : "bg-slate-400"}`}></span>
-                <span className={`relative inline-flex rounded-full h-2 w-2 ${activeExams.length > 0 ? "bg-emerald-500" : "bg-slate-400"}`}></span>
-              </span>
-              {activeExams.length > 0
-                ? `${activeExams.length} Ujian Sedang Berlangsung`
-                : "Sistem CBT Siaga Operasional"}
+            <div className="inline-flex items-center gap-2 text-xs font-medium text-slate-400">
+              <span className={`h-2 w-2 rounded-full ${activeExams.length > 0 ? "bg-emerald-400" : "bg-slate-500"}`} />
+              {activeExams.length > 0 ? `${activeExams.length} ujian sedang berlangsung` : "Sistem CBT siaga operasional"}
             </div>
-
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-              Pusat Kendali CBT Administrasi
-            </h1>
-            <p className="text-sm text-slate-400 max-w-xl">
-              Selamat datang kembali, <span className="text-slate-200 font-medium">{user.namaLengkap}</span>. Ringkasan performa dan pengawasan ujian kampus tersedia seketika.
-            </p>
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Pusat Kendali CBT</h1>
+            <p className="max-w-xl text-sm text-slate-400">Selamat datang, <span className="text-slate-200">{user.namaLengkap}</span>. Pantau ujian dan aktivitas akademik dari satu tempat.</p>
           </div>
-
-          {/* Quick Primary Actions */}
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
-            {canAccess("/admin/ujian") && (
-              <Button size="lg" className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl shadow border border-emerald-500/30" asChild>
-                <Link to="/admin/ujian">
-                  <Plus className="mr-2 h-4 w-4 stroke-[2.5]" />
-                  Buat Ujian Baru
-                </Link>
-              </Button>
-            )}
-            {canAccess("/admin/peserta/online") && (
-              <Button size="lg" variant="outline" className="bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 font-medium rounded-xl" asChild>
-                <Link to="/admin/peserta/online">
-                  <Radio className="mr-2 h-4 w-4 text-emerald-400" />
-                  Pantau Peserta
-                </Link>
-              </Button>
-            )}
+          <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm sm:grid-cols-4 lg:min-w-[28rem]">
+            <div><p className="text-slate-500">Ujian aktif</p><p className="mt-1 text-xl font-semibold">{activeExams.length}</p></div>
+            <div><p className="text-slate-500">Mendatang</p><p className="mt-1 text-xl font-semibold">{upcomingExamCount}</p></div>
+            <div><p className="text-slate-500">Peserta</p><p className="mt-1 text-xl font-semibold">{formatNumber(counts.peserta)}</p></div>
+            <div><p className="text-slate-500">Sesi</p><p className="mt-1 text-xl font-semibold">{formatNumber(counts.sesi)}</p></div>
           </div>
         </div>
       </section>
 
       {/* 2. EXECUTIVE KPI CARDS GRID (Ruthless Data-Ink & High Contrast) */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
           label="Total Peserta"
           value={formatNumber(counts.peserta)}
@@ -175,13 +181,13 @@ function CommandCenter() {
       </section>
 
       {/* 3. MAIN DASHBOARD CONTENT GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
 
         {/* LEFT COLUMN: Main Workflows (8 Cols) */}
         <div className="lg:col-span-8 space-y-6">
 
           {/* Live Surveillance Panel */}
-          <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+          <div className="rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5">
             <div className="flex items-center justify-between pb-4 mb-5 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50">
@@ -244,7 +250,7 @@ function CommandCenter() {
           </div>
 
           {/* Quick Operational Shortcuts Console */}
-          <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+          <div className="rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5">
             <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4">Konsol Aksi Cepat Administrasi</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {!hasQuickActions && (
@@ -291,7 +297,7 @@ function CommandCenter() {
         <div className="lg:col-span-4 space-y-6">
 
           {/* Urgent Action / Pending Tasks Queue */}
-          <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+          <div className="rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5">
             <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
               <AlertCircle className="h-5 w-5 text-amber-500" />
               <h2 className="text-base font-bold text-slate-900 dark:text-white">Perlu Perhatian & Tindakan</h2>
@@ -330,7 +336,7 @@ function CommandCenter() {
 
           {/* Upcoming Exams Timeline */}
           {upcomingExams.length > 0 && (
-            <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+            <div className="rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5">
               <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-2">
                   <CalendarClock className="h-5 w-5 text-blue-500" />
@@ -383,7 +389,7 @@ function KpiCard({
   trendPositive?: boolean;
 }) {
   return (
-    <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-sm hover:shadow-md transition-shadow">
+    <div className="rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</span>
         <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
