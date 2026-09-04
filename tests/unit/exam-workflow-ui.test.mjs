@@ -148,13 +148,16 @@ test("course classes are nested under the academic structure navigation", () => 
 test("creating a module creates a default topic and opens its question page", () => {
   const moduleRoute = read("src/routes/_authenticated/admin.modul.tsx");
   const questionRoute = read("src/routes/_authenticated/admin.topik.$id.soal.tsx");
+  const importRoute = read("src/routes/_authenticated/admin.modul.import.tsx");
 
   assert.match(moduleRoute, /const topikId = uid\("t_"\)/);
   assert.match(moduleRoute, /topikRepo\.upsert\(\{ id: topikId, modulId, nama: "Umum" \}\)/);
   assert.match(moduleRoute, /modulRepo\.flush\(\)[\s\S]*topikRepo\.upsert[\s\S]*topikRepo\.flush\(\)/);
   assert.match(moduleRoute, /modulRepo\.upsert\(newModul\)[\s\S]*modulRepo\.flush\(\)[\s\S]*newTopik\.forEach[\s\S]*topikRepo\.flush\(\)[\s\S]*newSoal\.forEach[\s\S]*soalRepo\.flush\(\)/);
   assert.match(moduleRoute, /navigate\(\{ to: "\/admin\/topik\/\$id\/soal", params: \{ id: topikId \} \}\)/);
-  assert.match(questionRoute, /to="\/admin\/modul\/import"[\s\S]*Import Excel/);
+  assert.match(questionRoute, /to="\/admin\/modul\/import" search=\{\{ topikId \}\}[\s\S]*Import Excel/);
+  assert.match(importRoute, /topikId: typeof search\.topikId === "string"/);
+  assert.match(importRoute, /const result = await soalRepo\.flush\(\)/);
 });
 
 test("draft exams stay in preparation even when their schedule is active", () => {

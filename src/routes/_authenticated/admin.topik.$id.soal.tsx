@@ -171,7 +171,7 @@ function SoalPage() {
           </Select>
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button variant="outline" asChild className="w-full sm:w-auto h-12 rounded-xl px-5 font-semibold">
-              <Link to="/admin/modul/import"><FolderOutput className="mr-2 h-4 w-4" />Import Excel</Link>
+              <Link to="/admin/modul/import" search={{ topikId }}><FolderOutput className="mr-2 h-4 w-4" />Import Excel</Link>
             </Button>
             <Button onClick={() => { setEditing(null); setOpen(true); }} className="w-full sm:w-auto h-12 rounded-xl px-6 font-bold bg-slate-900 hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white shadow-md shadow-slate-900/10 dark:shadow-indigo-900/20 transition-all">
               <Plus className="mr-2 h-4 w-4" />Soal Baru
