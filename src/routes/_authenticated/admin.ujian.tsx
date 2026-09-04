@@ -83,9 +83,15 @@ function UjianList() {
     u.nama.toLowerCase().includes(search.toLowerCase())
   );
 
-  const persiapan = filteredList.filter((u) => !u.beginAt || !u.endAt || u.beginAt > now);
-  const berlangsung = filteredList.filter((u) => u.beginAt && u.endAt && u.beginAt <= now && u.endAt >= now);
-  const selesai = filteredList.filter((u) => u.endAt && u.endAt < now);
+  const persiapan = filteredList.filter(
+    (u) => u.status === "draft" || !u.beginAt || !u.endAt || u.beginAt > now,
+  );
+  const berlangsung = filteredList.filter(
+    (u) => u.status === "published" && u.beginAt && u.endAt && u.beginAt <= now && u.endAt >= now,
+  );
+  const selesai = filteredList.filter(
+    (u) => u.status === "published" && u.endAt && u.endAt < now,
+  );
 
   const renderRow = (u: Ujian, type: "persiapan" | "berlangsung" | "selesai") => {
     const sesiCount = sesiRepo.all().filter((s) => s.ujianId === u.id).length;
@@ -229,8 +235,11 @@ function UjianList() {
         ) : (
           <div className="flex flex-col">
             {currentList.map(u => {
-              const status = (!u.beginAt || !u.endAt || u.beginAt > now) ? "persiapan" : 
-                             (u.beginAt && u.endAt && u.beginAt <= now && u.endAt >= now) ? "berlangsung" : "selesai";
+              const status = u.status === "draft" || !u.beginAt || !u.endAt || u.beginAt > now
+                ? "persiapan"
+                : u.beginAt <= now && u.endAt >= now
+                  ? "berlangsung"
+                  : "selesai";
               return renderRow(u, status);
             })}
           </div>
