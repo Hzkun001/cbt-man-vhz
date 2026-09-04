@@ -20,18 +20,24 @@ import { useAuthStore } from "@/lib/cbt/auth-store";
 import { isTopikAllowed, visibleModuls, visibleTopiks } from "@/lib/cbt/access";
 import { AdminPage, AdminPageContent, AdminPageHeader } from "@/components/cbt/AdminPage";
 
+type PreviewRow = { soal: Soal; valid: boolean; error?: string };
+type ImportSearch = { topikId?: string };
+
 export const Route = createFileRoute("/_authenticated/admin/modul/import")({
+  validateSearch: (search: Record<string, unknown>): ImportSearch => ({
+    topikId: typeof search.topikId === "string" ? search.topikId : undefined,
+  }),
   component: ImportPage,
 });
 
-type PreviewRow = { soal: Soal; valid: boolean; error?: string };
-
 function ImportPage() {
+  const search = Route.useSearch();
   const user = useAuthStore((s) => s.user);
   const moduls = visibleModuls(user);
-  const [modulId, setModulId] = useState<string>(moduls[0]?.id ?? "");
+  const requestedTopik = visibleTopiks(user).find((t) => t.id === search.topikId);
+  const [modulId, setModulId] = useState<string>(requestedTopik?.modulId ?? moduls[0]?.id ?? "");
   const topiks = visibleTopiks(user).filter((t) => t.modulId === modulId);
-  const [topikId, setTopikId] = useState<string>(topiks[0]?.id ?? "");
+  const [topikId, setTopikId] = useState<string>(requestedTopik?.id ?? topiks[0]?.id ?? "");
   const [preview, setPreview] = useState<PreviewRow[]>([]);
   const [imageMap, setImageMap] = useState<Record<string, string>>({});
   const [isUploadingImages, setIsUploadingImages] = useState(false);
@@ -326,13 +332,15 @@ function ImportPage() {
     else toast.success(`${out.length} baris soal berhasil diproses`);
   }
 
-  function commit() {
+  async function commit() {
     if (!topikId || !isTopikAllowed(user, topikId)) {
       toast.error("Topik tujuan di luar cakupan Anda");
       return;
     }
     const valid = preview.filter((r) => r.valid);
     valid.forEach((r) => soalRepo.upsert(r.soal));
+    const result = await soalRepo.flush();
+    if (!result.ok) return;
     toast.success(`${valid.length} soal berhasil disimpan ke bank soal`);
     setPreview([]);
   }
