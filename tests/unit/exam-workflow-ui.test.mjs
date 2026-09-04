@@ -154,3 +154,12 @@ test("creating a module creates a default topic and opens its question page", ()
   assert.match(moduleRoute, /navigate\(\{ to: "\/admin\/topik\/\$id\/soal", params: \{ id: topikId \} \}\)/);
   assert.match(questionRoute, /to="\/admin\/modul\/import"[\s\S]*Import Excel/);
 });
+
+test("draft exams stay in preparation even when their schedule is active", () => {
+  const route = read("src/routes/_authenticated/admin.ujian.tsx");
+
+  assert.match(route, /u\.status === "draft" \|\| !u\.beginAt \|\| !u\.endAt/);
+  assert.match(route, /u\.status === "published" && u\.beginAt && u\.endAt/);
+  assert.match(route, /const status = u\.status === "draft" \|\| !u\.beginAt \|\| !u\.endAt \|\| u\.beginAt > now/);
+  assert.match(route, /\? "persiapan"/);
+});
