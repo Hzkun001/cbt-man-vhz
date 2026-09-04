@@ -16,6 +16,7 @@ import { useAuthStore } from "@/lib/cbt/auth-store";
 import { visibleModuls, allowedTopikIdSet, isUnrestricted } from "@/lib/cbt/access";
 import { filterModuls } from "@/lib/cbt/modul-filter.mjs";
 import { AdminPage, AdminPageHeader, AdminPageContent } from "@/components/cbt/AdminPage";
+import { ConfirmDialog } from "@/components/cbt/ConfirmDialog";
 
 export const Route = createFileRoute("/_authenticated/admin/modul")({
   component: ModulRoute,
@@ -53,6 +54,7 @@ function ModulPage() {
   const [query, setQuery] = useState("");
   const [editingModul, setEditingModul] = useState<Modul | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
 
   const shown = filterModuls(moduls, query);
@@ -85,10 +87,15 @@ function ModulPage() {
       toast.error("Hapus topik di dalam modul ini dulu");
       return;
     }
-    if (!confirm("Hapus modul ini?")) return;
-    modulRepo.remove(id);
+    setDeleteId(id);
+  }
+
+  function confirmDelete() {
+    if (!deleteId) return;
+    modulRepo.remove(deleteId);
     setModuls(visibleModuls(user));
     toast.success("Modul dihapus");
+    setDeleteId(null);
   }
 
   function exportBank(modul: Modul) {
@@ -343,6 +350,13 @@ function ModulPage() {
         modul={editingModul}
         mkList={mkList}
         onSaved={() => setModuls(visibleModuls(user))}
+      />
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        title="Hapus Modul"
+        description="Apakah Anda yakin ingin menghapus modul ini secara permanen?"
+        onConfirm={confirmDelete}
       />
     </AdminPage>
   );

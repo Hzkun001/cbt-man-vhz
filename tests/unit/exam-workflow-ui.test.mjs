@@ -160,6 +160,17 @@ test("creating a module creates a default topic and opens its question page", ()
   assert.match(importRoute, /const result = await soalRepo\.flush\(\)/);
 });
 
+test("bank question deletion uses themed confirmation dialogs", () => {
+  const moduleRoute = read("src/routes/_authenticated/admin.modul.tsx");
+  const topicRoute = read("src/routes/_authenticated/admin.modul.$id.topik.tsx");
+  const questionRoute = read("src/routes/_authenticated/admin.topik.$id.soal.tsx");
+
+  assert.doesNotMatch(moduleRoute, /\bconfirm\(/);
+  assert.doesNotMatch(topicRoute, /\bconfirm\(/);
+  assert.doesNotMatch(questionRoute, /\bconfirm\(/);
+  assert.match(questionRoute, /<ConfirmDialog[\s\S]*Hapus Soal/);
+});
+
 test("draft exams stay in preparation even when their schedule is active", () => {
   const route = read("src/routes/_authenticated/admin.ujian.tsx");
 

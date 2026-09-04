@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { RichEditor, RichView } from "@/components/cbt/RichEditor";
 import { useAuthStore } from "@/lib/cbt/auth-store";
 import { isTopikAllowed, visibleTopiks } from "@/lib/cbt/access";
+import { ConfirmDialog } from "@/components/cbt/ConfirmDialog";
 
 export const Route = createFileRoute("/_authenticated/admin/topik/$id/soal")({
   component: SoalPage,
@@ -39,6 +40,8 @@ function SoalPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [targetTopikId, setTargetTopikId] = useState<string>("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   if (!topik || !modul) return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -59,11 +62,21 @@ function SoalPage() {
     setSelectedIds([]);
   }
   function remove(id: string) {
-    if (!confirm("Hapus soal?")) return;
-    soalRepo.remove(id); refresh();
+    setDeleteId(id);
   }
-  async function handleBulkDelete() {
-    if (!confirm(`Hapus ${selectedIds.length} soal terpilih secara permanen?`)) return;
+  async function confirmDelete() {
+    if (!deleteId) return;
+    soalRepo.remove(deleteId);
+    const res = await soalRepo.flush();
+    if (res.ok) toast.success("Soal dihapus");
+    setDeleteId(null);
+    refresh();
+  }
+  function handleBulkDelete() {
+    if (selectedIds.length === 0) return;
+    setBulkDeleteOpen(true);
+  }
+  async function confirmBulkDelete() {
     selectedIds.forEach((id) => soalRepo.remove(id));
     const res = await soalRepo.flush();
     if (res.ok) {
@@ -71,6 +84,7 @@ function SoalPage() {
     } else {
       toast.error(`Gagal menghapus soal: ${res.error}`);
     }
+    setBulkDeleteOpen(false);
     refresh();
   }
 
@@ -362,6 +376,20 @@ function SoalPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        title="Hapus Soal"
+        description="Apakah Anda yakin ingin menghapus soal ini secara permanen?"
+        onConfirm={confirmDelete}
+      />
+      <ConfirmDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        title="Hapus Soal Terpilih"
+        description={`Apakah Anda yakin ingin menghapus ${selectedIds.length} soal terpilih secara permanen?`}
+        onConfirm={confirmBulkDelete}
+      />
       </div>
     </div>
   );
