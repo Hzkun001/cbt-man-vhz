@@ -126,3 +126,13 @@ test("tools and guide pages use full-width structured admin layouts", () => {
   assert.match(guide, /lg:grid-cols-\[16rem_minmax\(0,1fr\)\]/);
   assert.match(guide, /xl:grid-cols-\[16rem_minmax\(0,1fr\)_14rem\]/);
 });
+
+test("admin dashboard uses a Vercel-style full-width toolbar and searchable exam list", () => {
+  const dashboard = read("src/routes/_authenticated/admin.index.tsx");
+
+  assert.match(dashboard, /<div className="mx-auto w-full max-w-\[1600px\] space-y-6/);
+  assert.match(dashboard, /placeholder="Cari ujian"/);
+  assert.match(dashboard, /setSearch\(e\.target\.value\)/);
+  assert.match(dashboard, /\.filter\(\(exam\) => exam\.nama\.toLowerCase\(\)\.includes\(search/);
+  assert.match(dashboard, /bg-slate-950 p-5 text-white/);
+});
