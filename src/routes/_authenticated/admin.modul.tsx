@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useRef, useState, useEffect } from "react";
 import { z } from "zod";
 import { modulRepo, topikRepo, soalRepo, mataKuliahRepo } from "@/lib/cbt/repos";
@@ -42,6 +42,7 @@ function ModulRoute() {
 }
 
 function ModulPage() {
+  const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const canEdit = isUnrestricted(user);
   const [moduls, setModuls] = useState<Modul[]>(visibleModuls(user));
@@ -62,11 +63,15 @@ function ModulPage() {
       toast.error("Nama modul wajib diisi");
       return;
     }
-    modulRepo.upsert({ id: uid("m_"), nama: nama.trim(), aktif: true, mataKuliahId: mkId === "none" ? undefined : mkId });
+    const modulId = uid("m_");
+    const topikId = uid("t_");
+    modulRepo.upsert({ id: modulId, nama: nama.trim(), aktif: true, mataKuliahId: mkId === "none" ? undefined : mkId });
+    topikRepo.upsert({ id: topikId, modulId, nama: "Umum" });
     setNama("");
     setMkId("none");
     setModuls(visibleModuls(user));
-    toast.success("Modul ditambahkan");
+    toast.success("Modul ditambahkan. Silakan tambahkan soal.");
+    navigate({ to: "/admin/topik/$id/soal", params: { id: topikId } });
   }
 
   function remove(id: string) {
@@ -185,7 +190,7 @@ function ModulPage() {
         <AdminPageContent className="overflow-hidden">
           <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-800">
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Buat Modul Baru</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Mata kuliah bersifat opsional untuk membantu mengelompokkan bank soal.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Topik <span className="font-medium">Umum</span> dibuat otomatis agar Anda bisa langsung menambahkan soal.</p>
           </div>
           <form
             onSubmit={(e) => { e.preventDefault(); add(); }}
@@ -227,6 +232,7 @@ function ModulPage() {
           {shown.map((m) => {
             const tAll = topikRepo.all().filter((t) => t.modulId === m.id);
             const t = allowedSet ? tAll.filter((x) => allowedSet.has(x.id)) : tAll;
+            const primaryTopik = t[0];
             const tIds = new Set(t.map((x) => x.id));
             const sCount = soalRepo.all().filter((s) => tIds.has(s.topikId)).length;
             const mkName = m.mataKuliahId ? mkList.find((x) => x.id === m.mataKuliahId)?.nama : null;
@@ -239,7 +245,7 @@ function ModulPage() {
                       <FileText className="h-5 w-5" />
                     </div>
                     <div className="min-w-0 space-y-1">
-                      <Link to="/admin/modul/$id/topik" params={{ id: m.id }} className="block truncate text-base font-semibold text-slate-900 hover:text-primary dark:text-slate-100 dark:hover:text-primary">
+                      <Link to={primaryTopik ? "/admin/topik/$id/soal" : "/admin/modul/$id/topik"} params={{ id: primaryTopik?.id ?? m.id }} className="block truncate text-base font-semibold text-slate-900 hover:text-primary dark:text-slate-100 dark:hover:text-primary">
                         {m.nama}
                       </Link>
                       {mkName ? (
@@ -258,8 +264,15 @@ function ModulPage() {
                     <span>{t.length} topik</span>
                     <span>{sCount} soal</span>
                     <Button size="sm" variant="outline" className="h-8" asChild>
-                      <Link to="/admin/modul/$id/topik" params={{ id: m.id }}>Kelola Topik</Link>
+                      <Link to={primaryTopik ? "/admin/topik/$id/soal" : "/admin/modul/$id/topik"} params={{ id: primaryTopik?.id ?? m.id }}>
+                        {primaryTopik ? "Kelola Soal" : "Tambah Topik"}
+                      </Link>
                     </Button>
+                    {primaryTopik && (
+                      <Button size="sm" variant="ghost" className="h-8" asChild>
+                        <Link to="/admin/modul/$id/topik" params={{ id: m.id }}>Topik</Link>
+                      </Button>
+                    )}
                     {canEdit && (
                       <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-primary" onClick={() => { setEditingModul(m); setEditDialogOpen(true); }} title="Edit Modul">
                         <Pencil className="h-4 w-4" />

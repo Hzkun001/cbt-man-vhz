@@ -144,3 +144,13 @@ test("course classes are nested under the academic structure navigation", () => 
   assert.doesNotMatch(admin, /to: "\/admin\/akademik\/kelas-mata-kuliah"/);
   assert.match(academic, /section: "Kelas Perkuliahan"[\s\S]*to: "\/admin\/akademik\/kelas-mata-kuliah"/);
 });
+
+test("creating a module creates a default topic and opens its question page", () => {
+  const moduleRoute = read("src/routes/_authenticated/admin.modul.tsx");
+  const questionRoute = read("src/routes/_authenticated/admin.topik.$id.soal.tsx");
+
+  assert.match(moduleRoute, /const topikId = uid\("t_"\)/);
+  assert.match(moduleRoute, /topikRepo\.upsert\(\{ id: topikId, modulId, nama: "Umum" \}\)/);
+  assert.match(moduleRoute, /navigate\(\{ to: "\/admin\/topik\/\$id\/soal", params: \{ id: topikId \} \}\)/);
+  assert.match(questionRoute, /to="\/admin\/modul\/import"[\s\S]*Import Excel/);
+});
