@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ujianRepo, sesiRepo } from "@/lib/cbt/repos";
 import { Trophy, ChevronRight } from "lucide-react";
-import { AdminPage, AdminPageHeader } from "@/components/cbt/AdminPage";
+import { Badge } from "@/components/ui/badge";
+import { AdminPage, AdminPageContent, AdminPageHeader } from "@/components/cbt/AdminPage";
 
 export const Route = createFileRoute("/_authenticated/admin/leaderboard/")({
   component: LeaderboardIndex,
@@ -12,17 +13,17 @@ function LeaderboardIndex() {
   const sesi = sesiRepo.all();
 
   return (
-    <AdminPage className="w-full pb-20">
+    <AdminPage className="pb-12">
       <AdminPageHeader
         title="Leaderboard"
-        description="Pilih paket ujian untuk melihat peringkat."
+        description="Pilih paket ujian untuk melihat peringkat peserta."
       />
 
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+      <AdminPageContent className="overflow-hidden p-0">
         {ujian.length === 0 ? (
-          <div className="p-12 text-center text-slate-500">Belum ada paket ujian.</div>
+          <div className="p-12 text-center text-sm text-muted-foreground">Belum ada paket ujian.</div>
         ) : (
-          <div className="flex flex-col divide-y divide-slate-100 dark:divide-slate-800/60">
+          <div className="flex flex-col">
             {ujian.map((u) => {
               const n = sesi.filter((s) => s.ujianId === u.id && s.status === "selesai").length;
               return (
@@ -30,34 +31,28 @@ function LeaderboardIndex() {
                   key={u.id}
                   to="/admin/leaderboard/$id"
                   params={{ id: u.id }}
-                  className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors group"
+                  className="group flex items-center justify-between gap-4 border-b p-4 transition-colors last:border-0 hover:bg-muted/30 sm:p-5"
                 >
-                  <div className="flex flex-col gap-1 min-w-0 pr-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
-                        {u.nama}
-                      </span>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <Trophy className="h-5 w-5" />
                     </div>
-                    <span className="text-sm text-slate-500 dark:text-slate-400 truncate">
-                      {n} sesi selesai
-                    </span>
+                    <div className="min-w-0 space-y-1">
+                      <span className="block truncate text-sm font-semibold text-foreground">{u.nama}</span>
+                      <span className="block truncate text-xs text-muted-foreground">Papan peringkat peserta yang menyelesaikan ujian</span>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-6 shrink-0">
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-xs font-medium border border-amber-200/50 dark:border-amber-800/50">
-                        <Trophy className="h-3.5 w-3.5" />
-                        <span>Lihat Peringkat</span>
-                      </div>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
+                  <div className="flex shrink-0 items-center gap-3">
+                    <Badge variant="secondary">{n} selesai</Badge>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
                   </div>
                 </Link>
               );
             })}
           </div>
         )}
-      </div>
+      </AdminPageContent>
     </AdminPage>
   );
 }
