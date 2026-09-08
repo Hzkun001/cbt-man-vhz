@@ -37,6 +37,7 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Security
 
+- Perbarui dependensi sanitizer, import Word, dan build melalui lockfile; gunakan override `deepmerge-ts@8.0.0` khusus `@prisma/config@6.19.3` untuk menutup GHSA-ggr8-5vv4-36mx tanpa mengganti versi Prisma. Override perlu ditinjau ulang ketika Prisma diperbarui; sertakan tes objek melingkar dan pemuatan konfigurasi.
 - Wajibkan `ADMIN_PASSWORD` saat seed production agar akun admin tidak dibuat dengan password acak yang tidak dapat dipulihkan operator (#144).
 - Sembunyikan kredensial akun demo dari halaman login admin pada build production (#143).
 - Hapus endpoint daftar ujian penuh yang tidak digunakan agar tidak menjadi permukaan baca di luar scope operator (#142).
