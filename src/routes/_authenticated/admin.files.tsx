@@ -15,6 +15,7 @@ import { Upload, Trash2, FolderOpen, FileAudio, File as FileIcon, Search, Copy, 
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { AdminPage, AdminPageHeader } from "@/components/cbt/AdminPage";
+import { ConfirmDialog } from "@/components/cbt/ConfirmDialog";
 
 export const Route = createFileRoute("/_authenticated/admin/files")({
   component: FilesPage,
@@ -30,6 +31,7 @@ function FilesPage() {
   const [search, setSearch] = useState("");
   const [selectedFolder, setSelectedFolder] = useState<string>(isSuper ? "all" : (myJurusanId || "all"));
   const [isUploading, setIsUploading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<FileMeta | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const jurusans = unitAkademikRepo.all().filter((u) => u.tipe === "jurusan");
@@ -103,6 +105,24 @@ function FilesPage() {
       setIsUploading(false);
     }
   }
+
+  async function confirmDelete() {
+    const file = deleteTarget;
+    if (!file) return;
+    setDeleteTarget(null);
+
+    try {
+      await deleteFile(file.id);
+      toast.success("File berhasil dihapus");
+      try {
+        await refresh();
+      } catch (e) {
+        toast.error(`Gagal memuat ulang daftar file: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    } catch (e) {
+      toast.error(`Gagal menghapus file: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
   
   const filteredFiles = files.filter(f => {
     const matchSearch = f.name.toLowerCase().includes(search.toLowerCase());
@@ -169,12 +189,16 @@ function FilesPage() {
             <div className="w-px h-6 bg-slate-200 dark:bg-slate-800 hidden sm:block mx-1" />
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide flex-1">
               <button 
+                type="button"
+                aria-label="Tampilkan semua file"
                 onClick={() => setSelectedFolder("all")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-300 ease-spring shrink-0 ${selectedFolder === "all" ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-md" : "bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-slate-400"}`}
               >
                 <Database className="h-4 w-4 translate-y-[-0.5px]" /> Semua File
               </button>
               <button 
+                type="button"
+                aria-label="Tampilkan file umum atau global"
                 onClick={() => setSelectedFolder("global")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-300 ease-spring shrink-0 ${selectedFolder === "global" ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-md" : "bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-slate-400"}`}
               >
@@ -186,6 +210,8 @@ function FilesPage() {
               {jurusans.map(j => (
                 <button 
                   key={j.id}
+                  type="button"
+                  aria-label={`Tampilkan file ${j.nama}`}
                   onClick={() => setSelectedFolder(j.id)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-300 ease-spring shrink-0 ${selectedFolder === j.id ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-primary/30"}`}
                 >
@@ -254,24 +280,14 @@ function FilesPage() {
                       size="icon" 
                       variant="secondary" 
                       className="h-9 w-9 rounded-full shadow-sm scale-75 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300 ease-spring delay-75 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30"
-                      onClick={async () => {
+                      onClick={() => {
                         if (usage > 0) {
                           toast.error(`Aksi Ditolak: File ini sedang digunakan di ${usage} soal. Hapus dari soal terlebih dahulu sebelum menghapus file.`);
                           return;
                         }
-                        if (!confirm(`Hapus file ${f.name} secara permanen?`)) return;
-                        try {
-                          await deleteFile(f.id);
-                          toast.success("File berhasil dihapus");
-                          try {
-                            await refresh();
-                          } catch (e) {
-                            toast.error(`Gagal memuat ulang daftar file: ${e instanceof Error ? e.message : String(e)}`);
-                          }
-                        } catch (e) {
-                          toast.error(`Gagal menghapus file: ${e instanceof Error ? e.message : String(e)}`);
-                        }
+                        setDeleteTarget(f);
                       }}
+                      aria-label={`Hapus file ${f.name} permanen`}
                       title="Hapus Permanen"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -285,6 +301,7 @@ function FilesPage() {
                         navigator.clipboard.writeText(internalUrl);
                         toast.success("File ID disalin! (Gunakan ini di Excel)");
                       }}
+                      aria-label={`Salin ID file ${f.name}`}
                       title="Copy Internal Link (ID)"
                     >
                       <Copy className="h-4 w-4" />
@@ -314,6 +331,14 @@ function FilesPage() {
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Hapus File Permanen"
+        description={deleteTarget ? `File “${deleteTarget.name}” akan dihapus secara permanen.` : ""}
+        onConfirm={confirmDelete}
+      />
     </AdminPage>
   );
 }
