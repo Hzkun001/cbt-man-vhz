@@ -194,6 +194,8 @@ function UjianList() {
           {tabs.map(tab => (
             <button
               key={tab.id}
+              type="button"
+              aria-label={tab.label}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
                 activeTab === tab.id 

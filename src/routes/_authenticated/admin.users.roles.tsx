@@ -160,6 +160,7 @@ function RolesPage() {
                         <div className="flex items-center gap-2 text-[11px]">
                           <button
                             type="button"
+                            aria-label={allSelected ? `Kosongkan ${m.nama}` : `Pilih semua topik ${m.nama}`}
                             onClick={() => patchTopik(u, ts.map((t) => t.id), allSelected ? "remove" : "add")}
                             className="text-primary hover:underline font-medium"
                           >

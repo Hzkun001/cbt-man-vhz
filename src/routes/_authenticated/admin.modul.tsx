@@ -291,15 +291,15 @@ function ModulPage() {
                       </Button>
                     )}
                     {canEdit && (
-                      <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-primary" onClick={() => { setEditingModul(m); setEditDialogOpen(true); }} title="Edit Modul">
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-primary" onClick={() => { setEditingModul(m); setEditDialogOpen(true); }} aria-label="Edit Modul" title="Edit Modul">
                         <Pencil className="h-4 w-4" />
                       </Button>
                     )}
-                    <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-primary" onClick={() => exportBank(m)} title="Export JSON">
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-primary" onClick={() => exportBank(m)} aria-label="Export JSON" title="Export JSON">
                       <Download className="h-4 w-4" />
                     </Button>
                     {canEdit && (
-                      <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-red-600" onClick={() => remove(m.id)} title="Hapus">
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-red-600" onClick={() => remove(m.id)} aria-label="Hapus Modul" title="Hapus Modul">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     )}

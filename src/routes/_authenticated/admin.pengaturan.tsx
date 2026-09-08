@@ -203,6 +203,7 @@ function PengaturanPage() {
               {/* Theme: Modern (Default) */}
               <button
                 type="button"
+                aria-label="Pilih tema Modern"
                 onClick={() => setTheme("default")}
                 aria-pressed={theme === "default"}
                 className={`text-left p-4 rounded-xl border-2 transition-all cursor-pointer ${theme === "default" ? "border-primary ring-2 ring-primary/20 bg-primary/5" : "border-slate-200 dark:border-slate-800 hover:border-primary/50 bg-white dark:bg-slate-900"}`}
@@ -221,6 +222,7 @@ function PengaturanPage() {
               {/* Theme: Neumorphism (Soft UI) */}
               <button
                 type="button"
+                aria-label="Pilih tema Neumorphism"
                 onClick={() => setTheme("neumorphism")}
                 aria-pressed={theme === "neumorphism"}
                 className={`text-left p-4 rounded-xl border-2 transition-all cursor-pointer ${theme === "neumorphism" ? "border-primary ring-2 ring-primary/20 bg-[#f0f3f8]" : "border-slate-200 dark:border-slate-800 hover:border-primary/50 bg-[#f0f3f8]/60 dark:bg-slate-900"}`}
@@ -250,6 +252,7 @@ function PengaturanPage() {
               {/* Font: SN Pro */}
               <button
                 type="button"
+                aria-label="Pilih font SN Pro"
                 onClick={() => setFont("sn-pro")}
                 aria-pressed={font === "sn-pro"}
                 className={`text-left p-4 rounded-xl border-2 transition-all cursor-pointer ${font === "sn-pro" ? "border-primary ring-2 ring-primary/20 bg-primary/5" : "border-slate-200 dark:border-slate-800 hover:border-primary/50 bg-white dark:bg-slate-900"}`}
@@ -271,6 +274,7 @@ function PengaturanPage() {
               {/* Font: System Default */}
               <button
                 type="button"
+                aria-label="Pilih font sistem default"
                 onClick={() => setFont("system")}
                 aria-pressed={font === "system"}
                 className={`text-left p-4 rounded-xl border-2 transition-all cursor-pointer ${font === "system" ? "border-primary ring-2 ring-primary/20 bg-primary/5" : "border-slate-200 dark:border-slate-800 hover:border-primary/50 bg-white dark:bg-slate-900"}`}

@@ -180,13 +180,13 @@ function UsersPage() {
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex justify-center items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={() => { setEditing(u); setOpen(true); }} className="h-8 w-8 p-0">
+                        <Button variant="outline" size="sm" onClick={() => { setEditing(u); setOpen(true); }} className="h-8 w-8 p-0" aria-label={`Edit pengguna ${u.namaLengkap}`} title={`Edit pengguna ${u.namaLengkap}`}>
                           <Pencil className="h-4 w-4 text-slate-500" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setLogoutId(u.id)} className="h-8 w-8 p-0 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/50 hover:text-amber-600">
+                        <Button variant="ghost" size="sm" onClick={() => setLogoutId(u.id)} className="h-8 w-8 p-0 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/50 hover:text-amber-600" aria-label={`Hentikan sesi ${u.namaLengkap}`} title={`Hentikan sesi ${u.namaLengkap}`}>
                           <LogOut className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(u.id)} className="h-8 w-8 p-0 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:text-rose-600">
+                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(u.id)} className="h-8 w-8 p-0 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:text-rose-600" aria-label={`Hapus pengguna ${u.namaLengkap}`} title={`Hapus pengguna ${u.namaLengkap}`}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -219,6 +219,8 @@ function UsersPage() {
                     className="h-8 w-8" 
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
+                    aria-label="Halaman sebelumnya"
+                    title="Halaman sebelumnya"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
@@ -231,6 +233,8 @@ function UsersPage() {
                     className="h-8 w-8" 
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
+                    aria-label="Halaman berikutnya"
+                    title="Halaman berikutnya"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>

@@ -180,6 +180,7 @@ function FakultasSection({ data, onUpdated }: { data: UnitAkademik[]; onUpdated:
                     variant="ghost"
                     className="h-8 w-8 text-slate-500 hover:text-primary"
                     onClick={() => setForm({ id: f.id, nama: f.nama })}
+                    aria-label={`Edit ${f.nama}`}
                     title="Edit"
                   >
                     <Edit2 className="h-3.5 w-3.5" />
@@ -189,6 +190,7 @@ function FakultasSection({ data, onUpdated }: { data: UnitAkademik[]; onUpdated:
                     variant="ghost"
                     className="h-8 w-8 text-slate-500 hover:text-destructive"
                     onClick={() => remove(f.id)}
+                    aria-label={`Hapus ${f.nama}`}
                     title="Hapus"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -359,6 +361,7 @@ function ProdiSection({
                       onClick={() =>
                         setForm({ id: p.id, nama: p.nama, fakultasId: p.parentId || "none" })
                       }
+                      aria-label={`Edit ${p.nama}`}
                       title="Edit"
                     >
                       <Edit2 className="h-3.5 w-3.5" />
@@ -368,6 +371,7 @@ function ProdiSection({
                       variant="ghost"
                       className="h-8 w-8 text-slate-500 hover:text-destructive"
                       onClick={() => remove(p.id)}
+                      aria-label={`Hapus ${p.nama}`}
                       title="Hapus"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -560,6 +564,7 @@ function KelasSection({
                       onClick={() =>
                         setForm({ id: k.id, nama: k.nama, prodiId: k.parentId || "none" })
                       }
+                      aria-label={`Edit ${k.nama}`}
                       title="Edit"
                     >
                       <Edit2 className="h-3.5 w-3.5" />
@@ -569,6 +574,7 @@ function KelasSection({
                       variant="ghost"
                       className="h-8 w-8 text-slate-500 hover:text-destructive"
                       onClick={() => remove(k.id)}
+                      aria-label={`Hapus ${k.nama}`}
                       title="Hapus"
                     >
                       <Trash2 className="h-3.5 w-3.5" />

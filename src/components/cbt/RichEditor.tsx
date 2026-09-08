@@ -292,6 +292,8 @@ function FilePicker({
               <button
                 key={f.id}
                 type="button"
+                aria-label={`Pilih file ${f.name}`}
+                title={`Pilih file ${f.name}`}
                 onClick={() => onPick(f)}
                 className="flex flex-col items-center gap-1 rounded border p-2 text-left text-xs hover:bg-muted"
               >

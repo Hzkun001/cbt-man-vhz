@@ -52,7 +52,15 @@ export function AudioPlayer({
 
   return (
     <div className="flex items-center gap-2 rounded border bg-muted/30 p-2">
-      <Button type="button" size="sm" variant="outline" onClick={toggle} disabled={done && playOnce}>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        onClick={toggle}
+        disabled={done && playOnce}
+        aria-label={done && playOnce ? "Audio sudah diputar" : playing ? "Jeda audio" : "Putar audio"}
+        title={done && playOnce ? "Audio sudah diputar" : playing ? "Jeda audio" : "Putar audio"}
+      >
         {done && playOnce ? <Lock className="h-4 w-4" /> : playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
       </Button>
       <span className="text-xs text-muted-foreground">

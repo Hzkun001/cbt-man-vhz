@@ -150,6 +150,7 @@ function LoginAdminPage() {
 
 						<Button 
 							type="submit" 
+							aria-label={busy ? "Otentikasi" : "Masuk sebagai admin"}
 							className="w-full h-12 rounded-xl bg-[#03A559] hover:bg-[#028b4a] text-white font-bold transition-all shadow-md shadow-emerald-500/25 border border-emerald-600/50 relative overflow-hidden group" 
 							disabled={busy}
 						>

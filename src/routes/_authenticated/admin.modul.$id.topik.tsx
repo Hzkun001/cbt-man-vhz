@@ -140,10 +140,10 @@ function TopikPage() {
                 <div className="flex items-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                   {canEdit && (
                     <>
-                      <Button size="sm" variant="ghost" className="h-8 text-slate-500 hover:text-slate-900 dark:hover:text-white" onClick={() => openEdit(t)}>
+                      <Button size="sm" variant="ghost" className="h-8 text-slate-500 hover:text-slate-900 dark:hover:text-white" onClick={() => openEdit(t)} aria-label={`Edit topik ${t.nama}`} title={`Edit topik ${t.nama}`}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" variant="ghost" className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950" onClick={() => remove(t.id)}>
+                      <Button size="sm" variant="ghost" className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950" onClick={() => remove(t.id)} aria-label={`Hapus topik ${t.nama}`} title={`Hapus topik ${t.nama}`}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </>

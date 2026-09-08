@@ -92,6 +92,7 @@ function PesertaLayout() {
 						onClick={toggleTheme}
 						className="h-9 w-9 rounded-xl bg-white/50 dark:bg-black/50 backdrop-blur-sm border-slate-200 dark:border-white/10 hover:bg-white dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-all shadow-sm"
 						aria-label="Toggle Theme"
+						title="Toggle Theme"
 					>
 						{theme === "dark" ? (
 							<Sun className="h-4 w-4 text-amber-400" />
@@ -104,7 +105,8 @@ function PesertaLayout() {
 						variant="outline"
 						size="icon"
 						className="h-9 w-9 rounded-xl bg-white/50 dark:bg-black/50 backdrop-blur-sm border-slate-200 dark:border-white/10 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-500/20 dark:hover:text-red-400 transition-all shadow-sm text-slate-600 dark:text-slate-300"
-						title="Keluar"
+						 title="Keluar"
+						aria-label="Keluar"
 						onClick={async () => {
 							if (isKerjakan) {
 								if (!confirm("Keluar dari ujian? Waktu akan terus berjalan.")) return;

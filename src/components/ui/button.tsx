@@ -36,11 +36,34 @@ export interface ButtonProps
   asChild?: boolean;
 }
 
+function buttonText(children: React.ReactNode): string {
+  return React.Children.toArray(children)
+    .map((child) => {
+      if (typeof child === "string" || typeof child === "number") return String(child);
+      if (React.isValidElement<{ children?: React.ReactNode }>(child)) {
+        return buttonText(child.props.children);
+      }
+      return "";
+    })
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, children, title, "aria-label": ariaLabel, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
+    const iconOnly = !buttonText(children);
     return (
-      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+        aria-label={iconOnly ? ariaLabel ?? title : ariaLabel}
+        title={iconOnly ? title ?? ariaLabel : undefined}
+      >
+        {children}
+      </Comp>
     );
   },
 );

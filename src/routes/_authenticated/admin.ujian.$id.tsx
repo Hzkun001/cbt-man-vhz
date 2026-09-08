@@ -600,6 +600,8 @@ function UjianEditor() {
                   <Button
                     size="sm"
                     variant="ghost"
+                    aria-label={`Hapus sumber topik ${i + 1}`}
+                    title={`Hapus sumber topik ${i + 1}`}
                     onClick={() =>
                       set(
                         "topicSets",

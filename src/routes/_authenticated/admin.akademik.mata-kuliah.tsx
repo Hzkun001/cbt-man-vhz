@@ -204,6 +204,7 @@ function MataKuliahPage() {
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-foreground"
                         onClick={() => handleEdit(item)}
+                        title={`Edit ${item.nama}`}
                         aria-label={`Edit ${item.nama}`}
                       >
                         <Pencil className="h-4 w-4" />
@@ -213,6 +214,7 @@ function MataKuliahPage() {
                         size="icon"
                         className="h-8 w-8 text-destructive hover:bg-destructive/10"
                         onClick={() => handleRemove(item.id)}
+                        title={`Hapus ${item.nama}`}
                         aria-label={`Hapus ${item.nama}`}
                       >
                         <Trash2 className="h-4 w-4" />

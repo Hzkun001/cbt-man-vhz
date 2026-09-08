@@ -309,6 +309,7 @@ function AdminLayout() {
                   <div key={group.id}>
                     <button
                       type="button"
+                      aria-label={group.label}
                       aria-expanded={isOpen}
                       aria-controls={panelId}
                       onClick={() => setOpenGroupId(isOpen ? undefined : group.id)}
@@ -373,6 +374,7 @@ function AdminLayout() {
                 className="h-9 w-9 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
                 onClick={toggleTheme}
                 title="Ganti tema"
+                aria-label="Ganti tema"
               >
                 {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>
@@ -384,6 +386,7 @@ function AdminLayout() {
                   await logout();
                   window.location.assign("/login-admin");
                 }}
+                aria-label="Keluar"
               >
                 <LogOut className="mr-1.5 h-3.5 w-3.5" /> <span className="hidden sm:inline">Keluar</span>
               </Button>

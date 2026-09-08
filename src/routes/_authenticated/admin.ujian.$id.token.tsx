@@ -348,6 +348,8 @@ function TokenPage() {
                         variant="ghost"
                         className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
                         onClick={() => hapusToken(t.id)}
+                        aria-label={`Hapus token ${t.kode}`}
+                        title={`Hapus token ${t.kode}`}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

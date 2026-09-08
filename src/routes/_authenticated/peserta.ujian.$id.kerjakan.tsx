@@ -329,13 +329,13 @@ function RouteComponent() {
             <div className="flex items-center gap-3 sm:gap-6">
               {/* Font Size Controls */}
               <div className="hidden sm:flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700/50">
-                <button onClick={() => setFontSize("sm")} className={cn("flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm transition-all", fontSize === "sm" ? "bg-white dark:bg-slate-700 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200")} title="Perkecil Teks">
+                <button type="button" onClick={() => setFontSize("sm")} className={cn("flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm transition-all", fontSize === "sm" ? "bg-white dark:bg-slate-700 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200")} aria-label="Perkecil teks" title="Perkecil teks">
                   <Type className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={() => setFontSize("base")} className={cn("flex items-center justify-center w-8 h-8 rounded-lg font-bold text-base transition-all", fontSize === "base" ? "bg-white dark:bg-slate-700 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200")} title="Teks Normal">
+                <button type="button" onClick={() => setFontSize("base")} className={cn("flex items-center justify-center w-8 h-8 rounded-lg font-bold text-base transition-all", fontSize === "base" ? "bg-white dark:bg-slate-700 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200")} aria-label="Gunakan ukuran teks normal" title="Gunakan ukuran teks normal">
                   <Type className="w-4 h-4" />
                 </button>
-                <button onClick={() => setFontSize("lg")} className={cn("flex items-center justify-center w-8 h-8 rounded-lg font-bold text-lg transition-all", fontSize === "lg" ? "bg-white dark:bg-slate-700 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200")} title="Perbesar Teks">
+                <button type="button" onClick={() => setFontSize("lg")} className={cn("flex items-center justify-center w-8 h-8 rounded-lg font-bold text-lg transition-all", fontSize === "lg" ? "bg-white dark:bg-slate-700 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200")} aria-label="Perbesar teks" title="Perbesar teks">
                   <Type className="w-5 h-5" />
                 </button>
               </div>
@@ -359,7 +359,7 @@ function RouteComponent() {
                 </p>
               )}
 
-              <Button variant="outline" size="icon" className="md:hidden w-10 h-10 rounded-xl border-slate-200 dark:border-slate-700" onClick={() => setShowList(true)}>
+              <Button variant="outline" size="icon" className="md:hidden w-10 h-10 rounded-xl border-slate-200 dark:border-slate-700" onClick={() => setShowList(true)} aria-label="Buka daftar soal" title="Buka daftar soal">
                 <LayoutGrid className="w-5 h-5 text-slate-600 dark:text-slate-400" />
               </Button>
             </div>
@@ -540,6 +540,9 @@ function RouteComponent() {
                 return (
                   <button
                     key={i}
+                    type="button"
+                    aria-label={`Buka soal nomor ${i + 1}`}
+                    title={`Buka soal nomor ${i + 1}`}
                     onClick={() => handleNavigateIdx(i)}
                     className={cn(
                       "relative aspect-square flex items-center justify-center rounded-xl text-sm font-bold border-2 transition-all hover:scale-105",
@@ -614,7 +617,10 @@ function RouteComponent() {
             <div className="flex items-center gap-3 text-lg font-black text-slate-800 dark:text-white">
               <LayoutGrid className="w-5 h-5 text-primary" /> DAFTAR SOAL
             </div>
-            <button 
+            <button
+              type="button"
+              aria-label="Tutup daftar soal"
+              title="Tutup daftar soal"
               className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition-colors text-slate-600 dark:text-slate-300"
               onClick={() => setShowList(false)}
             >
@@ -649,6 +655,9 @@ function RouteComponent() {
                   return (
                     <button
                       key={i}
+                      type="button"
+                      aria-label={`Buka soal nomor ${i + 1}`}
+                      title={`Buka soal nomor ${i + 1}`}
                       onClick={() => { handleNavigateIdx(i); setShowList(false); }}
                       className={cn(
                         "relative aspect-square rounded-2xl text-lg font-bold border-2 transition-all shadow-sm active:scale-95",

@@ -148,6 +148,7 @@ export function LoginModal({ isOpen, onClose, redirectUrl }: LoginModalProps) {
 
             <Button 
               type="submit" 
+              aria-label={busy ? "Memverifikasi" : "Masuk"}
               className="w-full h-12 rounded-xl bg-[#03A559] hover:bg-[#028b4a] text-white font-semibold transition-all border border-[#028b4a]" 
               disabled={busy}
             >

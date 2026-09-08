@@ -314,6 +314,7 @@ function Landing() {
 						onClick={toggleTheme}
 						className="h-9 w-9 rounded-xl bg-white/50 dark:bg-black/50 backdrop-blur-sm border-slate-200 dark:border-white/10 hover:bg-white dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-all shadow-sm"
 						aria-label="Toggle Theme"
+						title="Toggle Theme"
 					>
 						{theme === "dark" ? (
 							<Sun className="h-4 w-4 text-amber-400" />
@@ -365,8 +366,10 @@ function Landing() {
 								)}
 							/>
 
-							<button
-								className={cn(
+			<button
+				type="button"
+				aria-label="Tampilkan ujian online"
+				className={cn(
 									"relative z-10 flex items-center justify-center gap-2 px-2 py-2.5 text-sm font-bold rounded-lg transition-colors duration-300",
 									activeTab === "online"
 										? "text-[#03A559] dark:text-green-400"
@@ -383,8 +386,10 @@ function Landing() {
 								</span>
 							</button>
 
-							<button
-								className={cn(
+			<button
+				type="button"
+				aria-label="Tampilkan ujian offline"
+				className={cn(
 									"relative z-10 flex items-center justify-center gap-2 px-2 py-2.5 text-sm font-bold rounded-lg transition-colors duration-300",
 									activeTab === "offline"
 										? "text-[#03A559] dark:text-green-400"
@@ -547,6 +552,7 @@ function Landing() {
 							<div className="relative group">
 								<button
 									type="button"
+									aria-label="Login peserta"
 									onClick={handleOpenLoginGeneral}
 									className="w-full sm:w-72 h-14 bg-[#03A559] hover:bg-[#028b4a] text-white font-semibold rounded-xl shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 border border-[#028b4a]"
 								>

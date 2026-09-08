@@ -19,6 +19,8 @@ export function ExamTabs({ activeTab, setActiveTab, onlineCount, offlineCount }:
       />
 
       <button
+        type="button"
+        aria-label="Tampilkan ujian online"
         className={cn(
           "relative z-10 flex items-center justify-center gap-2 px-2 py-2.5 text-sm font-bold rounded-lg transition-colors duration-300",
           activeTab === "online"
@@ -37,6 +39,8 @@ export function ExamTabs({ activeTab, setActiveTab, onlineCount, offlineCount }:
       </button>
 
       <button
+        type="button"
+        aria-label="Tampilkan ujian offline"
         className={cn(
           "relative z-10 flex items-center justify-center gap-2 px-2 py-2.5 text-sm font-bold rounded-lg transition-colors duration-300",
           activeTab === "offline"

@@ -35,8 +35,8 @@ export function ConfirmDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
-          <Button variant="destructive" onClick={onConfirm}>{confirmLabel}</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} aria-label="Batal">Batal</Button>
+          <Button variant="destructive" onClick={onConfirm} aria-label={confirmLabel}>{confirmLabel}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
