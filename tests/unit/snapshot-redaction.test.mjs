@@ -127,6 +127,15 @@ test("operator snapshot applies Mata Kuliah scope instead of treating empty topi
   assert.match(body, /allowedMataKuliahIds\.has\(penawaran\.mataKuliahId\)/);
 });
 
+test("scoped operator only receives participants from visible offerings", () => {
+  const snapshot = read("src/lib/server/repos/snapshot.ts");
+  const fnIdx = snapshot.indexOf("export function operatorSnapshot(");
+  const body = snapshot.slice(fnIdx, snapshot.indexOf("export function pesertaSnapshot(", fnIdx));
+  assert.match(body, /penawaranById\.get\(item\.penawaranId\)\?\.pesertaIds/);
+  assert.match(body, /if \(unrestricted\) return true/);
+  assert.doesNotMatch(body, /includeAllPeserta/);
+});
+
 test("participant pages resolve questions by session and question id", () => {
   const kerjakan = read("src/routes/_authenticated/peserta.ujian.$id.kerjakan.tsx");
   const hasil = read("src/routes/_authenticated/peserta.ujian.$id.hasil.tsx");

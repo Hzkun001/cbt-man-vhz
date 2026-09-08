@@ -107,20 +107,20 @@ export function operatorSnapshot(rows: SnapshotRows, caller: UserRow): Snapshot 
 	const sesi = rows.sesi.filter((item) => ujianIds.has(item.ujianId));
 	const token = rows.token.filter((item) => ujianIds.has(item.ujianId));
 	const visibleUnitIds = new Set(
-
 		ujian.flatMap((item) => parseJson<string[]>(item.groupIds, [])),
 	);
-	const visiblePesertaIds = new Set(sesi.map((item) => item.pesertaId));
-	const includeAllPeserta = ujian.some(
-		(item) => parseJson<string[]>(item.groupIds, []).length === 0,
-	);
+	const visiblePesertaIds = new Set([
+		...sesi.map((item) => item.pesertaId),
+		...ujian.flatMap((item) =>
+			item.penawaranId ? penawaranById.get(item.penawaranId)?.pesertaIds ?? [] : [],
+		),
+	]);
 	const users = rows.users.filter((item) => {
 		if (item.id === caller.id) return true;
 		if (item.role !== "mahasiswa") return false;
-		if (includeAllPeserta) return true;
+		if (unrestricted) return true;
 		if (visiblePesertaIds.has(item.id)) return true;
 		return item.unitId ? visibleUnitIds.has(item.unitId) : false;
-
 	});
 
 	return {
