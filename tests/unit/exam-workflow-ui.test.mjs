@@ -127,14 +127,19 @@ test("tools and guide pages use full-width structured admin layouts", () => {
   assert.match(guide, /xl:grid-cols-\[16rem_minmax\(0,1fr\)_14rem\]/);
 });
 
-test("admin dashboard uses a Vercel-style full-width toolbar and searchable exam list", () => {
+test("admin dashboard uses shared layout, searchable schedules, and accurate summary sources", () => {
   const dashboard = read("src/routes/_authenticated/admin.index.tsx");
 
-  assert.match(dashboard, /<div className="mx-auto w-full max-w-\[1600px\] space-y-6/);
+  assert.match(dashboard, /<AdminPage className="pb-12">/);
   assert.match(dashboard, /placeholder="Cari ujian"/);
   assert.match(dashboard, /setSearch\(e\.target\.value\)/);
-  assert.match(dashboard, /\.filter\(\(exam\) => exam\.nama\.toLowerCase\(\)\.includes\(search/);
-  assert.match(dashboard, /bg-slate-950 p-5 text-white/);
+  assert.match(dashboard, /activeExams\.filter\(matchesSearch\)/);
+  assert.match(dashboard, /upcoming\.filter\(matchesSearch\)/);
+  assert.match(dashboard, /exam\.status === "published"/);
+  assert.match(dashboard, /getExamAvailabilityStatus\(exam, now\)/);
+  assert.match(dashboard, /essayIds\.has\(j\.soalId\) && typeof j\.skor !== "number"/);
+  assert.match(dashboard, /aria-label="Ringkasan ujian"/);
+  assert.doesNotMatch(dashboard, /bg-slate-950 p-5 text-white/);
 });
 
 test("course classes are nested under the academic structure navigation", () => {
