@@ -33,6 +33,7 @@ import {
   X,
   BookOpenCheck,
   ChevronDown,
+  ScrollText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -51,6 +52,7 @@ const ADMIN_ROUTE_RULES = {
   pengaturan: { key: "pengaturan", adminOnly: true, paths: ["/admin/pengaturan"] },
   tools: { key: "tools", adminOnly: true, paths: ["/admin/tools"] },
   panduan: { key: "panduan", adminOnly: false, paths: ["/admin/panduan"] },
+  audit: { key: "audit", adminOnly: true, paths: ["/admin/audit"] },
 } satisfies Record<string, { key: NavKey; adminOnly: boolean; paths: string[] }>;
 
 type AdminRouteRule = (typeof ADMIN_ROUTE_RULES)[keyof typeof ADMIN_ROUTE_RULES];
@@ -123,6 +125,7 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/admin/pengaturan", label: "Pengaturan", icon: Settings },
       { to: "/admin/tools", label: "Backup & Tools", icon: Wrench },
+      { to: "/admin/audit", label: "Audit Trail", icon: ScrollText },
       { to: "/admin/panduan", label: "Panduan", icon: BookOpenCheck },
     ],
   },

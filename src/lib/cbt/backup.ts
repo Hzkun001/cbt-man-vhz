@@ -129,7 +129,7 @@ export async function importBackup(raw: any): Promise<Backup> {
   }
 
   const data = BackupSchema.parse(raw);
-  await importBackupServer({
+  const databaseResult = await importBackupServer({
     data: {
       users: data.users,
       unitAkademik: data.unitAkademik,
@@ -145,14 +145,21 @@ export async function importBackup(raw: any): Promise<Backup> {
       config: data.config,
     },
   });
-  await importFilesServer({ data: data.files ?? [] });
+  if (!databaseResult.ok) throw new Error(databaseResult.error);
+  if (data.files) {
+    const filesResult = await importFilesServer({ data: data.files });
+    if (!filesResult.ok) {
+      throw new Error(`Database berhasil dipulihkan, tetapi berkas gagal dipulihkan: ${filesResult.error}`);
+    }
+  }
   invalidateReposCache();
   await hydrateRepos();
   return data;
 }
 
 export async function resetAllData(): Promise<void> {
-  await resetAllDataServer();
+  const result = await resetAllDataServer();
+  if (!result.ok) throw new Error(result.error);
   invalidateReposCache();
   await hydrateRepos();
 }

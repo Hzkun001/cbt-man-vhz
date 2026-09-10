@@ -12,8 +12,10 @@ export interface AuditLogEntry {
 	details?: string;
 }
 
-/** Write an audit log entry. Fire-and-forget: never throws to caller. */
-export async function writeAuditLog(entry: AuditLogEntry): Promise<void> {
+type AuditWriteResult = { ok: true } | { ok: false; error: string };
+
+/** Write an audit log entry and make failures visible to high-risk callers. */
+export async function writeAuditLog(entry: AuditLogEntry): Promise<AuditWriteResult> {
 	try {
 		await prisma.auditLog.create({
 			data: {
@@ -26,9 +28,10 @@ export async function writeAuditLog(entry: AuditLogEntry): Promise<void> {
 				details: entry.details?.replace(/"password(Hash)?":"[^"]*"/g, '"password$1":"[REDACTED]"') ?? null,
 			},
 		});
+		return { ok: true };
 	} catch {
-		// Swallow errors — audit logging must never break the primary operation
-		console.error("Failed to write audit log:", entry);
+		console.error("Failed to write audit log");
+		return { ok: false, error: "Audit log tidak dapat disimpan" };
 	}
 }
 

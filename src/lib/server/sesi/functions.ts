@@ -239,8 +239,6 @@ export const mutateSesiServer = createServerFn({ method: "POST" })
 				return { ok: false as const, error: "Forbidden" };
 			}
 
-			// Do not audit `sesi` (was explicitly skipped in functions.ts)
-
 			let upsertItem: SesiUjian | undefined;
 			let existingStatus: SesiUjian["status"] | undefined;
 			if (action === "upsert") {
@@ -344,6 +342,13 @@ export const mutateSesiServer = createServerFn({ method: "POST" })
 					});
 				}
 			});
+			await writeAuditLog({
+				userId: caller.id,
+				userRole: caller.role,
+				action: `sesi.${action}`,
+				entity: "sesi",
+				entityId: typeof payload === "object" && payload && "id" in payload ? String(payload.id) : undefined,
+			});
 			return { ok: true as const };
 		} catch (err) {
 			return {
@@ -394,7 +399,7 @@ export const actionLiveSesiServer = createServerFn({ method: "POST" })
 					data: { pelanggaran: 0 },
 				});
 			}
-			void writeAuditLog({ userId: caller.id, userRole: caller.role, action: `sesi.${data.action}`, entity: "sesi", entityId: data.sesiId });
+			await writeAuditLog({ userId: caller.id, userRole: caller.role, action: `sesi.${data.action}`, entity: "sesi", entityId: data.sesiId });
 			return { ok: true as const };
 		} catch (err) {
 			return { ok: false as const, error: err instanceof Error ? err.message : String(err) };

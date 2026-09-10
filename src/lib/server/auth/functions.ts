@@ -15,6 +15,7 @@ import {
 	getDeviceFingerprint,
 } from "../db/session";
 import { seedIfNeeded } from "../db/auth";
+import { writeAuditLog } from "../db/audit";
 
 export const loginServer = createServerFn({ method: "POST" })
 	.validator(
@@ -47,6 +48,13 @@ export const loginServer = createServerFn({ method: "POST" })
 		const ua = getRequestHeaders().get("user-agent") ?? "";
 		const token = await createSession(user.id, ua, fp);
 		setSessionCookie(token);
+		await writeAuditLog({
+			userId: user.id,
+			userRole: user.role,
+			action: "auth.login",
+			entity: "session",
+			details: JSON.stringify({ ip }),
+		});
 		return { ok: true as const, user: publicUser(user) };
 	});
 
@@ -65,7 +73,16 @@ export const validateSessionServer = createServerFn({ method: "POST" }).handler(
 export const logoutServer = createServerFn({ method: "POST" }).handler(
 	async () => {
 		await seedIfNeeded();
+		const caller = await validateSession(readSessionToken());
 		await deleteSession(readSessionToken());
+		if (caller) {
+			await writeAuditLog({
+				userId: caller.id,
+				userRole: caller.role,
+				action: "auth.logout",
+				entity: "session",
+			});
+		}
 		clearSessionCookie();
 		return { ok: true as const };
 	},

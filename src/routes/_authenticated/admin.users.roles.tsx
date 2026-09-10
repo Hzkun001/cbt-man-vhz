@@ -25,6 +25,7 @@ const LABEL: Record<NavKey, string> = {
   pengaturan: "Pengaturan Sistem",
   tools: "Backup & Restore",
   panduan: "Panduan Pengguna",
+  audit: "Audit Trail",
 
 };
 

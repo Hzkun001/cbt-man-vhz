@@ -348,27 +348,53 @@ export const importFilesServer = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const auth = await requireAdmin();
     if (!auth.ok) return { ok: false as const, error: auth.error };
-
-    await ensureUploadsDir();
-    const [{ resolve, sep }, { writeFile }] = await Promise.all([pathApi(), fsApi()]);
-    const baseDir = await resolveUploadsDir();
-    for (const item of data) {
-      if (!/^[A-Za-z0-9_-]+$/.test(item.id)) continue;
-      if (item.extension !== "" && !/^\.[A-Za-z0-9]{1,16}$/.test(item.extension)) continue;
-      const blobPath = resolve(await filePath(item.id, item.extension));
-      if (!blobPath.startsWith(baseDir + sep)) continue;
-      const buffer = Buffer.from(item.dataBase64, "base64");
-      await writeFile(blobPath, buffer);
-      const meta: StoredFileRecord = {
-        id: item.id,
-        name: item.name,
-        mime: item.mime,
-        size: item.size,
-        createdAt: item.createdAt,
-        extension: item.extension,
-        jurusanId: item.jurusanId,
-      };
-      await writeFile(await metaPath(item.id), JSON.stringify(meta, null, 2));
+    try {
+      // Restore semantics: when files are present, storage is replaced as one
+      // staged directory. This removes stale files without exposing a partial set.
+      const [{ mkdir, mkdtemp, rename, rm, writeFile }, { dirname, join }] = await Promise.all([
+        fsApi(),
+        pathApi(),
+      ]);
+      const baseDir = await resolveUploadsDir();
+      await mkdir(baseDir, { recursive: true });
+      const stageDir = await mkdtemp(join(dirname(baseDir), ".uploads-restore-"));
+      let previousDir: string | undefined;
+      const ids = new Set<string>();
+      try {
+        for (const item of data) {
+          if (!/^[A-Za-z0-9_-]+$/.test(item.id)) throw new Error("ID file tidak valid");
+          if (ids.has(item.id)) throw new Error("ID file duplikat");
+          ids.add(item.id);
+          if (item.extension !== "" && !/^\.[A-Za-z0-9]{1,16}$/.test(item.extension)) {
+            throw new Error("Ekstensi file tidak valid");
+          }
+          const buffer = Buffer.from(item.dataBase64, "base64");
+          if (buffer.length !== item.size) throw new Error(`Ukuran file ${item.name} tidak sesuai`);
+          const meta: StoredFileRecord = {
+            id: item.id,
+            name: item.name,
+            mime: item.mime,
+            size: item.size,
+            createdAt: item.createdAt,
+            extension: item.extension,
+            jurusanId: item.jurusanId,
+          };
+          await writeFile(join(stageDir, `${item.id}${item.extension}`), buffer);
+          await writeFile(join(stageDir, `${item.id}.json`), JSON.stringify(meta, null, 2));
+        }
+        previousDir = `${baseDir}.previous`;
+        await rm(previousDir, { recursive: true, force: true });
+        await rename(baseDir, previousDir);
+        await rename(stageDir, baseDir);
+        await rm(previousDir, { recursive: true, force: true }).catch(() => undefined);
+      } catch (error) {
+        await rm(stageDir, { recursive: true, force: true });
+        if (previousDir) await rename(previousDir, baseDir).catch(() => undefined);
+        throw error;
+      }
+      return { ok: true as const };
+    } catch (error) {
+      console.error("Failed to restore files", error);
+      return { ok: false as const, error: "Berkas backup gagal dipulihkan" };
     }
-    return { ok: true as const };
   });

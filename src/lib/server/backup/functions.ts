@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { prisma } from "../db/prisma";
-import { requireAdminResult } from "../db/auth";
+import { requireAdminResult, requireCaller } from "../db/auth";
+import { writeAuditLog } from "../db/audit";
 import type { User, UnitAkademik, MataKuliah, PenawaranMataKuliah, Modul, Topik, Soal, Ujian, TokenUjian, TokenClaim, SesiUjian, AppConfig } from "@/lib/cbt/types";
 
 import { stringifyJson, toBigInt } from "../db/json";
@@ -26,6 +27,16 @@ export const importBackupServer = createServerFn({ method: "POST" })
 	.handler(async ({ data }) => {
 		const auth = await requireAdminResult();
 		if (!auth.ok) return { ok: false as const, error: auth.error };
+		const caller = await requireCaller();
+		if (!caller) return { ok: false as const, error: "Forbidden" };
+		const audit = await writeAuditLog({
+			userId: caller.id,
+			userRole: caller.role,
+			action: "backup.restore",
+			entity: "backup",
+			details: JSON.stringify({ users: data.users.length, soal: data.soal.length, ujian: data.ujian.length }),
+		});
+		if (!audit.ok) return { ok: false as const, error: audit.error };
 		await prisma.$transaction(async (tx) => {
 			await tx.jawaban.deleteMany();
 			await tx.sesiUjian.deleteMany();
@@ -194,6 +205,16 @@ export const resetAllDataServer = createServerFn({ method: "POST" }).handler(
 	async () => {
 		const auth = await requireAdminResult();
 		if (!auth.ok) return { ok: false as const, error: auth.error };
+		const caller = await requireCaller();
+		if (!caller) return { ok: false as const, error: "Forbidden" };
+		const audit = await writeAuditLog({
+			userId: caller.id,
+			userRole: caller.role,
+			action: "backup.reset",
+			entity: "backup",
+			details: JSON.stringify({ destructive: true }),
+		});
+		if (!audit.ok) return { ok: false as const, error: audit.error };
 		await prisma.$transaction(async (tx) => {
 			await tx.jawaban.deleteMany();
 			await tx.sesiUjian.deleteMany();
