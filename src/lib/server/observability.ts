@@ -25,11 +25,11 @@ let cachedConfig: { value: ObservabilityConfig; expiresAt: number } | undefined;
 let lastPruneAt = 0;
 
 export type ObservabilityLogRow = {
-	id: string;
-	createdAt: string;
-	severity: ObservabilityLevel;
-	event: string;
-	requestId?: string;
+  id: string;
+  createdAt: string;
+  severity: ObservabilityLevel;
+  event: string;
+  requestId?: string;
   method?: string;
   path?: string;
   statusCode?: number;
@@ -75,27 +75,27 @@ function safeText(value: string | undefined, max = 500): string | undefined {
 async function writeEvent(event: {
   severity: ObservabilityLevel;
   event: string;
-	requestId?: string;
+  requestId?: string;
   method?: string;
-	path?: string;
-	statusCode?: number;
-	durationMs?: number;
-	errorType?: string;
-	message?: string;
+  path?: string;
+  statusCode?: number;
+  durationMs?: number;
+  errorType?: string;
+  message?: string;
 }): Promise<void> {
   try {
     const payload = {
       schemaVersion: 1,
       severity: event.severity,
       event: event.event,
-			requestId: event.requestId,
+      requestId: event.requestId,
       attributes: {
         "http.request.method": safeText(event.method, 16),
         "url.path": safeText(event.path, 512),
-				"http.response.status_code": event.statusCode,
-				"http.server.duration_ms": event.durationMs,
-				"error.type": safeText(event.errorType, 128),
-				message: safeText(event.message),
+        "http.response.status_code": event.statusCode,
+        "http.server.duration_ms": event.durationMs,
+        "error.type": safeText(event.errorType, 128),
+        message: safeText(event.message),
       },
     };
     const encoded = JSON.stringify(payload);
@@ -105,7 +105,7 @@ async function writeEvent(event: {
         : JSON.stringify({ ...payload, attributes: { truncated: true } });
     await prisma.auditLog.create({
       data: {
-				id: `obs_${globalThis.crypto.randomUUID()}`,
+        id: `obs_${globalThis.crypto.randomUUID()}`,
         userId: "system",
         userRole: "system",
         action: event.event,
@@ -136,9 +136,9 @@ async function pruneObservabilityLogs(retentionDays: number): Promise<void> {
 export async function recordHttpRequest(input: {
   requestId: string;
   request: Request;
-	statusCode: number;
-	durationMs: number;
-	errorType?: string;
+  statusCode: number;
+  durationMs: number;
+  errorType?: string;
 }): Promise<void> {
   const path = new URL(input.request.url).pathname;
   const config = await getObservabilityConfig();
@@ -149,12 +149,12 @@ export async function recordHttpRequest(input: {
   await writeEvent({
     severity,
     event: "http.server.request",
-		requestId: input.requestId,
+    requestId: input.requestId,
     method: input.request.method,
     path,
-		statusCode: input.statusCode,
-		durationMs: input.durationMs,
-		errorType: input.errorType,
+    statusCode: input.statusCode,
+    durationMs: input.durationMs,
+    errorType: input.errorType,
   });
   void pruneObservabilityLogs(config.retentionDays);
 }
@@ -181,7 +181,7 @@ export const getObservabilityLogsServer = createServerFn({ method: "POST" })
       const details = parseJson<{
         severity?: ObservabilityLevel;
         event?: string;
-				requestId?: string;
+        requestId?: string;
         attributes?: Record<string, unknown>;
       }>(row.details, {});
       const severity = ObservabilityLevelSchema.safeParse(details.severity);
@@ -193,7 +193,7 @@ export const getObservabilityLogsServer = createServerFn({ method: "POST" })
           createdAt: row.createdAt.toISOString(),
           severity: severity.data,
           event: details.event ?? "unknown",
-				requestId: details.requestId,
+          requestId: details.requestId,
           method:
             typeof attributes["http.request.method"] === "string"
               ? attributes["http.request.method"]

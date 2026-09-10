@@ -42,9 +42,10 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     const suppliedRequestId = request.headers.get("x-request-id")?.trim();
-    const requestId = suppliedRequestId && /^[A-Za-z0-9._~-]{1,128}$/.test(suppliedRequestId)
-      ? suppliedRequestId
-      : randomUUID();
+    const requestId =
+      suppliedRequestId && /^[A-Za-z0-9._~-]{1,128}$/.test(suppliedRequestId)
+        ? suppliedRequestId
+        : randomUUID();
     const startedAt = Date.now();
     const withRequestId = (response: Response) => {
       const headers = new Headers(response.headers);
