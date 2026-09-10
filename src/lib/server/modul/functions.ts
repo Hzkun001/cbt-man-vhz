@@ -3,7 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { prisma } from "../db/prisma";
-import { 
+import {
 	requireCaller, 
 	seedIfNeeded,
 	operatorHasNav,
@@ -12,6 +12,7 @@ import {
 	operatorCanTouchSoal,
 	operatorCanTouchTopikId
 } from "../db/auth";
+import { ModulSchema, SoalSchema, TopikSchema } from "@/lib/cbt/types";
 import type { Modul, Topik, Soal } from "@/lib/cbt/types";
 import { writeAuditLog } from "../db/audit";
 
@@ -30,13 +31,25 @@ function audit(caller: any, entity: string, action: string, payload: any) {
 	}
 }
 
+const idPayloadSchema = z.object({ id: z.string().min(1) }).strict();
+const modulMutationSchema = z.discriminatedUnion("action", [
+	 z.object({ action: z.literal("upsert"), payload: ModulSchema }),
+	 z.object({ action: z.literal("remove"), payload: idPayloadSchema }),
+	 z.object({ action: z.literal("bulkSet"), payload: z.array(ModulSchema) }),
+]);
+const topikMutationSchema = z.discriminatedUnion("action", [
+	 z.object({ action: z.literal("upsert"), payload: TopikSchema }),
+	 z.object({ action: z.literal("remove"), payload: idPayloadSchema }),
+	 z.object({ action: z.literal("bulkSet"), payload: z.array(TopikSchema) }),
+]);
+const soalMutationSchema = z.discriminatedUnion("action", [
+	 z.object({ action: z.literal("upsert"), payload: SoalSchema }),
+	 z.object({ action: z.literal("remove"), payload: idPayloadSchema }),
+	 z.object({ action: z.literal("bulkSet"), payload: z.array(SoalSchema) }),
+]);
+
 export const mutateModulServer = createServerFn({ method: "POST" })
-	.validator(
-		z.object({
-			action: z.enum(["upsert", "remove", "bulkSet"]),
-			payload: z.any(),
-		}),
-	)
+	.validator(modulMutationSchema)
 	.handler(async ({ data }) => {
 		try {
 			await seedIfNeeded();
@@ -90,12 +103,7 @@ export const mutateModulServer = createServerFn({ method: "POST" })
 	});
 
 export const mutateTopikServer = createServerFn({ method: "POST" })
-	.validator(
-		z.object({
-			action: z.enum(["upsert", "remove", "bulkSet"]),
-			payload: z.any(),
-		}),
-	)
+	.validator(topikMutationSchema)
 	.handler(async ({ data }) => {
 		try {
 			await seedIfNeeded();
@@ -138,12 +146,7 @@ export const mutateTopikServer = createServerFn({ method: "POST" })
 	});
 
 export const mutateSoalServer = createServerFn({ method: "POST" })
-	.validator(
-		z.object({
-			action: z.enum(["upsert", "remove", "bulkSet"]),
-			payload: z.any(),
-		}),
-	)
+	.validator(soalMutationSchema)
 	.handler(async ({ data }) => {
 		try {
 			await seedIfNeeded();

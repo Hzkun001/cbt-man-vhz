@@ -3,7 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { prisma } from "../db/prisma";
-import { 
+import {
 	requireCaller, 
 	requireAdminResult,
 	seedIfNeeded,
@@ -12,6 +12,7 @@ import {
 	operatorCanTouchUjianInput,
 	pesertaCanTouchUjian,
 } from "../db/auth";
+import { TokenUjianSchema, UjianSchema } from "@/lib/cbt/types";
 import type { Ujian, TokenUjian } from "@/lib/cbt/types";
 import { writeAuditLog } from "../db/audit";
 import { Prisma } from "@prisma/client";
@@ -85,13 +86,31 @@ function validateUjianForSave(item: Ujian) {
 	}
 }
 
+const idPayloadSchema = z.object({ id: z.string().min(1) }).strict();
+const ujianMutationItemSchema = UjianSchema.superRefine((item, ctx) => {
+	if (!item.nama.trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Nama paket ujian wajib diisi." });
+	if (item.durasiMenit < 1) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Durasi paket ujian harus minimal 1 menit." });
+	if (item.beginAt !== undefined && item.endAt !== undefined && item.endAt <= item.beginAt) {
+		ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Waktu selesai harus setelah waktu mulai." });
+	}
+	if (new Set(item.topicSets.map((set) => set.topikId)).size !== item.topicSets.length) {
+		ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Topik sumber soal tidak boleh duplikat." });
+	}
+});
+const ujianMutationSchema = z.discriminatedUnion("action", [
+	 z.object({ action: z.literal("upsert"), payload: ujianMutationItemSchema }),
+	 z.object({ action: z.literal("remove"), payload: idPayloadSchema }),
+	 z.object({ action: z.literal("bulkSet"), payload: z.array(ujianMutationItemSchema) }),
+	 z.object({ action: z.literal("publish"), payload: idPayloadSchema }),
+]);
+const tokenMutationSchema = z.discriminatedUnion("action", [
+	 z.object({ action: z.literal("upsert"), payload: TokenUjianSchema }),
+	 z.object({ action: z.literal("remove"), payload: idPayloadSchema }),
+	 z.object({ action: z.literal("bulkSet"), payload: z.array(TokenUjianSchema) }),
+]);
+
 export const mutateUjianServer = createServerFn({ method: "POST" })
-	.validator(
-		z.object({
-			action: z.enum(["upsert", "remove", "bulkSet", "publish"]),
-			payload: z.any(),
-		}),
-	)
+	.validator(ujianMutationSchema)
 	.handler(async ({ data }) => {
 		try {
 			await seedIfNeeded();
@@ -211,12 +230,7 @@ export const mutateUjianServer = createServerFn({ method: "POST" })
 	});
 
 export const mutateTokenServer = createServerFn({ method: "POST" })
-	.validator(
-		z.object({
-			action: z.enum(["upsert", "remove", "bulkSet"]),
-			payload: z.any(),
-		}),
-	)
+	.validator(tokenMutationSchema)
 	.handler(async ({ data }) => {
 		try {
 			await seedIfNeeded();

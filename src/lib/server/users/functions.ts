@@ -6,9 +6,18 @@ import { requireCaller, requireAdminResult, seedIfNeeded } from "../db/auth";
 import { hashPassword } from "@/lib/cbt/hash";
 import { stringifyJson, parseJson } from "../db/json";
 import { publicUser, upsertUserSchema } from "../repos/mappers";
+import { UserSchema } from "@/lib/cbt/types";
 import type { User, PublicUser } from "@/lib/cbt/types";
 
 import { writeAuditLog } from "../db/audit";
+
+const idPayloadSchema = z.object({ id: z.string().min(1) }).strict();
+const userMutationSchema = z.discriminatedUnion("action", [
+	 z.object({ action: z.literal("upsert"), payload: UserSchema }),
+	 z.object({ action: z.literal("remove"), payload: idPayloadSchema }),
+	 z.object({ action: z.literal("bulkSet"), payload: z.array(UserSchema) }),
+	 z.object({ action: z.literal("bulkRemove"), payload: z.object({ ids: z.array(z.string().min(1)).min(1) }).strict() }),
+]);
 
 export const revokeUserSessionsServer = createServerFn({ method: "POST" })
 	.validator(z.object({ userId: z.string().min(1) }))
@@ -131,12 +140,7 @@ export const patchUserTopikAccessServer = createServerFn({ method: "POST" })
 	});
 
 export const mutateUserServer = createServerFn({ method: "POST" })
-	.validator(
-		z.object({
-			action: z.enum(["upsert", "remove", "bulkSet", "bulkRemove"]),
-			payload: z.any(),
-		}),
-	)
+	.validator(userMutationSchema)
 	.handler(async ({ data }) => {
 		try {
 			await seedIfNeeded();

@@ -14,6 +14,8 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Security
 
+- Perketat validasi mutation server, scope akses file operator, dan batas ukuran/quota upload; amankan default production (#150).
+
 ### Deprecated
 
 ### Removed

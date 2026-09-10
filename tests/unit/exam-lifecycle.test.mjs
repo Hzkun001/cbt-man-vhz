@@ -33,7 +33,7 @@ test("only published exams with explicit groups enter the participant snapshot",
 
 test("publish performs readiness checks before changing status", () => {
   const server = read("src/lib/server/ujian/functions.ts");
-  assert.match(server, /action: z\.enum\(\["upsert", "remove", "bulkSet", "publish"\]\)/);
+  assert.match(server, /const ujianMutationSchema = z\.discriminatedUnion\("action"/);
   assert.match(server, /if \(item\.topicSets\.length === 0\)/);
   assert.match(server, /if \(item\.groupIds\.length === 0 && parseJson/);
   assert.match(server, /if \(!item\.penawaranId\)/);

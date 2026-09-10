@@ -78,7 +78,34 @@ test("production session cookies default secure but allow explicit private-HTTP 
   const compose = readFileSync("compose.yaml", "utf8");
 
   assert.match(session, /SESSION_COOKIE_SECURE !== "false"/);
-  assert.match(compose, /SESSION_COOKIE_SECURE: "false"/);
+  assert.match(compose, /SESSION_COOKIE_SECURE: "\$\{SESSION_COOKIE_SECURE:-true\}"/);
+});
+
+test("issue 150 hardens mutation and file boundaries", () => {
+  const mutationFiles = [
+    "src/lib/server/modul/functions.ts",
+    "src/lib/server/ujian/functions.ts",
+    "src/lib/server/sesi/functions.ts",
+    "src/lib/server/users/functions.ts",
+    "src/lib/server/backup/functions.ts",
+  ];
+  for (const path of mutationFiles) {
+    assert.doesNotMatch(readFileSync(path, "utf8"), /z\.any\(\)/, `${path} must validate payloads`);
+  }
+
+  const files = readFileSync("src/lib/server/files/functions.ts", "utf8");
+  const compose = readFileSync("compose.yaml", "utf8");
+  const dockerfile = readFileSync("Dockerfile", "utf8");
+
+  assert.match(files, /MAX_FILE_BYTES/);
+  assert.match(files, /MAX_STORAGE_BYTES/);
+  assert.match(files, /BASE64_PATTERN/);
+  assert.match(files, /operatorCanAccessFile/);
+  assert.match(files, /operatorCanTouchTopikId/);
+  assert.match(files, /operatorCanTouchUjian/);
+  assert.match(compose, /ADMIN_PASSWORD: "\$\{ADMIN_PASSWORD:\?set ADMIN_PASSWORD for production\}"/);
+  assert.match(compose, /SEED_DEMO: "\$\{SEED_DEMO:-false\}"/);
+  assert.doesNotMatch(dockerfile, /NODE_ENV=development npm run prisma:seed/);
 });
 
 test("migration normalizes only dangling optional relation IDs", () => {

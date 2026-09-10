@@ -6,8 +6,13 @@ import { z } from "zod";
 import { prisma } from "@/lib/server/db/prisma";
 import { parseJson } from "@/lib/server/db/json";
 import { readSessionToken, validateSession } from "@/lib/server/db/session";
-import { pesertaCanTouchUjian } from "@/lib/server/db/auth";
+import {
+  operatorCanTouchTopikId,
+  operatorCanTouchUjian,
+  pesertaCanTouchUjian,
+} from "@/lib/server/db/auth";
 import type { NavKey, Role } from "@/lib/cbt/types";
+import type { UserRow } from "@/lib/server/repos/mappers";
 
 const uploadsDir = [process.cwd(), "data", "uploads"] as const;
 const DEFAULT_OPERATOR_ROLE_ACCESS: NavKey[] = [
@@ -40,6 +45,78 @@ const fileSchema = z.object({
   createdAt: z.number(),
   extension: z.string().default(""),
   jurusanId: z.string().optional(),
+});
+
+export const MAX_FILE_BYTES = 10 * 1024 * 1024;
+export const MAX_STORAGE_BYTES = 500 * 1024 * 1024;
+const ALLOWED_FILE_EXTENSIONS: Record<string, readonly string[]> = {
+  "image/jpeg": [".jpg", ".jpeg"],
+  "image/png": [".png"],
+  "image/gif": [".gif"],
+  "image/webp": [".webp"],
+  "audio/mpeg": [".mp3"],
+  "audio/wav": [".wav"],
+  "audio/ogg": [".ogg"],
+  "audio/webm": [".webm"],
+  "audio/mp4": [".m4a", ".mp4"],
+};
+const ALLOWED_FILE_MIMES = Object.keys(ALLOWED_FILE_EXTENSIONS) as [string, ...string[]];
+const BASE64_PATTERN = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+
+function decodedBase64Size(value: string): number {
+  if (!BASE64_PATTERN.test(value)) return -1;
+  const padding = value.endsWith("==") ? 2 : value.endsWith("=") ? 1 : 0;
+  return (value.length / 4) * 3 - padding;
+}
+
+function extensionFromName(name: string): string {
+  const match = /\.[^.]+$/.exec(name);
+  return match?.[0].toLowerCase() ?? "";
+}
+
+function validateMediaFile(
+  item: { name: string; mime: string; dataBase64: string; extension?: string; size?: number },
+  ctx: z.RefinementCtx,
+): void {
+  const decodedSize = decodedBase64Size(item.dataBase64);
+  if (decodedSize < 0) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["dataBase64"], message: "Data file bukan base64 yang valid" });
+    return;
+  }
+  if (decodedSize > MAX_FILE_BYTES) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["dataBase64"], message: `Ukuran file maksimal ${MAX_FILE_BYTES} byte` });
+  }
+  if (item.size !== undefined && decodedSize !== item.size) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["size"], message: "Ukuran file tidak sesuai isi" });
+  }
+  const extension = (item.extension ?? extensionFromName(item.name)).toLowerCase();
+  if (!ALLOWED_FILE_EXTENSIONS[item.mime]?.includes(extension)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["mime"], message: "Tipe dan ekstensi file tidak diizinkan" });
+  }
+}
+
+const uploadFileSchema = z.object({
+  name: z.string().trim().min(1).max(255).refine((name) => !/[\\/\0]/.test(name), "Nama file tidak valid"),
+  mime: z.enum(ALLOWED_FILE_MIMES),
+  dataBase64: z.string().min(1),
+  jurusanId: z.string().min(1).optional(),
+}).superRefine(validateMediaFile);
+
+const fileBackupSchema = z.object({
+  id: z.string().regex(/^[A-Za-z0-9_-]+$/),
+  name: z.string().trim().min(1).max(255).refine((name) => !/[\\/\0]/.test(name), "Nama file tidak valid"),
+  mime: z.enum(ALLOWED_FILE_MIMES),
+  size: z.number().int().nonnegative(),
+  createdAt: z.number().finite(),
+  extension: z.string().regex(/^\.[A-Za-z0-9]{1,16}$/),
+  dataBase64: z.string().min(1),
+  jurusanId: z.string().min(1).optional(),
+}).superRefine(validateMediaFile);
+const importFilesSchema = z.array(fileBackupSchema).max(5000).superRefine((items, ctx) => {
+  const totalBytes = items.reduce((total, item) => total + item.size, 0);
+  if (totalBytes > MAX_STORAGE_BYTES) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Kuota penyimpanan maksimal ${MAX_STORAGE_BYTES} byte` });
+  }
 });
 
 async function pathApi() {
@@ -223,6 +300,48 @@ async function pesertaCanAccessFile(
   return allowed.has(fileId);
 }
 
+async function operatorCanAccessFile(
+  caller: UserRow,
+  fileId: string,
+  meta: StoredFileRecord,
+): Promise<boolean> {
+  if (caller.role === "super_admin") return true;
+  if (caller.role !== "admin_prodi" && caller.role !== "evaluator") return false;
+  if (meta.jurusanId && meta.jurusanId !== caller.unitId) return false;
+
+  const marker = `file://${fileId}`;
+  const [soals, ujians] = await Promise.all([
+    prisma.soal.findMany({
+      where: {
+        OR: [
+          { audioFileId: fileId },
+          { detail: { contains: marker } },
+          { pembahasan: { contains: marker } },
+          { jawaban: { some: { detail: { contains: marker } } } },
+        ],
+      },
+      select: { topikId: true },
+    }),
+    prisma.ujian.findMany({
+      where: { deskripsi: { contains: marker } },
+      select: { id: true },
+    }),
+  ]);
+
+  for (const soal of soals) {
+    if (await operatorCanTouchTopikId(caller, soal.topikId)) return true;
+  }
+  for (const ujian of ujians) {
+    if (await operatorCanTouchUjian(caller, ujian.id)) return true;
+  }
+
+  // Unreferenced files follow the file-manager list boundary: only the
+  // operator's own jurusan and an enabled files nav are readable.
+  return !soals.length && !ujians.length
+    && meta.jurusanId === caller.unitId
+    && await operatorHasFilesAccess(caller.role);
+}
+
 export const listStoredFiles = createServerFn({ method: "GET" }).handler(async () => {
   const auth = await requireFileManagerAccess();
   if (!auth.ok) throw new Error(auth.error);
@@ -233,22 +352,21 @@ export const listStoredFiles = createServerFn({ method: "GET" }).handler(async (
 });
 
 export const uploadStoredFile = createServerFn({ method: "POST" })
-  .validator(
-    z.object({
-      name: z.string().min(1),
-      mime: z.string().min(1),
-      dataBase64: z.string().min(1),
-      jurusanId: z.string().optional(),
-    }),
-  )
+  .validator(uploadFileSchema)
   .handler(async ({ data }) => {
     const auth = await requireFileManagerAccess();
     if (!auth.ok) throw new Error(auth.error);
 
+    const currentBytes = (await listMetas()).reduce((total, file) => total + file.size, 0);
+    const incomingBytes = decodedBase64Size(data.dataBase64);
+    if (currentBytes + incomingBytes > MAX_STORAGE_BYTES) {
+      throw new Error(`Kuota penyimpanan maksimal ${MAX_STORAGE_BYTES} byte`);
+    }
+
     await ensureUploadsDir();
     const [{ extname }, { writeFile }] = await Promise.all([pathApi(), fsApi()]);
     const id = uid("f_");
-    const extension = extname(data.name).slice(0, 16);
+    const extension = extname(data.name).toLowerCase();
     const buffer = Buffer.from(data.dataBase64, "base64");
     const meta: StoredFileRecord = {
       id,
@@ -285,23 +403,16 @@ export const getStoredFileUrl = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const caller = await requireCaller();
     if (!caller) throw new Error("Forbidden");
-
-    // Authorize by role (Issue #2). Admin and operators may read any blob:
-    // operators legitimately view exam/soal images (hasil/evaluasi/laporan)
-    // based on their topik scope, independent of the file-manager nav, so
-    // gating reads behind the "files" management nav would break those images.
-    // A peserta is scoped to files referenced by exams/soal they can access;
-    // everyone else is denied.
-    if (caller.role === "super_admin" || caller.role === "admin_prodi" || caller.role === "evaluator") {
-      // allowed
-    } else if (caller.role === "mahasiswa") {
-      if (!(await pesertaCanAccessFile(caller, data.id))) throw new Error("Forbidden");
-    } else {
-      throw new Error("Forbidden");
-    }
-
     const meta = await readMeta(data.id);
     if (!meta) return null;
+
+    if (caller.role === "admin_prodi" || caller.role === "evaluator") {
+      if (!(await operatorCanAccessFile(caller, data.id, meta))) throw new Error("Forbidden");
+    } else if (caller.role === "mahasiswa") {
+      if (!(await pesertaCanAccessFile(caller, data.id))) throw new Error("Forbidden");
+    } else if (caller.role !== "super_admin") {
+      throw new Error("Forbidden");
+    }
 
     const [{ stat, readFile }, absPath] = await Promise.all([
       fsApi(),
@@ -316,17 +427,6 @@ export const getStoredFileUrl = createServerFn({ method: "GET" })
       dataBase64: body.toString("base64"),
     };
   });
-
-const fileBackupSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  mime: z.string(),
-  size: z.number(),
-  createdAt: z.number(),
-  extension: z.string(),
-  dataBase64: z.string(),
-  jurusanId: z.string().optional(),
-});
 
 export const exportFilesServer = createServerFn({ method: "GET" }).handler(async () => {
   const auth = await requireAdmin();
@@ -344,7 +444,7 @@ export const exportFilesServer = createServerFn({ method: "GET" }).handler(async
 });
 
 export const importFilesServer = createServerFn({ method: "POST" })
-  .validator(z.array(fileBackupSchema))
+  .validator(importFilesSchema)
   .handler(async ({ data }) => {
     const auth = await requireAdmin();
     if (!auth.ok) return { ok: false as const, error: auth.error };
@@ -353,11 +453,10 @@ export const importFilesServer = createServerFn({ method: "POST" })
     const [{ resolve, sep }, { writeFile }] = await Promise.all([pathApi(), fsApi()]);
     const baseDir = await resolveUploadsDir();
     for (const item of data) {
-      if (!/^[A-Za-z0-9_-]+$/.test(item.id)) continue;
-      if (item.extension !== "" && !/^\.[A-Za-z0-9]{1,16}$/.test(item.extension)) continue;
       const blobPath = resolve(await filePath(item.id, item.extension));
-      if (!blobPath.startsWith(baseDir + sep)) continue;
       const buffer = Buffer.from(item.dataBase64, "base64");
+      if (buffer.length !== item.size) throw new Error(`Ukuran file ${item.name} tidak sesuai`);
+      if (!blobPath.startsWith(baseDir + sep)) throw new Error("Path file tidak valid");
       await writeFile(blobPath, buffer);
       const meta: StoredFileRecord = {
         id: item.id,

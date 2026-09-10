@@ -10,6 +10,7 @@ import {
 	operatorCanTouchUjian,
 	pesertaCanTouchUjian,
 } from "../db/auth";
+import { SesiUjianSchema } from "@/lib/cbt/types";
 import type { SesiUjian, NavKey } from "@/lib/cbt/types";
 import { writeAuditLog } from "../db/audit";
 import { stringifyJson, toBigInt, toNumber, parseJson } from "../db/json";
@@ -29,6 +30,25 @@ const OPERATOR_SESSION_KEYS: NavKey[] = [
 	"leaderboard",
 ];
 const SUBMIT_GRACE_MS = 30_000;
+
+const idPayloadSchema = z.object({ id: z.string().min(1) }).strict();
+const sesiMutationItemSchema = SesiUjianSchema.superRefine((item, ctx) => {
+	const soalIds = new Set(item.soalIds);
+	if (soalIds.size !== item.soalIds.length) {
+		ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Daftar soal sesi tidak boleh duplikat." });
+	}
+	if (item.mulaiAt !== undefined && item.selesaiAt !== undefined && item.selesaiAt < item.mulaiAt) {
+		ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Waktu selesai sesi tidak valid." });
+	}
+	if (item.jawaban.some((answer) => !soalIds.has(answer.soalId))) {
+		ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Jawaban mengacu pada soal yang tidak ada di sesi." });
+	}
+});
+const sesiMutationSchema = z.discriminatedUnion("action", [
+	 z.object({ action: z.literal("upsert"), payload: sesiMutationItemSchema }),
+	 z.object({ action: z.literal("remove"), payload: idPayloadSchema }),
+	 z.object({ action: z.literal("bulkSet"), payload: z.array(sesiMutationItemSchema) }),
+]);
 
 // Authoritative server-side grading at submit time. The participant's client
 // also computes a provisional grade for instant display, but the persisted
@@ -195,12 +215,7 @@ export const saveParticipantSesiServer = createServerFn({ method: "POST" })
 	});
 
 export const mutateSesiServer = createServerFn({ method: "POST" })
-	.validator(
-		z.object({
-			action: z.enum(["upsert", "remove", "bulkSet"]),
-			payload: z.any(),
-		}),
-	)
+	.validator(sesiMutationSchema)
 	.handler(async ({ data }) => {
 		try {
 			await seedIfNeeded();
