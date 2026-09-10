@@ -83,6 +83,13 @@ const cache = {
 		pesanLogin: "Selamat datang di aplikasi ujian online",
 		mobileLock: false,
 		multiDevice: false,
+		observability: {
+			enabled: true,
+			minLevel: "info",
+			sampleRate: 1,
+			retentionDays: 30,
+			captureRequests: true,
+		},
 		roleAccess: {
 			admin_prodi: DEFAULT_OPERATOR_NAV,
 			evaluator: [

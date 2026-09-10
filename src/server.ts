@@ -2,6 +2,8 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { randomUUID } from "node:crypto";
+import { recordHttpRequest } from "./lib/server/observability";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -39,16 +41,44 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    const suppliedRequestId = request.headers.get("x-request-id")?.trim();
+    const requestId = suppliedRequestId && /^[A-Za-z0-9._~-]{1,128}$/.test(suppliedRequestId)
+      ? suppliedRequestId
+      : randomUUID();
+    const startedAt = Date.now();
+    const withRequestId = (response: Response) => {
+      const headers = new Headers(response.headers);
+      headers.set("x-request-id", requestId);
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+      });
+    };
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      const normalized = await normalizeCatastrophicSsrResponse(response);
+      void recordHttpRequest({
+        requestId,
+        request,
+        statusCode: normalized.status,
+        durationMs: Date.now() - startedAt,
+      });
+      return withRequestId(normalized);
     } catch (error) {
       console.error(error);
-      return new Response(renderErrorPage(), {
+      const response = new Response(renderErrorPage(), {
         status: 500,
         headers: { "content-type": "text/html; charset=utf-8" },
       });
+      void recordHttpRequest({
+        requestId,
+        request,
+        statusCode: response.status,
+        durationMs: Date.now() - startedAt,
+      });
+      return withRequestId(response);
     }
   },
 };

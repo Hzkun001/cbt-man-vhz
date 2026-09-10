@@ -222,6 +222,7 @@ model AppConfig {
   mobileLock   Boolean @default(false)
   multiDevice  Boolean @default(false)
   roleAccess   String  @default("{}")
+  observability String @default("{}")
 }
 
 model AuditLog {

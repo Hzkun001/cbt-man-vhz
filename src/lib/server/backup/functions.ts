@@ -175,6 +175,7 @@ export const importBackupServer = createServerFn({ method: "POST" })
 					id: "app",
 					...data.config,
 					roleAccess: stringifyJson((data.config as AppConfig).roleAccess),
+					observability: stringifyJson((data.config as AppConfig).observability),
 				},
 			});
 		});

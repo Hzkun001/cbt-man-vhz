@@ -12,8 +12,10 @@ import {
 	operatorCanTouchUjianInput,
 	pesertaCanTouchUjian,
 } from "../db/auth";
+import { ObservabilityConfigSchema } from "@/lib/cbt/types";
 import type { Ujian, TokenUjian } from "@/lib/cbt/types";
 import { writeAuditLog } from "../db/audit";
+import { setObservabilityConfig } from "../observability";
 import { Prisma } from "@prisma/client";
 import { stringifyJson, toBigInt, parseJson } from "../db/json";
 import { mapToken, mapUjian } from "../repos/mappers";
@@ -562,6 +564,7 @@ export const getFullConfigServer = createServerFn({ method: "GET" }).handler(
 			mobileLock: row.mobileLock,
 			multiDevice: row.multiDevice,
 			roleAccess: parseJson<Record<string, string[]>>(row.roleAccess, {}),
+			observability: ObservabilityConfigSchema.parse(parseJson(row.observability, {})),
 		};
 	}
 );
@@ -575,6 +578,7 @@ export const saveConfigServer = createServerFn({ method: "POST" })
 			mobileLock: z.boolean(),
 			multiDevice: z.boolean(),
 			roleAccess: z.record(z.string(), z.array(z.string())),
+			observability: ObservabilityConfigSchema,
 		}),
 	)
 	.handler(async ({ data }) => {
@@ -583,13 +587,19 @@ export const saveConfigServer = createServerFn({ method: "POST" })
 			if (!auth.ok) return { ok: false as const, error: auth.error };
 			await prisma.appConfig.upsert({
 				where: { id: "app" },
-				update: { ...data, roleAccess: stringifyJson(data.roleAccess) },
+				update: {
+					...data,
+					roleAccess: stringifyJson(data.roleAccess),
+					observability: stringifyJson(data.observability),
+				},
 				create: {
 					id: "app",
 					...data,
 					roleAccess: stringifyJson(data.roleAccess),
+					observability: stringifyJson(data.observability),
 				},
 			});
+			setObservabilityConfig(data.observability);
 			return { ok: true as const };
 		} catch (err) {
 			return {

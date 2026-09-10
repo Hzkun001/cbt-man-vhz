@@ -688,6 +688,7 @@ export async function seedDatabase({ prisma, dataset, stringifyJson }) {
       mobileLock: dataset.config.mobileLock,
       multiDevice: dataset.config.multiDevice,
       roleAccess: stringifyJson(dataset.config.roleAccess),
+      observability: stringifyJson(dataset.config.observability ?? {}),
     },
   });
 }

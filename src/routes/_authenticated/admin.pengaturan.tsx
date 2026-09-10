@@ -1,14 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { configRepo, hydrateRepos } from "@/lib/cbt/repos";
-import { ConfigSchema } from "@/lib/cbt/types";
+import { ConfigSchema, type ObservabilityLevel } from "@/lib/cbt/types";
+import { getObservabilityLogsServer, type ObservabilityLogRow } from "@/lib/server/observability";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Settings, Upload, Image as ImageIcon, Save } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Settings, Upload, Image as ImageIcon, Activity, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPage, AdminPageHeader } from "@/components/cbt/AdminPage";
 import { useThemeStore, ThemeType } from "@/lib/cbt/theme-store";
@@ -28,8 +32,44 @@ export const Route = createFileRoute("/_authenticated/admin/pengaturan")({
 
 function PengaturanPage() {
   const [cfg, setCfg] = useState(configRepo.get());
+  const [logs, setLogs] = useState<ObservabilityLogRow[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logSeverity, setLogSeverity] = useState<"all" | ObservabilityLevel>("all");
   const { theme, setTheme, font, setFont } = useThemeStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let active = true;
+    setLogsLoading(true);
+    getObservabilityLogsServer({ data: { limit: 100 } })
+      .then((result) => {
+        if (!active) return;
+        if (result.ok) setLogs(result.logs);
+        else toast.error("Log observability tidak dapat dimuat.");
+      })
+      .catch(() => {
+        if (active) toast.error("Log observability tidak dapat dimuat.");
+      })
+      .finally(() => {
+        if (active) setLogsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function refreshLogs() {
+    setLogsLoading(true);
+    try {
+      const result = await getObservabilityLogsServer({ data: { limit: 100 } });
+      if (result.ok) setLogs(result.logs);
+      else toast.error("Log observability tidak dapat dimuat.");
+    } catch {
+      toast.error("Log observability tidak dapat dimuat.");
+    } finally {
+      setLogsLoading(false);
+    }
+  }
 
   async function save() {
     const parsed = ConfigSchema.safeParse(cfg);
@@ -185,7 +225,127 @@ function PengaturanPage() {
 
       <div className="h-px w-full bg-slate-200 dark:bg-slate-800/60 my-10" />
 
-      {/* Section 3: Tema & Tampilan */}
+      {/* Section 3: Observability */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
+        <div className="space-y-2 lg:col-span-1">
+          <h2 id="observability-heading" className="text-lg font-semibold text-slate-900 dark:text-white">Observability</h2>
+          <p className="text-sm text-slate-500 leading-relaxed">
+            Pantau request server dengan request ID, status HTTP, durasi, severity, dan retention log yang terukur.
+          </p>
+        </div>
+        <div role="region" aria-labelledby="observability-heading" className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+          <div className="p-6 space-y-6">
+            <ToggleRow
+              label="Aktifkan observability"
+              desc="Merekam metadata request tanpa body atau credential ke log terstruktur server."
+              checked={cfg.observability.enabled}
+              onChange={(enabled) => setCfg({ ...cfg, observability: { ...cfg.observability, enabled } })}
+            />
+            <ToggleRow
+              label="Tangkap request HTTP"
+              desc="Mencatat method, path, status, durasi, dan X-Request-ID untuk request dinamis."
+              checked={cfg.observability.captureRequests}
+              onChange={(captureRequests) => setCfg({ ...cfg, observability: { ...cfg.observability, captureRequests } })}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-slate-200 dark:border-slate-800 pt-6">
+              <div className="space-y-2">
+                <Label>Minimum severity</Label>
+                <Select
+                  value={cfg.observability.minLevel}
+                  onValueChange={(minLevel: ObservabilityLevel) => setCfg({ ...cfg, observability: { ...cfg.observability, minLevel } })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="debug">Debug</SelectItem>
+                    <SelectItem value="info">Info</SelectItem>
+                    <SelectItem value="warn">Warning</SelectItem>
+                    <SelectItem value="error">Error</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Sampling (%)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={Math.round(cfg.observability.sampleRate * 100)}
+                  onChange={(event) => setCfg({ ...cfg, observability: { ...cfg.observability, sampleRate: Math.min(100, Math.max(0, Number(event.target.value) || 0)) / 100 } })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Retention (hari)</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="365"
+                  value={cfg.observability.retentionDays}
+                  onChange={(event) => setCfg({ ...cfg, observability: { ...cfg.observability, retentionDays: Math.min(365, Math.max(1, Number(event.target.value) || 1)) } })}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-200 dark:border-slate-800">
+            <div className="flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white"><Activity className="h-4 w-4" /> Log request terbaru</h3>
+                <p className="mt-1 text-xs text-slate-500">Hanya Super Admin yang dapat membaca log operasional ini.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Select value={logSeverity} onValueChange={(value: "all" | ObservabilityLevel) => setLogSeverity(value)}>
+                  <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua level</SelectItem>
+                    <SelectItem value="info">Info</SelectItem>
+                    <SelectItem value="warn">Warning</SelectItem>
+                    <SelectItem value="error">Error</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button type="button" variant="outline" onClick={refreshLogs} disabled={logsLoading} aria-label="Muat ulang log">
+                  <RefreshCw className={`h-4 w-4 ${logsLoading ? "animate-spin" : ""}`} />
+                </Button>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Waktu</TableHead>
+                    <TableHead>Level</TableHead>
+                    <TableHead>Request</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Durasi</TableHead>
+                    <TableHead>Request ID</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {logsLoading && logs.length === 0 ? (
+                    <TableRow><TableCell colSpan={6} className="py-8 text-center text-sm text-slate-500">Memuat log...</TableCell></TableRow>
+                  ) : logs.filter((log) => logSeverity === "all" || log.severity === logSeverity).length === 0 ? (
+                    <TableRow><TableCell colSpan={6} className="py-8 text-center text-sm text-slate-500">Belum ada log observability.</TableCell></TableRow>
+                  ) : logs.filter((log) => logSeverity === "all" || log.severity === logSeverity).map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell className="whitespace-nowrap text-xs">{new Date(log.createdAt).toLocaleString("id-ID")}</TableCell>
+                      <TableCell><Badge variant={log.severity === "error" ? "destructive" : "outline"}>{log.severity}</Badge></TableCell>
+                      <TableCell className="min-w-56 font-mono text-xs">{log.method} {log.path}</TableCell>
+                      <TableCell>{log.statusCode ?? "-"}</TableCell>
+                      <TableCell>{log.durationMs ?? "-"} ms</TableCell>
+                      <TableCell className="font-mono text-xs" title={log.requestId}>{log.requestId?.slice(0, 12) ?? "-"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="h-px w-full bg-slate-200 dark:bg-slate-800/60 my-10" />
+
+      {/* Section 4: Tema & Tampilan */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
         <div className="space-y-2 lg:col-span-1">
           <h2 id="tema-heading" className="text-lg font-semibold text-slate-900 dark:text-white">Tema & Tampilan</h2>

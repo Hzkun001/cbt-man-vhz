@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { AppConfig, Modul, NavKey, Soal, SesiUjian, TokenUjian, Topik, Ujian, User, UnitAkademik, TahunAkademik, Semester, MataKuliah, PenawaranMataKuliah } from "@/lib/cbt/types";
+import { DEFAULT_OBSERVABILITY_CONFIG, ObservabilityConfigSchema, type AppConfig, type Modul, type NavKey, type Soal, type SesiUjian, type TokenUjian, type Topik, type Ujian, type User, type UnitAkademik, type TahunAkademik, type Semester, type MataKuliah, type PenawaranMataKuliah } from "@/lib/cbt/types";
 import { prisma } from "@/lib/server/db/prisma";
 import { parseJson, toNumber } from "@/lib/server/db/json";
 
@@ -226,6 +226,9 @@ export function buildConfig(config: SnapshotRows["config"]): AppConfig {
 			admin_prodi: [...DEFAULT_OPERATOR_ROLE_ACCESS],
 			evaluator: [...DEFAULT_EVALUATOR_ROLE_ACCESS],
 		}),
+		observability: ObservabilityConfigSchema.parse(
+			parseJson(config?.observability, DEFAULT_OBSERVABILITY_CONFIG),
+		),
 	};
 }
 
