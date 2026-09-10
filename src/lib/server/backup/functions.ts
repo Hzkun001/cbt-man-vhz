@@ -201,6 +201,14 @@ export const importBackupServer = createServerFn({ method: "POST" })
 				},
 			});
 					if (plan) await promoteFileRestore(plan);
+					const completed = await writeAuditLog({
+						userId: caller.id,
+						userRole: caller.role,
+						action: "backup.restore",
+						entity: "backup",
+						details: JSON.stringify({ phase: "succeeded" }),
+					}, tx);
+					if (!completed.ok) throw new Error(completed.error);
 				});
 			} catch (error) {
 				if (plan) await rollbackFileRestore(plan);
@@ -250,6 +258,14 @@ export const resetAllDataServer = createServerFn({ method: "POST" }).handler(
 			await tx.unitAkademik.deleteMany();
 
 			await tx.appConfig.deleteMany();
+			const completed = await writeAuditLog({
+				userId: caller.id,
+				userRole: caller.role,
+				action: "backup.reset",
+				entity: "backup",
+				details: JSON.stringify({ phase: "succeeded" }),
+			}, tx);
+			if (!completed.ok) throw new Error(completed.error);
 		});
 
 		return { ok: true as const };

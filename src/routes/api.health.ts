@@ -8,12 +8,12 @@ export const Route = createFileRoute("/api/health")({
         try {
           await prisma.$queryRaw`SELECT 1`;
           return Response.json(
-            { status: "ok", database: "ok" },
+            { status: "ok" },
             { headers: { "cache-control": "no-store" } },
           );
         } catch {
           return Response.json(
-            { status: "not_ready", database: "unavailable" },
+            { status: "not_ready" },
             { status: 503, headers: { "cache-control": "no-store" } },
           );
         }

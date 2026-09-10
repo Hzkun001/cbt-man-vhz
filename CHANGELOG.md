@@ -12,6 +12,7 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Fixed
 
+- Catat keberhasilan restore/reset dalam transaksi yang sama dan batasi respons readiness publik tanpa detail dependensi (#153).
 - Jadikan restore database dan media satu alur yang tervalidasi, menghapus media stale, dan mengembalikan folder lama saat promosi gagal (#153).
 - Lindungi mutation audit, token, sesi, pengguna, akademik, modul, dan ujian dengan audit precondition yang eksplisit (#153).
 

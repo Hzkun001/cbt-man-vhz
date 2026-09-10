@@ -15,9 +15,9 @@ export interface AuditLogEntry {
 type AuditWriteResult = { ok: true } | { ok: false; error: string };
 
 /** Write an audit log entry and make failures visible to high-risk callers. */
-export async function writeAuditLog(entry: AuditLogEntry): Promise<AuditWriteResult> {
+export async function writeAuditLog(entry: AuditLogEntry, db: Pick<typeof prisma, "auditLog"> = prisma): Promise<AuditWriteResult> {
 	try {
-		await prisma.auditLog.create({
+		await db.auditLog.create({
 			data: {
 				id: `al_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
 				userId: entry.userId,
