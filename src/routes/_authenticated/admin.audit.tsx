@@ -75,8 +75,8 @@ function AuditPage() {
         </Button>
       </div>
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        {loading ? <p className="p-8 text-center text-sm text-muted-foreground">Memuat audit log...</p> : null}
-        {error ? <p className="p-8 text-center text-sm text-destructive">{error}</p> : null}
+        {loading ? <p role="status" className="p-8 text-center text-sm text-muted-foreground">Memuat audit log...</p> : null}
+        {error ? <p role="alert" className="p-8 text-center text-sm text-destructive">{error}</p> : null}
         {!loading && !error && rows.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">Belum ada catatan audit.</p> : null}
         {!loading && !error && rows.length > 0 ? (
           <div className="overflow-x-auto">
