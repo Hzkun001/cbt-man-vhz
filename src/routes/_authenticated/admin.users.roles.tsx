@@ -99,7 +99,7 @@ function RolesPage() {
           <h3 className="font-medium">Menu yang bisa diakses Admin Jurusan</h3>
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {NAV_KEYS.filter((k) => k !== "users" && k !== "pengaturan" && k !== "tools").map(
+            {NAV_KEYS.filter((k) => k !== "users" && k !== "pengaturan" && k !== "tools" && k !== "audit").map(
               (k) => (
                 <label key={k} className="flex items-center gap-2 rounded border p-2 text-sm">
                   <Checkbox
@@ -118,7 +118,7 @@ function RolesPage() {
         <CardContent className="space-y-3 p-6">
           <h3 className="font-medium">Menu yang bisa diakses Evaluator</h3>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {NAV_KEYS.filter((k) => k !== "users" && k !== "pengaturan" && k !== "tools").map(
+            {NAV_KEYS.filter((k) => k !== "users" && k !== "pengaturan" && k !== "tools" && k !== "audit").map(
               (k) => (
                 <label key={k} className="flex items-center gap-2 rounded border p-2 text-sm">
                   <Checkbox

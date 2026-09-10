@@ -13,7 +13,7 @@ import {
 	pesertaCanTouchUjian,
 } from "../db/auth";
 import type { Ujian, TokenUjian } from "@/lib/cbt/types";
-import { writeAuditLog } from "../db/audit";
+import { requireAuditLog } from "../db/audit";
 import { Prisma } from "@prisma/client";
 import { stringifyJson, toBigInt, parseJson } from "../db/json";
 import { mapToken, mapUjian } from "../repos/mappers";
@@ -57,9 +57,9 @@ async function getPublishError(item: Ujian, db: any = prisma): Promise<string | 
 	return null;
 }
 
-function audit(caller: any, entity: string, action: string, payload: any) {
+async function audit(caller: any, entity: string, action: string, payload: any) {
 	if (caller) {
-		writeAuditLog({
+		await requireAuditLog({
 			userId: caller.id,
 			userRole: caller.role,
 			action: `${entity}.${action}`,
@@ -68,7 +68,7 @@ function audit(caller: any, entity: string, action: string, payload: any) {
 					? String((payload as { id?: unknown }).id ?? "")
 					: undefined,
 			details: JSON.stringify({ entity, action, hasPayload: !!payload }),
-		}).catch(() => undefined);
+		});
 	}
 }
 
@@ -119,7 +119,7 @@ export const mutateUjianServer = createServerFn({ method: "POST" })
 				return { ok: false as const, error: "Forbidden" };
 			}
 
-			audit(caller, "ujian", action, payload);
+			await audit(caller, "ujian", action, payload);
 
 			await prisma.$transaction(async (tx) => {
 				if (action === "publish") {
@@ -244,6 +244,13 @@ export const mutateTokenServer = createServerFn({ method: "POST" })
 				return { ok: false as const, error: "Forbidden" };
 			}
 
+			await requireAuditLog({
+				userId: caller.id,
+				userRole: caller.role,
+				action: `token.${action}`,
+				entity: "token",
+				entityId: typeof payload === "object" && payload && "id" in payload ? String(payload.id) : undefined,
+			});
 			await prisma.$transaction(async (tx) => {
 				if (action === "remove")
 					await tx.tokenUjian.delete({ where: { id: String(payload.id) } });
@@ -275,13 +282,6 @@ export const mutateTokenServer = createServerFn({ method: "POST" })
 						},
 					});
 				}
-			});
-			await writeAuditLog({
-				userId: caller.id,
-				userRole: caller.role,
-				action: `token.${action}`,
-				entity: "token",
-				entityId: typeof payload === "object" && payload && "id" in payload ? String(payload.id) : undefined,
 			});
 			return { ok: true as const };
 		} catch (err) {
@@ -360,6 +360,14 @@ export const generateExamTokensServer = createServerFn({ method: "POST" })
 
 		const expireAt = data.expireAtMs ? toBigInt(data.expireAtMs) : null;
 		const created: TokenUjian[] = [];
+		await requireAuditLog({
+			userId: caller.id,
+			userRole: caller.role,
+			action: "token.generate",
+			entity: "token",
+			entityId: data.ujianId,
+			details: JSON.stringify({ phase: "attempt", applyToAll: !!data.applyToAll }),
+		});
 
 		if (data.customKode) {
 			const code = data.customKode.trim().toUpperCase();
@@ -375,14 +383,6 @@ export const generateExamTokensServer = createServerFn({ method: "POST" })
 					);
 				}
 				return rows;
-			});
-			await writeAuditLog({
-				userId: caller.id,
-				userRole: caller.role,
-				action: "token.generate",
-				entity: "token",
-				entityId: data.ujianId,
-				details: JSON.stringify({ count: tokens.length, applyToAll: !!data.applyToAll }),
 			});
 			return { ok: true as const, tokens: tokens.filter((token) => token.ujianId === data.ujianId).map(mapToken) };
 		}
@@ -420,14 +420,6 @@ export const generateExamTokensServer = createServerFn({ method: "POST" })
 			};
 		}
 
-		await writeAuditLog({
-			userId: caller.id,
-			userRole: caller.role,
-			action: "token.generate",
-			entity: "token",
-			entityId: data.ujianId,
-			details: JSON.stringify({ count: created.length, applyToAll: false }),
-		});
 		return { ok: true as const, tokens: created };
 	});
 
@@ -454,14 +446,14 @@ export const deleteExamTokenServer = createServerFn({ method: "POST" })
 				}
 			}
 
-			await prisma.tokenUjian.delete({ where: { id: data.id } });
-			await writeAuditLog({
+			await requireAuditLog({
 				userId: caller.id,
 				userRole: caller.role,
 				action: "token.remove",
 				entity: "token",
 				entityId: data.id,
 			});
+			await prisma.tokenUjian.delete({ where: { id: data.id } });
 			return { ok: true as const };
 		} catch (err) {
 			return { ok: false as const, error: err instanceof Error ? err.message : String(err) };
@@ -523,6 +515,14 @@ export const claimExamToken = createServerFn({ method: "POST" })
 				return { ok: false as const, error: "Token sudah kedaluwarsa" };
 			}
 		}
+		await requireAuditLog({
+			userId: caller.id,
+			userRole: caller.role,
+			action: "token.claim",
+			entity: "token",
+			entityId: token.id,
+			details: JSON.stringify({ phase: "attempt", ujianId: data.ujianId }),
+		});
 
 		// Reusable / Master token claim: atomic upsert to TokenClaim
 		await prisma.tokenClaim.upsert({
@@ -551,14 +551,6 @@ export const claimExamToken = createServerFn({ method: "POST" })
 		}
 
 		clearRateLimit(caller.id, "claimToken");
-		await writeAuditLog({
-			userId: caller.id,
-			userRole: caller.role,
-			action: "token.claim",
-			entity: "token",
-			entityId: token.id,
-			details: JSON.stringify({ ujianId: data.ujianId }),
-		});
 		return {
 			ok: true as const,
 			token: mapToken(token),

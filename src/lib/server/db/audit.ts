@@ -35,6 +35,12 @@ export async function writeAuditLog(entry: AuditLogEntry): Promise<AuditWriteRes
 	}
 }
 
+/** Persist an audit precondition or stop the protected mutation. */
+export async function requireAuditLog(entry: AuditLogEntry): Promise<void> {
+	const result = await writeAuditLog(entry);
+	if (!result.ok) throw new Error(result.error);
+}
+
 /** Get audit logs with filtering. Admin only. */
 export async function getAuditLogs(filters: {
 	userId?: string;

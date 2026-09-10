@@ -13,11 +13,11 @@ import {
 	operatorCanTouchTopikId
 } from "../db/auth";
 import type { Modul, Topik, Soal } from "@/lib/cbt/types";
-import { writeAuditLog } from "../db/audit";
+import { requireAuditLog } from "../db/audit";
 
-function audit(caller: any, entity: string, action: string, payload: any) {
+async function audit(caller: any, entity: string, action: string, payload: any) {
 	if (caller) {
-		writeAuditLog({
+		await requireAuditLog({
 			userId: caller.id,
 			userRole: caller.role,
 			action: `${entity}.${action}`,
@@ -26,7 +26,7 @@ function audit(caller: any, entity: string, action: string, payload: any) {
 					? String((payload as { id?: unknown }).id ?? "")
 					: undefined,
 			details: JSON.stringify({ entity, action, hasPayload: !!payload }),
-		}).catch(() => undefined);
+		});
 	}
 }
 
@@ -59,7 +59,7 @@ export const mutateModulServer = createServerFn({ method: "POST" })
 				return { ok: false as const, error: "Forbidden" };
 			}
 
-			audit(caller, "modul", action, payload);
+			await audit(caller, "modul", action, payload);
 
 			await prisma.$transaction(async (tx) => {
 				if (action === "remove")
@@ -113,7 +113,7 @@ export const mutateTopikServer = createServerFn({ method: "POST" })
 				return { ok: false as const, error: "Forbidden" };
 			}
 
-			audit(caller, "topik", action, payload);
+			await audit(caller, "topik", action, payload);
 
 			await prisma.$transaction(async (tx) => {
 				if (action === "remove")
@@ -169,7 +169,7 @@ export const mutateSoalServer = createServerFn({ method: "POST" })
 				return { ok: false as const, error: "Forbidden" };
 			}
 
-			audit(caller, "soal", action, payload);
+			await audit(caller, "soal", action, payload);
 
 			await prisma.$transaction(async (tx) => {
 				if (action === "remove")

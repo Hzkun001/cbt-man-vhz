@@ -8,7 +8,7 @@ import { stringifyJson, parseJson } from "../db/json";
 import { publicUser, upsertUserSchema } from "../repos/mappers";
 import type { User, PublicUser } from "@/lib/cbt/types";
 
-import { writeAuditLog } from "../db/audit";
+import { requireAuditLog } from "../db/audit";
 
 export const revokeUserSessionsServer = createServerFn({ method: "POST" })
 	.validator(z.object({ userId: z.string().min(1) }))
@@ -17,6 +17,13 @@ export const revokeUserSessionsServer = createServerFn({ method: "POST" })
 		if (!caller || caller.role !== "super_admin") {
 			return { ok: false as const, error: "Forbidden", deleted: 0 };
 		}
+		await requireAuditLog({
+			userId: caller.id,
+			userRole: caller.role,
+			action: "users.revokeSessions",
+			entity: "users",
+			entityId: data.userId,
+		});
 		const deleted = await deleteSessionsForUser(data.userId);
 		return { ok: true as const, deleted };
 	});
@@ -42,6 +49,13 @@ export const upsertUserServer = createServerFn({ method: "POST" })
 			const passwordHash = data.newPassword
 				? await hashPassword(data.newPassword)
 				: (existing?.passwordHash ?? "");
+			await requireAuditLog({
+				userId: caller.id,
+				userRole: caller.role,
+				action: "users.upsert",
+				entity: "users",
+				entityId: data.id,
+			});
 
 			const saved = await prisma.user.upsert({
 				where: { id: data.id },
@@ -100,6 +114,13 @@ export const patchUserTopikAccessServer = createServerFn({ method: "POST" })
 			if (!caller || caller.role !== "super_admin") {
 				return { ok: false as const, error: "Forbidden" };
 			}
+			await requireAuditLog({
+				userId: caller.id,
+				userRole: caller.role,
+				action: `users.topikAccess.${data.mode}`,
+				entity: "users",
+				entityId: data.userId,
+			});
 
 			await prisma.$transaction(async (tx) => {
 				const user = await tx.user.findUnique({
@@ -146,7 +167,7 @@ export const mutateUserServer = createServerFn({ method: "POST" })
 			const { action, payload } = data;
 
 			if (caller) {
-				writeAuditLog({
+				await requireAuditLog({
 					userId: caller.id,
 					userRole: caller.role,
 					action: `users.${action}`,
@@ -155,7 +176,7 @@ export const mutateUserServer = createServerFn({ method: "POST" })
 							? String((payload as { id?: unknown }).id ?? "")
 							: undefined,
 					details: JSON.stringify({ entity: "users", action, hasPayload: !!payload }),
-				}).catch(() => undefined);
+				});
 			}
 
 			await prisma.$transaction(async (tx) => {

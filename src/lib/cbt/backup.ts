@@ -32,7 +32,7 @@ import {
   ConfigSchema,
 } from "./types";
 import { exportTokenClaimsServer, importBackupServer, resetAllDataServer } from "@/lib/server/backup/functions";
-import { exportFilesServer, importFilesServer } from "@/lib/server/files/functions";
+import { exportFilesServer } from "@/lib/server/files/functions";
 
 const FileBackupSchema = z.object({
   id: z.string(),
@@ -42,6 +42,7 @@ const FileBackupSchema = z.object({
   createdAt: z.number(),
   extension: z.string(),
   dataBase64: z.string(),
+  jurusanId: z.string().optional(),
 });
 
 export const BackupSchema = z.object({
@@ -143,15 +144,10 @@ export async function importBackup(raw: any): Promise<Backup> {
       tokenClaims: data.tokenClaims,
       sesi: data.sesi,
       config: data.config,
+      files: data.files,
     },
   });
   if (!databaseResult.ok) throw new Error(databaseResult.error);
-  if (data.files) {
-    const filesResult = await importFilesServer({ data: data.files });
-    if (!filesResult.ok) {
-      throw new Error(`Database berhasil dipulihkan, tetapi berkas gagal dipulihkan: ${filesResult.error}`);
-    }
-  }
   invalidateReposCache();
   await hydrateRepos();
   return data;

@@ -3,6 +3,14 @@ import { z } from "zod";
 import { prisma } from "../db/prisma";
 import { requireAdminResult, requireCaller } from "../db/auth";
 import { writeAuditLog } from "../db/audit";
+import {
+	fileBackupSchema,
+	finalizeFileRestore,
+	promoteFileRestore,
+	rollbackFileRestore,
+	stageFileRestore,
+	withFileOperationLock,
+} from "../files/functions";
 import type { User, UnitAkademik, MataKuliah, PenawaranMataKuliah, Modul, Topik, Soal, Ujian, TokenUjian, TokenClaim, SesiUjian, AppConfig } from "@/lib/cbt/types";
 
 import { stringifyJson, toBigInt } from "../db/json";
@@ -22,6 +30,7 @@ export const importBackupServer = createServerFn({ method: "POST" })
 			tokenClaims: z.array(z.any()).default([]),
 			sesi: z.array(z.any()),
 			config: z.any(),
+			files: z.array(fileBackupSchema).optional(),
 		}),
 	)
 	.handler(async ({ data }) => {
@@ -34,10 +43,13 @@ export const importBackupServer = createServerFn({ method: "POST" })
 			userRole: caller.role,
 			action: "backup.restore",
 			entity: "backup",
-			details: JSON.stringify({ users: data.users.length, soal: data.soal.length, ujian: data.ujian.length }),
+			details: JSON.stringify({ phase: "attempt", users: data.users.length, soal: data.soal.length, ujian: data.ujian.length }),
 		});
 		if (!audit.ok) return { ok: false as const, error: audit.error };
-		await prisma.$transaction(async (tx) => {
+		const restore = async () => {
+			const plan = data.files ? await stageFileRestore(data.files) : undefined;
+			try {
+				await prisma.$transaction(async (tx) => {
 			await tx.jawaban.deleteMany();
 			await tx.sesiUjian.deleteMany();
 			await tx.tokenUjian.deleteMany();
@@ -188,7 +200,16 @@ export const importBackupServer = createServerFn({ method: "POST" })
 					roleAccess: stringifyJson((data.config as AppConfig).roleAccess),
 				},
 			});
-		});
+					if (plan) await promoteFileRestore(plan);
+				});
+			} catch (error) {
+				if (plan) await rollbackFileRestore(plan);
+				throw error;
+			}
+			if (plan) await finalizeFileRestore(plan);
+		};
+		if (data.files) await withFileOperationLock(restore);
+		else await restore();
 
 		return { ok: true as const };
 	});
@@ -212,7 +233,7 @@ export const resetAllDataServer = createServerFn({ method: "POST" }).handler(
 			userRole: caller.role,
 			action: "backup.reset",
 			entity: "backup",
-			details: JSON.stringify({ destructive: true }),
+			details: JSON.stringify({ phase: "attempt", destructive: true }),
 		});
 		if (!audit.ok) return { ok: false as const, error: audit.error };
 		await prisma.$transaction(async (tx) => {

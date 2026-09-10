@@ -42,6 +42,35 @@ const fileSchema = z.object({
   jurusanId: z.string().optional(),
 });
 
+export const fileBackupSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  mime: z.string(),
+  size: z.number(),
+  createdAt: z.number(),
+  extension: z.string(),
+  dataBase64: z.string(),
+  jurusanId: z.string().optional(),
+});
+export type FileBackup = z.infer<typeof fileBackupSchema>;
+
+let fileOperationQueue = Promise.resolve();
+
+// ponytail: one process-wide lock keeps the file swap safe; use per-tenant locks only if throughput requires it.
+export async function withFileOperationLock<T>(operation: () => Promise<T>): Promise<T> {
+  const previous = fileOperationQueue;
+  let release!: () => void;
+  fileOperationQueue = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await previous;
+  try {
+    return await operation();
+  } finally {
+    release();
+  }
+}
+
 async function pathApi() {
   return import("node:path");
 }
@@ -226,7 +255,7 @@ async function pesertaCanAccessFile(
 export const listStoredFiles = createServerFn({ method: "GET" }).handler(async () => {
   const auth = await requireFileManagerAccess();
   if (!auth.ok) throw new Error(auth.error);
-  const files = await listMetas();
+  const files = await withFileOperationLock(() => listMetas());
   return auth.caller.role === "super_admin"
     ? files
     : files.filter((file) => file.jurusanId === auth.caller.unitId);
@@ -245,24 +274,27 @@ export const uploadStoredFile = createServerFn({ method: "POST" })
     const auth = await requireFileManagerAccess();
     if (!auth.ok) throw new Error(auth.error);
 
-    await ensureUploadsDir();
-    const [{ extname }, { writeFile }] = await Promise.all([pathApi(), fsApi()]);
-    const id = uid("f_");
-    const extension = extname(data.name).slice(0, 16);
-    const buffer = Buffer.from(data.dataBase64, "base64");
-    const meta: StoredFileRecord = {
-      id,
-      name: data.name,
-      mime: data.mime,
-      size: buffer.byteLength,
-      createdAt: Date.now(),
-      extension,
-      jurusanId: auth.caller.role === "super_admin" ? data.jurusanId : auth.caller.unitId ?? undefined,
-    };
+    return withFileOperationLock(async () => {
+      await ensureUploadsDir();
+      const [{ extname }, { writeFile }] = await Promise.all([pathApi(), fsApi()]);
+      const id = uid("f_");
+      const extension = extname(data.name).slice(0, 16);
+      if (extension.toLowerCase() === ".json") throw new Error("Ekstensi .json dicadangkan untuk metadata file");
+      const buffer = Buffer.from(data.dataBase64, "base64");
+      const meta: StoredFileRecord = {
+        id,
+        name: data.name,
+        mime: data.mime,
+        size: buffer.byteLength,
+        createdAt: Date.now(),
+        extension,
+        jurusanId: auth.caller.role === "super_admin" ? data.jurusanId : auth.caller.unitId ?? undefined,
+      };
 
-    await writeFile(await filePath(id, extension), buffer);
-    await writeFile(await metaPath(id), JSON.stringify(meta, null, 2));
-    return meta;
+      await writeFile(await filePath(id, extension), buffer);
+      await writeFile(await metaPath(id), JSON.stringify(meta, null, 2));
+      return meta;
+    });
   });
 
 export const deleteStoredFile = createServerFn({ method: "POST" })
@@ -271,13 +303,15 @@ export const deleteStoredFile = createServerFn({ method: "POST" })
     const auth = await requireAdmin();
     if (!auth.ok) return { ok: false as const, error: auth.error };
 
-    const meta = await readMeta(data.id);
-    if (!meta) return { ok: true as const };
+    return withFileOperationLock(async () => {
+      const meta = await readMeta(data.id);
+      if (!meta) return { ok: true as const };
 
-    const { rm } = await fsApi();
-    await rm(await filePath(meta.id, meta.extension), { force: true });
-    await rm(await metaPath(meta.id), { force: true });
-    return { ok: true as const };
+      const { rm } = await fsApi();
+      await rm(await filePath(meta.id, meta.extension), { force: true });
+      await rm(await metaPath(meta.id), { force: true });
+      return { ok: true as const };
+    });
   });
 
 export const getStoredFileUrl = createServerFn({ method: "GET" })
@@ -300,48 +334,98 @@ export const getStoredFileUrl = createServerFn({ method: "GET" })
       throw new Error("Forbidden");
     }
 
-    const meta = await readMeta(data.id);
-    if (!meta) return null;
+    return withFileOperationLock(async () => {
+      const meta = await readMeta(data.id);
+      if (!meta) return null;
 
-    const [{ stat, readFile }, absPath] = await Promise.all([
-      fsApi(),
-      filePath(meta.id, meta.extension),
-    ]);
-    const info = await stat(absPath);
-    if (!info.isFile()) return null;
+      const [{ stat, readFile }, absPath] = await Promise.all([
+        fsApi(),
+        filePath(meta.id, meta.extension),
+      ]);
+      const info = await stat(absPath);
+      if (!info.isFile()) return null;
 
-    const body = await readFile(absPath);
-    return {
-      mime: meta.mime,
-      dataBase64: body.toString("base64"),
-    };
+      const body = await readFile(absPath);
+      return {
+        mime: meta.mime,
+        dataBase64: body.toString("base64"),
+      };
+    });
   });
-
-const fileBackupSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  mime: z.string(),
-  size: z.number(),
-  createdAt: z.number(),
-  extension: z.string(),
-  dataBase64: z.string(),
-  jurusanId: z.string().optional(),
-});
 
 export const exportFilesServer = createServerFn({ method: "GET" }).handler(async () => {
   const auth = await requireAdmin();
   if (!auth.ok) throw new Error(auth.error);
 
-  const metas = await listMetas();
-  const { readFile } = await fsApi();
-  const files = await Promise.all(
-    metas.map(async (meta) => {
-      const body = await readFile(await filePath(meta.id, meta.extension));
-      return { ...meta, dataBase64: body.toString("base64") };
-    }),
-  );
-  return files;
+  return withFileOperationLock(async () => {
+    const metas = await listMetas();
+    const { readFile } = await fsApi();
+    return Promise.all(
+      metas.map(async (meta) => {
+        const body = await readFile(await filePath(meta.id, meta.extension));
+        return { ...meta, dataBase64: body.toString("base64") };
+      }),
+    );
+  });
 });
+
+export type FileRestorePlan = {
+  baseDir: string;
+  stageDir: string;
+  previousDir?: string;
+};
+
+export async function stageFileRestore(data: FileBackup[]): Promise<FileRestorePlan> {
+  const [{ mkdir, mkdtemp, rm, writeFile }, { dirname, join }] = await Promise.all([fsApi(), pathApi()]);
+  const baseDir = await resolveUploadsDir();
+  await mkdir(baseDir, { recursive: true });
+  const stageDir = await mkdtemp(join(dirname(baseDir), ".uploads-restore-"));
+  const ids = new Set<string>();
+  try {
+    for (const item of fileBackupSchema.array().parse(data)) {
+      if (!/^[A-Za-z0-9_-]+$/.test(item.id)) throw new Error("ID file tidak valid");
+      if (ids.has(item.id)) throw new Error("ID file duplikat");
+      ids.add(item.id);
+      if (item.extension !== "" && !/^\.[A-Za-z0-9]{1,16}$/.test(item.extension)) {
+        throw new Error("Ekstensi file tidak valid");
+      }
+      if (item.extension.toLowerCase() === ".json") throw new Error("Ekstensi .json dicadangkan untuk metadata file");
+      const buffer = Buffer.from(item.dataBase64, "base64");
+      if (buffer.length !== item.size) throw new Error(`Ukuran file ${item.name} tidak sesuai`);
+      const meta: StoredFileRecord = { ...item };
+      await writeFile(join(stageDir, `${item.id}${item.extension}`), buffer);
+      await writeFile(join(stageDir, `${item.id}.json`), JSON.stringify(meta, null, 2));
+    }
+    return { baseDir, stageDir };
+  } catch (error) {
+    await rm(stageDir, { recursive: true, force: true });
+    throw error;
+  }
+}
+
+export async function promoteFileRestore(plan: FileRestorePlan): Promise<void> {
+  const { rename, rm } = await fsApi();
+  const previousDir = `${plan.baseDir}.previous`;
+  await rm(previousDir, { recursive: true, force: true });
+  await rename(plan.baseDir, previousDir);
+  plan.previousDir = previousDir;
+  await rename(plan.stageDir, plan.baseDir);
+}
+
+export async function rollbackFileRestore(plan: FileRestorePlan): Promise<void> {
+  const { rm, rename } = await fsApi();
+  if (plan.previousDir) {
+    await rm(plan.baseDir, { recursive: true, force: true });
+    await rename(plan.previousDir, plan.baseDir);
+  }
+  await rm(plan.stageDir, { recursive: true, force: true });
+}
+
+export async function finalizeFileRestore(plan: FileRestorePlan): Promise<void> {
+  const { rm } = await fsApi();
+  if (plan.previousDir) await rm(plan.previousDir, { recursive: true, force: true });
+  await rm(plan.stageDir, { recursive: true, force: true });
+}
 
 export const importFilesServer = createServerFn({ method: "POST" })
   .validator(z.array(fileBackupSchema))
@@ -349,50 +433,17 @@ export const importFilesServer = createServerFn({ method: "POST" })
     const auth = await requireAdmin();
     if (!auth.ok) return { ok: false as const, error: auth.error };
     try {
-      // Restore semantics: when files are present, storage is replaced as one
-      // staged directory. This removes stale files without exposing a partial set.
-      const [{ mkdir, mkdtemp, rename, rm, writeFile }, { dirname, join }] = await Promise.all([
-        fsApi(),
-        pathApi(),
-      ]);
-      const baseDir = await resolveUploadsDir();
-      await mkdir(baseDir, { recursive: true });
-      const stageDir = await mkdtemp(join(dirname(baseDir), ".uploads-restore-"));
-      let previousDir: string | undefined;
-      const ids = new Set<string>();
-      try {
-        for (const item of data) {
-          if (!/^[A-Za-z0-9_-]+$/.test(item.id)) throw new Error("ID file tidak valid");
-          if (ids.has(item.id)) throw new Error("ID file duplikat");
-          ids.add(item.id);
-          if (item.extension !== "" && !/^\.[A-Za-z0-9]{1,16}$/.test(item.extension)) {
-            throw new Error("Ekstensi file tidak valid");
-          }
-          const buffer = Buffer.from(item.dataBase64, "base64");
-          if (buffer.length !== item.size) throw new Error(`Ukuran file ${item.name} tidak sesuai`);
-          const meta: StoredFileRecord = {
-            id: item.id,
-            name: item.name,
-            mime: item.mime,
-            size: item.size,
-            createdAt: item.createdAt,
-            extension: item.extension,
-            jurusanId: item.jurusanId,
-          };
-          await writeFile(join(stageDir, `${item.id}${item.extension}`), buffer);
-          await writeFile(join(stageDir, `${item.id}.json`), JSON.stringify(meta, null, 2));
+      return await withFileOperationLock(async () => {
+        const plan = await stageFileRestore(data);
+        try {
+          await promoteFileRestore(plan);
+        } catch (error) {
+          await rollbackFileRestore(plan);
+          throw error;
         }
-        previousDir = `${baseDir}.previous`;
-        await rm(previousDir, { recursive: true, force: true });
-        await rename(baseDir, previousDir);
-        await rename(stageDir, baseDir);
-        await rm(previousDir, { recursive: true, force: true }).catch(() => undefined);
-      } catch (error) {
-        await rm(stageDir, { recursive: true, force: true });
-        if (previousDir) await rename(previousDir, baseDir).catch(() => undefined);
-        throw error;
-      }
-      return { ok: true as const };
+        await finalizeFileRestore(plan);
+        return { ok: true as const };
+      });
     } catch (error) {
       console.error("Failed to restore files", error);
       return { ok: false as const, error: "Berkas backup gagal dipulihkan" };

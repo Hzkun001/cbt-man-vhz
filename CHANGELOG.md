@@ -12,7 +12,12 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Fixed
 
+- Jadikan restore database dan media satu alur yang tervalidasi, menghapus media stale, dan mengembalikan folder lama saat promosi gagal (#153).
+- Lindungi mutation audit, token, sesi, pengguna, akademik, modul, dan ujian dengan audit precondition yang eksplisit (#153).
+
 ### Security
+
+- Pertahankan metadata `jurusanId` saat backup/restore, serialisasi operasi file, dan cadangkan ekstensi `.json` untuk metadata internal (#153).
 
 ### Deprecated
 
