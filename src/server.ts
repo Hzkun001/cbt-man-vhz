@@ -77,6 +77,7 @@ export default {
         request,
         statusCode: response.status,
         durationMs: Date.now() - startedAt,
+        errorType: error instanceof Error ? error.name : "UnknownError",
       });
       return withRequestId(response);
     }

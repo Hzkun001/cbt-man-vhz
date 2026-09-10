@@ -77,10 +77,11 @@ async function writeEvent(event: {
   event: string;
 	requestId?: string;
   method?: string;
-  path?: string;
-  statusCode?: number;
-  durationMs?: number;
-  message?: string;
+	path?: string;
+	statusCode?: number;
+	durationMs?: number;
+	errorType?: string;
+	message?: string;
 }): Promise<void> {
   try {
     const payload = {
@@ -91,9 +92,10 @@ async function writeEvent(event: {
       attributes: {
         "http.request.method": safeText(event.method, 16),
         "url.path": safeText(event.path, 512),
-        "http.response.status_code": event.statusCode,
-        "http.server.duration_ms": event.durationMs,
-        message: safeText(event.message),
+				"http.response.status_code": event.statusCode,
+				"http.server.duration_ms": event.durationMs,
+				"error.type": safeText(event.errorType, 128),
+				message: safeText(event.message),
       },
     };
     const encoded = JSON.stringify(payload);
@@ -134,8 +136,9 @@ async function pruneObservabilityLogs(retentionDays: number): Promise<void> {
 export async function recordHttpRequest(input: {
   requestId: string;
   request: Request;
-  statusCode: number;
-  durationMs: number;
+	statusCode: number;
+	durationMs: number;
+	errorType?: string;
 }): Promise<void> {
   const path = new URL(input.request.url).pathname;
   const config = await getObservabilityConfig();
@@ -149,8 +152,9 @@ export async function recordHttpRequest(input: {
 		requestId: input.requestId,
     method: input.request.method,
     path,
-    statusCode: input.statusCode,
-    durationMs: input.durationMs,
+		statusCode: input.statusCode,
+		durationMs: input.durationMs,
+		errorType: input.errorType,
   });
   void pruneObservabilityLogs(config.retentionDays);
 }
