@@ -16,7 +16,7 @@ import {
 	UjianSchema,
 	UserSchema,
 } from "@/lib/cbt/types";
-import type { User, UnitAkademik, MataKuliah, PenawaranMataKuliah, Modul, Topik, Soal, Ujian, TokenUjian, TokenClaim, SesiUjian } from "@/lib/cbt/types";
+import type { AppConfig, User, UnitAkademik, MataKuliah, PenawaranMataKuliah, Modul, Topik, Soal, Ujian, TokenUjian, TokenClaim, SesiUjian } from "@/lib/cbt/types";
 
 import { stringifyJson, toBigInt } from "../db/json";
 

@@ -235,14 +235,14 @@ function runEntityMutation(
 	let mutationPromise: Promise<{ ok: boolean; error?: string }>;
 	
 	switch (entity) {
-		case "users": mutationPromise = mutateUserServer({ data: { action, payload } }); break;
+		case "users": mutationPromise = mutateUserServer({ data: { action, payload: payload as never } }); break;
 
-		case "modul": mutationPromise = mutateModulServer({ data: { action, payload } }); break;
-		case "topik": mutationPromise = mutateTopikServer({ data: { action, payload } }); break;
-		case "soal": mutationPromise = mutateSoalServer({ data: { action, payload } }); break;
-		case "ujian": mutationPromise = mutateUjianServer({ data: { action, payload } }); break;
-		case "token": mutationPromise = mutateTokenServer({ data: { action, payload } }); break;
-		case "sesi": mutationPromise = mutateSesiServer({ data: { action, payload } }); break;
+		case "modul": mutationPromise = mutateModulServer({ data: { action, payload: payload as never } }); break;
+		case "topik": mutationPromise = mutateTopikServer({ data: { action, payload: payload as never } }); break;
+		case "soal": mutationPromise = mutateSoalServer({ data: { action, payload: payload as never } }); break;
+		case "ujian": mutationPromise = mutateUjianServer({ data: { action, payload: payload as never } }); break;
+		case "token": mutationPromise = mutateTokenServer({ data: { action, payload: payload as never } }); break;
+		case "sesi": mutationPromise = mutateSesiServer({ data: { action, payload: payload as never } }); break;
 		case "unitAkademik": mutationPromise = mutateUnitAkademikServer({ data: { action: action as any, payload } }); break;
 		case "tahunAkademik": mutationPromise = mutateTahunAkademikServer({ data: { action: action as any, payload } }); break;
 		case "semester": mutationPromise = mutateSemesterServer({ data: { action: action as any, payload } }); break;
