@@ -1,17 +1,20 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useRef } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import { configRepo, hydrateRepos } from "@/lib/cbt/repos";
-import { ConfigSchema } from "@/lib/cbt/types";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { ConfigSchema, DEFAULT_OBSERVABILITY_CONFIG, ObservabilityConfigSchema, type ObservabilityConfig, type ObservabilityLevel } from "@/lib/cbt/types";
+import { getObservabilityConfigServer, getObservabilityLogsServer, saveObservabilityConfigServer, type ObservabilityLogRow } from "@/lib/server/observability";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Settings, Upload, Image as ImageIcon, Save } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Upload, Image as ImageIcon, Activity, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPage, AdminPageHeader } from "@/components/cbt/AdminPage";
-import { useThemeStore, ThemeType } from "@/lib/cbt/theme-store";
+import { useThemeStore } from "@/lib/cbt/theme-store";
 import { CheckCircle2 } from "lucide-react";
 
 
@@ -28,8 +31,56 @@ export const Route = createFileRoute("/_authenticated/admin/pengaturan")({
 
 function PengaturanPage() {
   const [cfg, setCfg] = useState(configRepo.get());
+  const [observability, setObservability] = useState<ObservabilityConfig>(DEFAULT_OBSERVABILITY_CONFIG);
+  const [observabilityLoaded, setObservabilityLoaded] = useState(false);
+  const [observabilityError, setObservabilityError] = useState<string | null>(null);
+  const [logs, setLogs] = useState<ObservabilityLogRow[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logSeverity, setLogSeverity] = useState<"all" | ObservabilityLevel>("all");
   const { theme, setTheme, font, setFont } = useThemeStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let active = true;
+    setLogsLoading(true);
+    Promise.all([
+      getObservabilityConfigServer(),
+      getObservabilityLogsServer({ data: { limit: 100 } }),
+    ])
+      .then(([configResult, logsResult]) => {
+        if (!active) return;
+        if (configResult.ok) {
+          setObservability(configResult.config);
+          setObservabilityLoaded(true);
+          setObservabilityError(null);
+        } else {
+          setObservabilityError("Pengaturan observability tidak dapat dimuat.");
+        }
+        if (logsResult.ok) setLogs(logsResult.logs);
+      })
+      .catch(() => {
+        if (active) setObservabilityError("Pengaturan observability tidak dapat dimuat.");
+      })
+      .finally(() => {
+        if (active) setLogsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function refreshLogs() {
+    setLogsLoading(true);
+    try {
+      const result = await getObservabilityLogsServer({ data: { limit: 100 } });
+      if (result.ok) setLogs(result.logs);
+      else toast.error("Log observability tidak dapat dimuat.");
+    } catch {
+      toast.error("Log observability tidak dapat dimuat.");
+    } finally {
+      setLogsLoading(false);
+    }
+  }
 
   async function save() {
     const parsed = ConfigSchema.safeParse(cfg);
@@ -37,10 +88,28 @@ function PengaturanPage() {
       toast.error(parsed.error.issues[0]?.message ?? "Konfigurasi tidak valid");
       return;
     }
+    const observabilityParsed = ObservabilityConfigSchema.safeParse(observability);
+    if (!observabilityParsed.success) {
+      toast.error(observabilityParsed.error.issues[0]?.message ?? "Pengaturan observability tidak valid");
+      return;
+    }
     configRepo.set(parsed.data);
-    const result = await configRepo.flush();
-    if (result.ok) toast.success("Pengaturan disimpan.");
+    const [configResult, observabilityResult] = await Promise.all([
+      configRepo.flush(),
+      observabilityLoaded
+        ? saveObservabilityConfigServer({ data: observabilityParsed.data })
+        : Promise.resolve({ ok: true as const }),
+    ]);
+    if (!configResult.ok) {
+      toast.error(configResult.error ?? "Pengaturan aplikasi gagal disimpan.");
+    } else if (!observabilityResult.ok) {
+      toast.error(observabilityResult.error ?? "Pengaturan observability gagal disimpan.");
+    } else {
+      toast.success("Pengaturan disimpan.");
+    }
   }
+
+  const visibleLogs = logs.filter((log) => logSeverity === "all" || log.severity === logSeverity);
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -185,7 +254,132 @@ function PengaturanPage() {
 
       <div className="h-px w-full bg-slate-200 dark:bg-slate-800/60 my-10" />
 
-      {/* Section 3: Tema & Tampilan */}
+      {/* Section 3: Observability */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
+        <div className="space-y-2 lg:col-span-1">
+          <h2 id="observability-heading" className="text-lg font-semibold text-slate-900 dark:text-white">Observability Backend</h2>
+          <p className="text-sm text-slate-500 leading-relaxed">
+            Pantau request server dengan request ID, status HTTP, durasi, dan severity tanpa menyimpan isi request.
+          </p>
+        </div>
+        <div role="region" aria-labelledby="observability-heading" className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+          {observabilityError ? <p role="alert" className="border-b border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">{observabilityError}</p> : null}
+          <div className="p-6 space-y-6">
+            <ToggleRow
+              label="Aktifkan observability"
+              desc="Merekam metadata request yang sudah disanitasi ke buffer operasional server."
+              checked={observability.enabled}
+              onChange={(enabled) => setObservability((current) => ({ ...current, enabled }))}
+              disabled={!observabilityLoaded}
+            />
+            <ToggleRow
+              label="Tangkap request HTTP"
+              desc="Mencatat method, path tersanitasi, status, durasi, dan X-Request-ID."
+              checked={observability.captureRequests}
+              onChange={(captureRequests) => setObservability((current) => ({ ...current, captureRequests }))}
+              disabled={!observabilityLoaded}
+            />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-slate-200 dark:border-slate-800 pt-6">
+              <div className="space-y-2">
+                <Label htmlFor="observability-level">Minimum severity</Label>
+                <Select
+                  value={observability.minLevel}
+                  onValueChange={(minLevel) => setObservability((current) => ({ ...current, minLevel: minLevel as ObservabilityLevel }))}
+                  disabled={!observabilityLoaded}
+                >
+                  <SelectTrigger id="observability-level"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="debug">Debug</SelectItem>
+                    <SelectItem value="info">Info</SelectItem>
+                    <SelectItem value="warn">Warning</SelectItem>
+                    <SelectItem value="error">Error</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="observability-sampling">Sampling (%)</Label>
+                <Input
+                  id="observability-sampling"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={Math.round(observability.sampleRate * 100)}
+                  disabled={!observabilityLoaded}
+                  onChange={(event) => setObservability((current) => ({ ...current, sampleRate: Math.min(100, Math.max(0, Number(event.target.value) || 0)) / 100 }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="observability-retention">Retention (hari)</Label>
+                <Input
+                  id="observability-retention"
+                  type="number"
+                  min="1"
+                  max="365"
+                  value={observability.retentionDays}
+                  disabled={!observabilityLoaded}
+                  onChange={(event) => setObservability((current) => ({ ...current, retentionDays: Math.min(365, Math.max(1, Number(event.target.value) || 1)) }))}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-slate-200 dark:border-slate-800">
+            <div className="flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white"><Activity className="h-4 w-4" /> Log request terbaru</h3>
+                <p className="mt-1 text-xs text-slate-500">Buffer dibatasi 200 log per proses dan hanya dapat dibaca Super Admin.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Select value={logSeverity} onValueChange={(value) => setLogSeverity(value as "all" | ObservabilityLevel)}>
+                  <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua level</SelectItem>
+                    <SelectItem value="debug">Debug</SelectItem>
+                    <SelectItem value="info">Info</SelectItem>
+                    <SelectItem value="warn">Warning</SelectItem>
+                    <SelectItem value="error">Error</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button type="button" variant="outline" onClick={refreshLogs} disabled={logsLoading} aria-label="Muat ulang log">
+                  <RefreshCw className={`h-4 w-4 ${logsLoading ? "animate-spin" : ""}`} />
+                </Button>
+              </div>
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Waktu</TableHead>
+                  <TableHead>Level</TableHead>
+                  <TableHead>Request</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Durasi</TableHead>
+                  <TableHead>Request ID</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {logsLoading && logs.length === 0 ? (
+                  <TableRow><TableCell colSpan={6} className="py-8 text-center text-sm text-slate-500">Memuat log...</TableCell></TableRow>
+                ) : visibleLogs.length === 0 ? (
+                  <TableRow><TableCell colSpan={6} className="py-8 text-center text-sm text-slate-500">Belum ada log observability.</TableCell></TableRow>
+                ) : visibleLogs.map((log) => (
+                  <TableRow key={log.id}>
+                    <TableCell className="whitespace-nowrap text-xs">{new Date(log.createdAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}</TableCell>
+                    <TableCell><Badge variant={log.severity === "error" ? "destructive" : "outline"}>{log.severity}</Badge></TableCell>
+                    <TableCell className="min-w-56 font-mono text-xs">{log.method} {log.path}</TableCell>
+                    <TableCell>{log.statusCode}</TableCell>
+                    <TableCell>{log.durationMs} ms</TableCell>
+                    <TableCell className="font-mono text-xs" title={log.requestId}>{log.requestId.slice(0, 12)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      </div>
+
+      <div className="h-px w-full bg-slate-200 dark:bg-slate-800/60 my-10" />
+
+      {/* Section 4: Tema & Tampilan */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
         <div className="space-y-2 lg:col-span-1">
           <h2 id="tema-heading" className="text-lg font-semibold text-slate-900 dark:text-white">Tema & Tampilan</h2>
@@ -328,7 +522,7 @@ function ToggleRow({
         <p className="text-xs text-slate-500 leading-relaxed pr-6">{desc}</p>
       </div>
       <div className="shrink-0 mt-3 sm:mt-0">
-        <Switch checked={checked} onCheckedChange={onChange} disabled={disabled} className="data-[state=checked]:bg-emerald-500" />
+        <Switch aria-label={label} checked={checked} onCheckedChange={onChange} disabled={disabled} className="data-[state=checked]:bg-emerald-500" />
       </div>
     </div>
   );

@@ -8,6 +8,9 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Added
 
+- Tambahkan observability backend opsional di Pengaturan admin: `X-Request-ID`,
+  sampling, retention, sanitasi path, dan viewer log request terbaru khusus Super Admin.
+
 ### Changed
 
 ### Fixed
