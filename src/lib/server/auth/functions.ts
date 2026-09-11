@@ -15,6 +15,7 @@ import {
 	getDeviceFingerprint,
 } from "../db/session";
 import { seedIfNeeded } from "../db/auth";
+import { writeAuditLog } from "../db/audit";
 
 export const loginServer = createServerFn({ method: "POST" })
 	.validator(
@@ -45,6 +46,14 @@ export const loginServer = createServerFn({ method: "POST" })
 		clearRateLimit(data.username.toLowerCase(), "login:user");
 		const fp = await getDeviceFingerprint();
 		const ua = getRequestHeaders().get("user-agent") ?? "";
+		const audit = await writeAuditLog({
+			userId: user.id,
+			userRole: user.role,
+			action: "auth.login",
+			entity: "session",
+			details: JSON.stringify({ ip }),
+		});
+		if (!audit.ok) return { ok: false as const, error: audit.error };
 		const token = await createSession(user.id, ua, fp);
 		setSessionCookie(token);
 		return { ok: true as const, user: publicUser(user) };
@@ -65,7 +74,18 @@ export const validateSessionServer = createServerFn({ method: "POST" }).handler(
 export const logoutServer = createServerFn({ method: "POST" }).handler(
 	async () => {
 		await seedIfNeeded();
-		await deleteSession(readSessionToken());
+		const caller = await validateSession(readSessionToken());
+		if (caller) {
+			const audit = await writeAuditLog({
+				userId: caller.id,
+				userRole: caller.role,
+				action: "auth.logout",
+				entity: "session",
+			});
+			if (!audit.ok) return { ok: false as const, error: audit.error };
+		}
+		const removed = await deleteSession(readSessionToken());
+		if (!removed.ok) return { ok: false as const, error: removed.error };
 		clearSessionCookie();
 		return { ok: true as const };
 	},

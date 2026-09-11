@@ -12,10 +12,12 @@ export interface AuditLogEntry {
 	details?: string;
 }
 
-/** Write an audit log entry. Fire-and-forget: never throws to caller. */
-export async function writeAuditLog(entry: AuditLogEntry): Promise<void> {
+type AuditWriteResult = { ok: true } | { ok: false; error: string };
+
+/** Write an audit log entry and make failures visible to high-risk callers. */
+export async function writeAuditLog(entry: AuditLogEntry, db: Pick<typeof prisma, "auditLog"> = prisma): Promise<AuditWriteResult> {
 	try {
-		await prisma.auditLog.create({
+		await db.auditLog.create({
 			data: {
 				id: `al_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
 				userId: entry.userId,
@@ -26,10 +28,17 @@ export async function writeAuditLog(entry: AuditLogEntry): Promise<void> {
 				details: entry.details?.replace(/"password(Hash)?":"[^"]*"/g, '"password$1":"[REDACTED]"') ?? null,
 			},
 		});
+		return { ok: true };
 	} catch {
-		// Swallow errors — audit logging must never break the primary operation
-		console.error("Failed to write audit log:", entry);
+		console.error("Failed to write audit log");
+		return { ok: false, error: "Audit log tidak dapat disimpan" };
 	}
+}
+
+/** Persist an audit precondition or stop the protected mutation. */
+export async function requireAuditLog(entry: AuditLogEntry): Promise<void> {
+	const result = await writeAuditLog(entry);
+	if (!result.ok) throw new Error(result.error);
 }
 
 /** Get audit logs with filtering. Admin only. */

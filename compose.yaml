@@ -6,8 +6,8 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: file:/app/data/cbt.db
-      SEED_DEMO: "true"
-      SESSION_COOKIE_SECURE: "false"
+      SEED_DEMO: "${SEED_DEMO:-false}"
+      SESSION_COOKIE_SECURE: "${SESSION_COOKIE_SECURE:-true}"
     volumes:
       - cbt-data:/app/data
     ports:

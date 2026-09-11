@@ -78,7 +78,41 @@ test("production session cookies default secure but allow explicit private-HTTP 
   const compose = readFileSync("compose.yaml", "utf8");
 
   assert.match(session, /SESSION_COOKIE_SECURE !== "false"/);
-  assert.match(compose, /SESSION_COOKIE_SECURE: "false"/);
+  assert.match(compose, /SESSION_COOKIE_SECURE: "\$\{SESSION_COOKIE_SECURE:-true\}"/);
+});
+
+test("audit and health controls are reachable without exposing internals", () => {
+  const auditRoute = readFileSync("src/routes/_authenticated/admin.audit.tsx", "utf8");
+  const healthRoute = readFileSync("src/routes/api.health.ts", "utf8");
+  const backup = readFileSync("src/lib/cbt/backup.ts", "utf8");
+
+  assert.match(auditRoute, /getAuditLogsServer/);
+  assert.match(auditRoute, /Hanya-baca|hanya-baca/);
+  assert.match(healthRoute, /\/api\/health/);
+  assert.match(healthRoute, /status: 503/);
+  assert.match(backup, /if \(!databaseResult\.ok\)/);
+  assert.match(backup, /files: data\.files/);
+  assert.doesNotMatch(backup, /filesResult/);
+});
+
+test("restore and audit guardrails preserve file metadata and protect mutations", () => {
+  const backup = readFileSync("src/lib/cbt/backup.ts", "utf8");
+  const files = readFileSync("src/lib/server/files/functions.ts", "utf8");
+  const audit = readFileSync("src/lib/server/db/audit.ts", "utf8");
+  const roles = readFileSync("src/routes/_authenticated/admin.users.roles.tsx", "utf8");
+  const auth = readFileSync("src/lib/server/auth/functions.ts", "utf8");
+
+  assert.match(backup, /jurusanId: z\.string\(\)\.optional\(\)/);
+  assert.match(files, /withFileOperationLock/);
+  assert.match(files, /withFileReadLock/);
+  assert.match(files, /extension\.toLowerCase\(\) === "\.json"/);
+  assert.match(files, /stageFileRestore/);
+  assert.match(files, /rollbackFileRestore/);
+  assert.match(files, /Failed to remove previous uploads after restore/);
+  assert.match(audit, /requireAuditLog/);
+  assert.equal((roles.match(/&& k !== "audit"/g) ?? []).length, 2);
+  assert.match(auth, /if \(!audit\.ok\)/);
+  assert.match(auth, /if \(!removed\.ok\)/);
 });
 
 test("migration normalizes only dangling optional relation IDs", () => {

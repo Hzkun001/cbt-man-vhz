@@ -253,7 +253,7 @@ function ToolsPage() {
           <DialogHeader>
             <DialogTitle>Preview restore</DialogTitle>
             <DialogDescription>
-              Data berikut akan menggantikan seluruh data yang ada saat ini.
+              Data berikut akan menggantikan data saat ini. Jika backup memuat berkas, media lama juga diganti sepenuhnya.
             </DialogDescription>
           </DialogHeader>
           {preview && (

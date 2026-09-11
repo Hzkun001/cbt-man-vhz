@@ -11,7 +11,7 @@ import {
 	pesertaCanTouchUjian,
 } from "../db/auth";
 import type { SesiUjian, NavKey } from "@/lib/cbt/types";
-import { writeAuditLog } from "../db/audit";
+import { requireAuditLog } from "../db/audit";
 import { stringifyJson, toBigInt, toNumber, parseJson } from "../db/json";
 import { getRequestIP, setResponseHeader } from "@tanstack/start-server-core";
 import { ipInRanges } from "@/lib/cbt/cidr";
@@ -239,8 +239,6 @@ export const mutateSesiServer = createServerFn({ method: "POST" })
 				return { ok: false as const, error: "Forbidden" };
 			}
 
-			// Do not audit `sesi` (was explicitly skipped in functions.ts)
-
 			let upsertItem: SesiUjian | undefined;
 			let existingStatus: SesiUjian["status"] | undefined;
 			if (action === "upsert") {
@@ -282,6 +280,13 @@ export const mutateSesiServer = createServerFn({ method: "POST" })
 				}
 			}
 
+			await requireAuditLog({
+				userId: caller.id,
+				userRole: caller.role,
+				action: `sesi.${action}`,
+				entity: "sesi",
+				entityId: typeof payload === "object" && payload && "id" in payload ? String(payload.id) : undefined,
+			});
 			await prisma.$transaction(async (tx) => {
 				if (action === "remove")
 					await tx.sesiUjian.delete({ where: { id: String(payload.id) } });
@@ -366,6 +371,7 @@ export const actionLiveSesiServer = createServerFn({ method: "POST" })
 			if (!sesi || (caller.role !== "super_admin" && !(await operatorCanTouchUjian(caller, sesi.ujianId)))) {
 				return { ok: false as const, error: "Forbidden" };
 			}
+			await requireAuditLog({ userId: caller.id, userRole: caller.role, action: `sesi.${data.action}`, entity: "sesi", entityId: data.sesiId });
 			if (data.action === "forceSubmit") {
 				if (sesi.status === "selesai") return { ok: true as const };
 				// Grade server-side so a forced submit stores the same authoritative score as a normal submit.
@@ -394,7 +400,6 @@ export const actionLiveSesiServer = createServerFn({ method: "POST" })
 					data: { pelanggaran: 0 },
 				});
 			}
-			void writeAuditLog({ userId: caller.id, userRole: caller.role, action: `sesi.${data.action}`, entity: "sesi", entityId: data.sesiId });
 			return { ok: true as const };
 		} catch (err) {
 			return { ok: false as const, error: err instanceof Error ? err.message : String(err) };
