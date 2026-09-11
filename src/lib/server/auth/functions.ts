@@ -84,7 +84,8 @@ export const logoutServer = createServerFn({ method: "POST" }).handler(
 			});
 			if (!audit.ok) return { ok: false as const, error: audit.error };
 		}
-		await deleteSession(readSessionToken());
+		const removed = await deleteSession(readSessionToken());
+		if (!removed.ok) return { ok: false as const, error: removed.error };
 		clearSessionCookie();
 		return { ok: true as const };
 	},

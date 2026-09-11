@@ -164,20 +164,19 @@ export const mutateUserServer = createServerFn({ method: "POST" })
 			const auth = await requireAdminResult();
 			if (!auth.ok) return { ok: false as const, error: auth.error };
 			const caller = await requireCaller();
+			if (!caller) return { ok: false as const, error: "Forbidden" };
 			const { action, payload } = data;
 
-			if (caller) {
-				await requireAuditLog({
-					userId: caller.id,
-					userRole: caller.role,
-					action: `users.${action}`,
-					entity: "users",
-					entityId: typeof payload === "object" && payload && "id" in payload
-							? String((payload as { id?: unknown }).id ?? "")
-							: undefined,
-					details: JSON.stringify({ entity: "users", action, hasPayload: !!payload }),
-				});
-			}
+			await requireAuditLog({
+				userId: caller.id,
+				userRole: caller.role,
+				action: `users.${action}`,
+				entity: "users",
+				entityId: typeof payload === "object" && payload && "id" in payload
+						? String((payload as { id?: unknown }).id ?? "")
+						: undefined,
+				details: JSON.stringify({ entity: "users", action, hasPayload: !!payload }),
+			});
 
 			await prisma.$transaction(async (tx) => {
 				if (action === "remove")

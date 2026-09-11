@@ -12,7 +12,7 @@ function load(relativePath, dependencies) {
   });
   const exports = {};
   runInNewContext(outputText, {
-    exports, Response, console: { error() {} },
+    exports, Response, console: { error() {} }, process, setTimeout, Promise,
     require(name) {
       assert.ok(name in dependencies, `Unexpected import: ${name}`);
       return dependencies[name];
@@ -84,4 +84,69 @@ test("restore and reset roll back when their completion audit fails", async () =
     assert.deepEqual(events, operation === "importBackupServer"
       ? ["promote-files", "rollback-db", "rollback-files"] : ["rollback-db"]);
   }
+});
+
+test("deleteSession treats a missing row as success and surfaces other failures", async () => {
+  let deleted = 0;
+  const { deleteSession } = load("../../src/lib/server/db/session.ts", {
+    "node:crypto": { randomBytes() { throw new Error("unused"); } },
+    "@tanstack/react-start/server": {
+      getCookie() { return null; },
+      setResponseHeader() {},
+      getRequestHeaders() { return new Headers(); },
+    },
+    "./prisma": {
+      prisma: {
+        session: {
+          async delete() {
+            deleted += 1;
+            if (deleted === 1) {
+              const error = new Error("missing");
+              error.code = "P2025";
+              throw error;
+            }
+            throw new Error("database offline");
+          },
+        },
+      },
+    },
+  });
+  assert.equal((await deleteSession(null)).ok, true);
+  assert.equal((await deleteSession("gone")).ok, true);
+  const failed = await deleteSession("live");
+  assert.equal(failed.ok, false);
+  assert.equal(failed.error, "Sesi tidak dapat dihapus");
+});
+
+test("file read locks can overlap while writes stay exclusive", async () => {
+  const { withFileReadLock, withFileOperationLock } = load("../../src/lib/server/files/functions.ts", {
+    "@tanstack/react-start": { createServerFn: () => ({ validator() { return this; }, handler: (fn) => fn }) },
+    "@/lib/server/db/id.server": { uid: () => "f_test" },
+    zod: { z },
+    "@/lib/server/db/prisma": { prisma: {} },
+    "@/lib/server/db/json": { parseJson: JSON.parse },
+    "@/lib/server/db/session": { readSessionToken() { return null; }, validateSession: async () => null },
+    "@/lib/server/db/auth": { pesertaCanTouchUjian: async () => false },
+  });
+  let overlapping = 0;
+  let maxOverlap = 0;
+  await Promise.all([1, 2, 3].map(() => withFileReadLock(async () => {
+    overlapping += 1;
+    maxOverlap = Math.max(maxOverlap, overlapping);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    overlapping -= 1;
+  })));
+  assert.ok(maxOverlap > 1);
+  const order = [];
+  const write = withFileOperationLock(async () => {
+    order.push("write-start");
+    await new Promise((resolve) => setTimeout(resolve, 15));
+    order.push("write-end");
+  });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  await withFileReadLock(async () => {
+    order.push("read");
+  });
+  await write;
+  assert.deepEqual(order, ["write-start", "write-end", "read"]);
 });

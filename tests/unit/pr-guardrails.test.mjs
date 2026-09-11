@@ -104,12 +104,15 @@ test("restore and audit guardrails preserve file metadata and protect mutations"
 
   assert.match(backup, /jurusanId: z\.string\(\)\.optional\(\)/);
   assert.match(files, /withFileOperationLock/);
+  assert.match(files, /withFileReadLock/);
   assert.match(files, /extension\.toLowerCase\(\) === "\.json"/);
   assert.match(files, /stageFileRestore/);
   assert.match(files, /rollbackFileRestore/);
+  assert.match(files, /Failed to remove previous uploads after restore/);
   assert.match(audit, /requireAuditLog/);
   assert.equal((roles.match(/&& k !== "audit"/g) ?? []).length, 2);
   assert.match(auth, /if \(!audit\.ok\)/);
+  assert.match(auth, /if \(!removed\.ok\)/);
 });
 
 test("migration normalizes only dangling optional relation IDs", () => {

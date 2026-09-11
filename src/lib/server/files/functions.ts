@@ -54,20 +54,60 @@ export const fileBackupSchema = z.object({
 });
 export type FileBackup = z.infer<typeof fileBackupSchema>;
 
-let fileOperationQueue = Promise.resolve();
+type FileLockWaiter = { exclusive: boolean; resolve: () => void };
 
-// ponytail: one process-wide lock keeps the file swap safe; use per-tenant locks only if throughput requires it.
-export async function withFileOperationLock<T>(operation: () => Promise<T>): Promise<T> {
-  const previous = fileOperationQueue;
-  let release!: () => void;
-  fileOperationQueue = new Promise<void>((resolve) => {
-    release = resolve;
+let activeReaders = 0;
+let writerActive = false;
+const fileLockWaiters: FileLockWaiter[] = [];
+
+function flushFileLockWaiters() {
+  if (writerActive) return;
+  const nextWrite = fileLockWaiters.find((waiter) => waiter.exclusive);
+  if (nextWrite) {
+    if (activeReaders > 0) return;
+    fileLockWaiters.splice(fileLockWaiters.indexOf(nextWrite), 1);
+    writerActive = true;
+    nextWrite.resolve();
+    return;
+  }
+  while (fileLockWaiters[0] && !fileLockWaiters[0].exclusive) {
+    activeReaders += 1;
+    fileLockWaiters.shift()!.resolve();
+  }
+}
+
+export async function withFileReadLock<T>(operation: () => Promise<T>): Promise<T> {
+  await new Promise<void>((resolve) => {
+    if (!writerActive && !fileLockWaiters.some((waiter) => waiter.exclusive)) {
+      activeReaders += 1;
+      resolve();
+      return;
+    }
+    fileLockWaiters.push({ exclusive: false, resolve });
   });
-  await previous;
   try {
     return await operation();
   } finally {
-    release();
+    activeReaders -= 1;
+    flushFileLockWaiters();
+  }
+}
+
+// Writes stay exclusive so restore promotion cannot race uploads. Reads share the lock.
+export async function withFileOperationLock<T>(operation: () => Promise<T>): Promise<T> {
+  await new Promise<void>((resolve) => {
+    if (!writerActive && activeReaders === 0 && fileLockWaiters.length === 0) {
+      writerActive = true;
+      resolve();
+      return;
+    }
+    fileLockWaiters.push({ exclusive: true, resolve });
+  });
+  try {
+    return await operation();
+  } finally {
+    writerActive = false;
+    flushFileLockWaiters();
   }
 }
 
@@ -255,7 +295,7 @@ async function pesertaCanAccessFile(
 export const listStoredFiles = createServerFn({ method: "GET" }).handler(async () => {
   const auth = await requireFileManagerAccess();
   if (!auth.ok) throw new Error(auth.error);
-  const files = await withFileOperationLock(() => listMetas());
+  const files = await withFileReadLock(() => listMetas());
   return auth.caller.role === "super_admin"
     ? files
     : files.filter((file) => file.jurusanId === auth.caller.unitId);
@@ -334,7 +374,7 @@ export const getStoredFileUrl = createServerFn({ method: "GET" })
       throw new Error("Forbidden");
     }
 
-    return withFileOperationLock(async () => {
+    return withFileReadLock(async () => {
       const meta = await readMeta(data.id);
       if (!meta) return null;
 
@@ -357,7 +397,7 @@ export const exportFilesServer = createServerFn({ method: "GET" }).handler(async
   const auth = await requireAdmin();
   if (!auth.ok) throw new Error(auth.error);
 
-  return withFileOperationLock(async () => {
+  return withFileReadLock(async () => {
     const metas = await listMetas();
     const { readFile } = await fsApi();
     return Promise.all(
@@ -423,8 +463,16 @@ export async function rollbackFileRestore(plan: FileRestorePlan): Promise<void> 
 
 export async function finalizeFileRestore(plan: FileRestorePlan): Promise<void> {
   const { rm } = await fsApi();
-  if (plan.previousDir) await rm(plan.previousDir, { recursive: true, force: true });
-  await rm(plan.stageDir, { recursive: true, force: true });
+  try {
+    if (plan.previousDir) await rm(plan.previousDir, { recursive: true, force: true });
+  } catch (error) {
+    console.error("Failed to remove previous uploads after restore", error);
+  }
+  try {
+    await rm(plan.stageDir, { recursive: true, force: true });
+  } catch (error) {
+    console.error("Failed to remove staged uploads after restore", error);
+  }
 }
 
 export const importFilesServer = createServerFn({ method: "POST" })
