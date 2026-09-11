@@ -258,6 +258,26 @@ export const NAV_KEYS = [
 ] as const;
 export type NavKey = (typeof NAV_KEYS)[number];
 
+export const ObservabilityLevelSchema = z.enum(["debug", "info", "warn", "error"]);
+export type ObservabilityLevel = z.infer<typeof ObservabilityLevelSchema>;
+
+export const DEFAULT_OBSERVABILITY_CONFIG = {
+	enabled: false,
+	captureRequests: true,
+	minLevel: "info",
+	sampleRate: 1,
+	retentionDays: 30,
+} as const;
+
+export const ObservabilityConfigSchema = z.object({
+	enabled: z.boolean().default(DEFAULT_OBSERVABILITY_CONFIG.enabled),
+	captureRequests: z.boolean().default(DEFAULT_OBSERVABILITY_CONFIG.captureRequests),
+	minLevel: ObservabilityLevelSchema.default(DEFAULT_OBSERVABILITY_CONFIG.minLevel),
+	sampleRate: z.number().min(0).max(1).default(DEFAULT_OBSERVABILITY_CONFIG.sampleRate),
+	retentionDays: z.number().int().min(1).max(365).default(DEFAULT_OBSERVABILITY_CONFIG.retentionDays),
+});
+export type ObservabilityConfig = z.infer<typeof ObservabilityConfigSchema>;
+
 export const ConfigSchema = z.object({
 	appName: z.string().default("CBT-MAN"),
 	appLogo: z.string().default(""),
