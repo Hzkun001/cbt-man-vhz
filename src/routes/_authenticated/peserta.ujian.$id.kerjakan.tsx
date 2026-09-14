@@ -1,5 +1,7 @@
 import { useAuthStore } from "@/lib/cbt/auth-store";
 import { soalBySessionId, sesiRepo, ujianRepo, getParticipantSessionState, invalidateReposCache, hydrateRepos, saveParticipantSession } from "@/lib/cbt/repos";
+import { armExamAlarm, startExamAlarm } from "@/lib/cbt/exam-alarm";
+import { reportExamViolation } from "@/lib/server/sesi/functions";
 import type { SesiUjian, Ujian } from "@/lib/cbt/types";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
@@ -96,6 +98,7 @@ function RouteComponent() {
 
   const [showList, setShowList] = useState(false);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  const [examLocked, setExamLocked] = useState(false);
   const [fontSize, setFontSize] = useState<"sm" | "base" | "lg">("base");
 
   useEffect(() => {
@@ -108,13 +111,14 @@ function RouteComponent() {
   }, [user, ujian]);
 
   useEffect(() => {
+    if (examLocked) return;
     if (sesi && sesi.status === "selesai") {
       navigate({
         to: "/peserta/ujian/$id/hasil",
         params: { id: sesi.ujianId },
       });
     }
-  }, [sesi, navigate]);
+  }, [sesi, navigate, examLocked]);
 
   const endsAt = useMemo(() => {
     if (!sesi || !ujian) return 0;
@@ -126,13 +130,106 @@ function RouteComponent() {
   const remaining = Math.max(0, endsAt - now);
 
   const sesiRef = useRef(sesi);
+  const showListRef = useRef(showList);
+  const examLockedRef = useRef(examLocked);
+  const leaveInFlightRef = useRef(false);
+  const leaveQuietUntilRef = useRef(0);
   useEffect(() => {
     sesiRef.current = sesi;
   }, [sesi]);
+  useEffect(() => {
+    showListRef.current = showList;
+  }, [showList]);
+  useEffect(() => {
+    examLockedRef.current = examLocked;
+  }, [examLocked]);
 
   const activeSesiId = sesi?.id;
   const activeSesiStatus = sesi?.status;
   const activeUjianId = ujian?.id;
+
+  useEffect(() => {
+    if (!ujian?.blokirShortcut || activeSesiStatus !== "sedang") return;
+    const blockShortcut = (event: Event) => {
+      event.preventDefault();
+    };
+    document.addEventListener("copy", blockShortcut);
+    document.addEventListener("cut", blockShortcut);
+    document.addEventListener("paste", blockShortcut);
+    document.addEventListener("contextmenu", blockShortcut);
+    return () => {
+      document.removeEventListener("copy", blockShortcut);
+      document.removeEventListener("cut", blockShortcut);
+      document.removeEventListener("paste", blockShortcut);
+      document.removeEventListener("contextmenu", blockShortcut);
+    };
+  }, [ujian?.blokirShortcut, activeSesiStatus]);
+
+  useEffect(() => {
+    const arm = () => armExamAlarm();
+    window.addEventListener("pointerdown", arm, { once: true });
+    window.addEventListener("keydown", arm, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", arm);
+      window.removeEventListener("keydown", arm);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!activeSesiId || activeSesiStatus !== "sedang") return;
+
+    const inPageOverlayOpen = () => {
+      if (showListRef.current) return true;
+      return Boolean(document.querySelector('[role="dialog"]'));
+    };
+
+    const reportLeave = async () => {
+      if (examLockedRef.current || leaveInFlightRef.current) return;
+      if (Date.now() < leaveQuietUntilRef.current) return;
+      if (sesiRef.current?.status !== "sedang") return;
+      leaveInFlightRef.current = true;
+      leaveQuietUntilRef.current = Date.now() + 1500;
+      try {
+        const pending = sesiRef.current;
+        if (pending) {
+          await saveParticipantSession(pending);
+        }
+        const result = await reportExamViolation({ data: { sesiId: activeSesiId } });
+        if (result.ok && result.locked) {
+          examLockedRef.current = true;
+          setExamLocked(true);
+          startExamAlarm();
+          try {
+            await useAuthStore.getState().logout();
+          } catch {
+            /* cookie/session already revoked */
+          }
+        }
+      } catch {
+        /* leave report is best-effort; next leave retries */
+      } finally {
+        leaveInFlightRef.current = false;
+      }
+    };
+
+    const onVisibility = () => {
+      if (document.hidden) void reportLeave();
+    };
+    const onBlur = () => {
+      window.setTimeout(() => {
+        if (document.hasFocus()) return;
+        if (inPageOverlayOpen()) return;
+        void reportLeave();
+      }, 0);
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("blur", onBlur);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("blur", onBlur);
+    };
+  }, [activeSesiId, activeSesiStatus]);
 
   useEffect(() => {
     if (!activeSesiId || !activeUjianId || activeSesiStatus === "selesai") return;
@@ -156,6 +253,7 @@ function RouteComponent() {
         if (result.ok) {
           setPollingError(false);
           if (result.sesi.status === "selesai") {
+            if (examLockedRef.current) return;
             invalidateReposCache();
             await hydrateRepos();
             if (!pollingActive) return;
@@ -208,7 +306,12 @@ function RouteComponent() {
 
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      void saveParticipantSession(nextSesi);
+      void saveParticipantSession(nextSesi).then((result) => {
+        if (result.ok || sesiRef.current !== nextSesi) return;
+        const restored = sesiRepo.byId(nextSesi.id) ?? null;
+        sesiRef.current = restored;
+        setSesi(restored);
+      });
     }, 2000);
   }
 
@@ -237,7 +340,13 @@ function RouteComponent() {
       clearTimeout(saveTimer.current);
       saveTimer.current = null;
       if (sesiRef.current) {
-        void saveParticipantSession(sesiRef.current);
+        const pending = sesiRef.current;
+        void saveParticipantSession(pending).then((result) => {
+          if (result.ok || sesiRef.current !== pending) return;
+          const restored = sesiRepo.byId(pending.id) ?? null;
+          sesiRef.current = restored;
+          setSesi(restored);
+        });
       }
     }
     setIdx(newIdx);
@@ -279,6 +388,22 @@ function RouteComponent() {
       toast.error("Gagal menyimpan jawaban. Coba kumpulkan lagi.");
       submittingRef.current = false;
     }
+  }
+
+  if (examLocked) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50 p-6 dark:bg-slate-950">
+        <div
+          role="alert"
+          className="max-w-md rounded-2xl border border-red-200 bg-red-50 p-6 text-red-900 shadow-sm dark:border-red-900 dark:bg-red-950/40 dark:text-red-100"
+        >
+          <h1 className="text-lg font-bold">Sesi ujian dikunci</h1>
+          <p className="mt-2 text-sm leading-relaxed">
+            Anda meninggalkan halaman ujian melebihi batas. Jawaban dikumpulkan dan sesi diakhiri.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   if (!user) return <div className="p-8 text-center font-medium">Anda harus login.</div>;

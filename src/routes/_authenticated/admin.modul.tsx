@@ -80,7 +80,7 @@ function ModulPage() {
     navigate({ to: "/admin/topik/$id/soal", params: { id: topikId } });
   }
 
-  function remove(id: string) {
+  async function remove(id: string) {
     if (!canEdit) return;
     const topiks = topikRepo.all().filter((t) => t.modulId === id);
     if (topiks.length) {
@@ -356,6 +356,7 @@ function ModulPage() {
         onOpenChange={(open) => !open && setDeleteId(null)}
         title="Hapus Modul"
         description="Apakah Anda yakin ingin menghapus modul ini secara permanen?"
+        confirmLabel="Hapus"
         onConfirm={confirmDelete}
       />
     </AdminPage>

@@ -32,7 +32,7 @@ import {
   ConfigSchema,
 } from "./types";
 import { exportTokenClaimsServer, importBackupServer, resetAllDataServer } from "@/lib/server/backup/functions";
-import { exportFilesServer, importFilesServer } from "@/lib/server/files/functions";
+import { exportFilesServer } from "@/lib/server/files/functions";
 
 const FileBackupSchema = z.object({
   id: z.string(),
@@ -42,6 +42,7 @@ const FileBackupSchema = z.object({
   createdAt: z.number(),
   extension: z.string(),
   dataBase64: z.string(),
+  jurusanId: z.string().optional(),
 });
 
 export const BackupSchema = z.object({
@@ -129,7 +130,7 @@ export async function importBackup(raw: any): Promise<Backup> {
   }
 
   const data = BackupSchema.parse(raw);
-  await importBackupServer({
+  const databaseResult = await importBackupServer({
     data: {
       users: data.users,
       unitAkademik: data.unitAkademik,
@@ -143,16 +144,18 @@ export async function importBackup(raw: any): Promise<Backup> {
       tokenClaims: data.tokenClaims,
       sesi: data.sesi,
       config: data.config,
+      files: data.files,
     },
   });
-  await importFilesServer({ data: data.files ?? [] });
+  if (!databaseResult.ok) throw new Error(databaseResult.error);
   invalidateReposCache();
   await hydrateRepos();
   return data;
 }
 
 export async function resetAllData(): Promise<void> {
-  await resetAllDataServer();
+  const result = await resetAllDataServer();
+  if (!result.ok) throw new Error(result.error);
   invalidateReposCache();
   await hydrateRepos();
 }

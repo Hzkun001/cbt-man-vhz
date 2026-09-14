@@ -36,6 +36,11 @@ coverage/
 Thumbs.db
 .vscode/
 .idea/
+.zed/
+
+# local drafts / runtime uploads
+scratch/
+data/uploads/
 
 # local tool state
 *.pid
@@ -52,6 +57,7 @@ _bmad-output/
 # playwright test outputs / generated evidence (regenerable)
 artifacts/
 tests/output/
+test-results/
 playwright-report/
 # generated per-flow evidence manifests (keep only planned *-flows definitions)
 tests/meta/roles/*.evidence.json

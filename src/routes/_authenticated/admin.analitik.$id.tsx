@@ -336,6 +336,7 @@ function DaftarPesertaTab({ ujian, sesis, refresh }: { ujian: Ujian, sesis: Sesi
         onOpenChange={(open) => !open && setDeleteId(null)}
         title="Hapus Sesi Ujian"
         description="Sesi peserta dan seluruh jawaban yang tersimpan akan dihapus secara permanen."
+        confirmLabel="Hapus"
         onConfirm={deleteSession}
       />
     </>

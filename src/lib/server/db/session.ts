@@ -138,9 +138,22 @@ export async function validateSession(
 	return row.user;
 }
 
-export async function deleteSession(token: string | null): Promise<void> {
-	if (!token) return;
-	await prisma.session.delete({ where: { id: token } }).catch(() => undefined);
+function isMissingSession(error: unknown): boolean {
+	return typeof error === "object" && error !== null && "code" in error && error.code === "P2025";
+}
+
+export async function deleteSession(
+	token: string | null,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+	if (!token) return { ok: true };
+	try {
+		await prisma.session.delete({ where: { id: token } });
+		return { ok: true };
+	} catch (error) {
+		if (isMissingSession(error)) return { ok: true };
+		console.error("Failed to delete session");
+		return { ok: false, error: "Sesi tidak dapat dihapus" };
+	}
 }
 
 /** Hapus semua sesi milik seorang user (admin revoke / force-logout instan). */

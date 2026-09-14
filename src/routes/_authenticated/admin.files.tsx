@@ -337,6 +337,7 @@ function FilesPage() {
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         title="Hapus File Permanen"
         description={deleteTarget ? `File “${deleteTarget.name}” akan dihapus secara permanen.` : ""}
+        confirmLabel="Hapus"
         onConfirm={confirmDelete}
       />
     </AdminPage>

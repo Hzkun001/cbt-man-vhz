@@ -11,7 +11,8 @@ import {
 	pesertaCanTouchUjian,
 } from "../db/auth";
 import type { SesiUjian, NavKey } from "@/lib/cbt/types";
-import { writeAuditLog } from "../db/audit";
+import { requireAuditLog } from "../db/audit";
+import { deleteSessionsForUser } from "../db/session";
 import { stringifyJson, toBigInt, toNumber, parseJson } from "../db/json";
 import { getRequestIP, setResponseHeader } from "@tanstack/start-server-core";
 import { ipInRanges } from "@/lib/cbt/cidr";
@@ -55,6 +56,29 @@ async function gradeSesiServerSide(item: SesiUjian): Promise<SesiUjian> {
 		maxSkor,
 		selesaiAt: item.selesaiAt ?? Date.now(),
 	};
+}
+
+async function closeSedangSesiWithServerGrade(sesiId: string): Promise<boolean> {
+	const row = await prisma.sesiUjian.findUnique({ where: { id: sesiId } });
+	if (!row) return false;
+	if (row.status === "selesai") return true;
+	const scored = await gradeSesiServerSide(mapSesi(row));
+	const updated = await prisma.sesiUjian.updateMany({
+		where: { id: sesiId, status: "sedang" },
+		data: {
+			status: "selesai",
+			selesaiAt: BigInt(Date.now()),
+			jawaban: stringifyJson(scored.jawaban),
+			skorTotal: scored.skorTotal ?? null,
+			maxSkor: scored.maxSkor ?? null,
+		},
+	});
+	if (updated.count === 1) return true;
+	const current = await prisma.sesiUjian.findUnique({
+		where: { id: sesiId },
+		select: { status: true },
+	});
+	return current?.status === "selesai";
 }
 
 const participantAnswerSchema = z
@@ -194,6 +218,74 @@ export const saveParticipantSesiServer = createServerFn({ method: "POST" })
 		}
 	});
 
+export const reportExamViolation = createServerFn({ method: "POST" })
+	.validator(z.object({ sesiId: z.string().min(1) }))
+	.handler(async ({ data }) => {
+		try {
+			const caller = await requireCaller();
+			if (!caller || caller.role !== "mahasiswa") {
+				return { ok: false as const, error: "Forbidden" };
+			}
+
+			const sesiRow = await prisma.sesiUjian.findUnique({
+				where: { id: data.sesiId },
+				include: { ujian: true },
+			});
+			if (
+				!sesiRow ||
+				sesiRow.pesertaId !== caller.id ||
+				!(await pesertaCanTouchUjian(caller, sesiRow.ujianId))
+			) {
+				return { ok: false as const, error: "Forbidden" };
+			}
+			if (sesiRow.status === "selesai") {
+				return { ok: true as const, locked: true, pelanggaran: sesiRow.pelanggaran };
+			}
+			if (sesiRow.status !== "sedang") {
+				return { ok: false as const, error: "Sesi tidak aktif." };
+			}
+
+			await requireAuditLog({
+				userId: caller.id,
+				userRole: caller.role,
+				action: "sesi.examViolation",
+				entity: "sesi",
+				entityId: data.sesiId,
+				details: JSON.stringify({ reason: "leave" }),
+			});
+
+			const incremented = await prisma.sesiUjian.updateMany({
+				where: { id: data.sesiId, pesertaId: caller.id, status: "sedang" },
+				data: { pelanggaran: { increment: 1 } },
+			});
+			if (incremented.count !== 1) {
+				return { ok: false as const, error: "Ujian sudah disubmit oleh pengawas" };
+			}
+
+			const updated = await prisma.sesiUjian.findUnique({
+				where: { id: data.sesiId },
+				select: { pelanggaran: true },
+			});
+			const pelanggaran = updated?.pelanggaran ?? sesiRow.pelanggaran + 1;
+			const maxPindahTab = sesiRow.ujian.maxPindahTab;
+			const locked = maxPindahTab === 0 || pelanggaran > maxPindahTab;
+
+			if (!locked) {
+				return { ok: true as const, locked: false, pelanggaran };
+			}
+
+			const closed = await closeSedangSesiWithServerGrade(data.sesiId);
+			if (!closed) {
+				return { ok: false as const, error: "Gagal mengunci sesi ujian." };
+			}
+			await deleteSessionsForUser(caller.id);
+			return { ok: true as const, locked: true, pelanggaran };
+		} catch (err) {
+			console.error("[reportExamViolation]", err);
+			return { ok: false as const, error: "Gagal mencatat pelanggaran ujian." };
+		}
+	});
+
 export const mutateSesiServer = createServerFn({ method: "POST" })
 	.validator(
 		z.object({
@@ -239,8 +331,6 @@ export const mutateSesiServer = createServerFn({ method: "POST" })
 				return { ok: false as const, error: "Forbidden" };
 			}
 
-			// Do not audit `sesi` (was explicitly skipped in functions.ts)
-
 			let upsertItem: SesiUjian | undefined;
 			let existingStatus: SesiUjian["status"] | undefined;
 			if (action === "upsert") {
@@ -282,6 +372,13 @@ export const mutateSesiServer = createServerFn({ method: "POST" })
 				}
 			}
 
+			await requireAuditLog({
+				userId: caller.id,
+				userRole: caller.role,
+				action: `sesi.${action}`,
+				entity: "sesi",
+				entityId: typeof payload === "object" && payload && "id" in payload ? String(payload.id) : undefined,
+			});
 			await prisma.$transaction(async (tx) => {
 				if (action === "remove")
 					await tx.sesiUjian.delete({ where: { id: String(payload.id) } });
@@ -366,35 +463,17 @@ export const actionLiveSesiServer = createServerFn({ method: "POST" })
 			if (!sesi || (caller.role !== "super_admin" && !(await operatorCanTouchUjian(caller, sesi.ujianId)))) {
 				return { ok: false as const, error: "Forbidden" };
 			}
+			await requireAuditLog({ userId: caller.id, userRole: caller.role, action: `sesi.${data.action}`, entity: "sesi", entityId: data.sesiId });
 			if (data.action === "forceSubmit") {
 				if (sesi.status === "selesai") return { ok: true as const };
-				// Grade server-side so a forced submit stores the same authoritative score as a normal submit.
-				const row = await prisma.sesiUjian.findUnique({ where: { id: data.sesiId } });
-				if (row) {
-					const scored = await gradeSesiServerSide(mapSesi(row));
-					await prisma.sesiUjian.update({
-						where: { id: data.sesiId },
-						data: {
-							status: "selesai",
-							selesaiAt: BigInt(Date.now()),
-							jawaban: stringifyJson(scored.jawaban),
-							skorTotal: scored.skorTotal ?? null,
-							maxSkor: scored.maxSkor ?? null,
-						},
-					});
-				} else {
-					await prisma.sesiUjian.update({
-						where: { id: data.sesiId },
-						data: { status: "selesai", selesaiAt: BigInt(Date.now()) },
-					});
-				}
+				const closed = await closeSedangSesiWithServerGrade(data.sesiId);
+				if (!closed) return { ok: false as const, error: "Gagal mengumpulkan sesi." };
 			} else {
 				await prisma.sesiUjian.update({
 					where: { id: data.sesiId },
 					data: { pelanggaran: 0 },
 				});
 			}
-			void writeAuditLog({ userId: caller.id, userRole: caller.role, action: `sesi.${data.action}`, entity: "sesi", entityId: data.sesiId });
 			return { ok: true as const };
 		} catch (err) {
 			return { ok: false as const, error: err instanceof Error ? err.message : String(err) };
@@ -411,9 +490,14 @@ export const getLiveOnlineSesis = createServerFn({ method: "GET" }).handler(
 		});
 		// ponytail: super_admin sees all live sessions; operators only see ujian they can touch.
 		// If operator-all-read is intended by design, drop this filter.
-		const scoped: typeof rows = [];
-		for (const r of rows) {
-			if (caller.role === "super_admin" || await operatorCanTouchUjian(caller, r.ujianId)) scoped.push(r);
+		let scoped = rows;
+		if (caller.role !== "super_admin") {
+			const ujianIds = [...new Set(rows.map((r) => r.ujianId))];
+			const canTouchEntries = await Promise.all(
+				ujianIds.map(async (ujianId) => [ujianId, await operatorCanTouchUjian(caller, ujianId)] as const),
+			);
+			const canTouch = new Map(canTouchEntries);
+			scoped = rows.filter((r) => canTouch.get(r.ujianId));
 		}
 		return scoped.map((r: any) => {
 			const soalIds = parseJson<string[]>(r.soalIds, []);

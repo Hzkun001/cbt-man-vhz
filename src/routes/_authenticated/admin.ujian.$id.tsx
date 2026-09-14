@@ -426,6 +426,7 @@ function UjianEditor() {
         onOpenChange={setDeleteOpen}
         title="Hapus Ujian"
         description={`Yakin ingin menghapus ujian "${u.nama}" beserta seluruh data yang terkait?`}
+        confirmLabel="Hapus"
         onConfirm={hapus}
       />
 

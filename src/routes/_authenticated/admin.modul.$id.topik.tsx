@@ -46,7 +46,7 @@ function TopikPage() {
     setNama(""); setTopiks(filterMine(topikRepo.all())); toast.success("Topik ditambahkan");
   }
 
-  function remove(id: string) {
+  async function remove(id: string) {
     if (!canEdit) return;
     if (soalRepo.all().some((s) => s.topikId === id)) { toast.error("Hapus soal di topik ini dulu"); return; }
     setDeleteId(id);
@@ -191,6 +191,7 @@ function TopikPage() {
         onOpenChange={(open) => !open && setDeleteId(null)}
         title="Hapus Topik"
         description="Apakah Anda yakin ingin menghapus topik ini secara permanen?"
+        confirmLabel="Hapus"
         onConfirm={confirmDelete}
       />
     </div>

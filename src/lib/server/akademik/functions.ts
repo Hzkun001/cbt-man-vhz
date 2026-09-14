@@ -4,7 +4,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { prisma } from "../db/prisma";
 import { requireCaller, seedIfNeeded } from "../db/auth";
-import { writeAuditLog } from "../db/audit";
+import { requireAuditLog } from "../db/audit";
 import type { UnitAkademik, TahunAkademik, Semester, MataKuliah, PenawaranMataKuliah } from "@/lib/cbt/types";
 import { mapPenawaran } from "../repos/mappers";
 import { compareAndSetMembership } from "@/lib/cbt/penawaran-membership";
@@ -16,9 +16,9 @@ import {
 	PenawaranMataKuliahSchema,
 } from "@/lib/cbt/types";
 
-function audit(caller: any, entity: string, action: string, payload: any) {
+async function audit(caller: any, entity: string, action: string, payload: any) {
 	if (caller) {
-		writeAuditLog({
+		await requireAuditLog({
 			userId: caller.id,
 			userRole: caller.role,
 			action: `${entity}.${action}`,
@@ -28,7 +28,7 @@ function audit(caller: any, entity: string, action: string, payload: any) {
 					? String((payload as { id?: unknown }).id ?? "")
 					: undefined,
 			details: JSON.stringify({ entity, action, hasPayload: !!payload }),
-		}).catch(() => undefined);
+		});
 	}
 }
 
@@ -58,8 +58,9 @@ export const mutateUnitAkademikServer = createServerFn({ method: "POST" })
 	.handler(async ({ data }) => {
 		const caller = await requireSuperAdmin();
 		if (!caller) return { ok: false as const, error: "Akses ditolak: Hanya Super Admin yang diizinkan." };
-		const { action, payload } = data;
 		try {
+			const { action, payload } = data;
+			await audit(caller, "unitAkademik", action, payload);
 			if (action === "upsert") {
 				const item = payload as UnitAkademik;
 				await prisma.unitAkademik.upsert({
@@ -105,8 +106,6 @@ export const mutateUnitAkademikServer = createServerFn({ method: "POST" })
 
 				await prisma.unitAkademik.delete({ where: { id } });
 			}
-			audit(caller, "unitAkademik", action, payload);
-
 			return { ok: true as const };
 		} catch (e: any) {
 			console.error("[mutateUnitAkademikServer] Error:", e);
@@ -133,6 +132,7 @@ export const mutateTahunAkademikServer = createServerFn({ method: "POST" })
 			const caller = await requireSuperAdmin();
 			if (!caller) return { ok: false as const, error: "Akses ditolak: Hanya Super Admin yang diizinkan." };
 			const { action, payload } = data;
+			await audit(caller, "tahunAkademik", action, payload);
 
 			if (action === "upsert") {
 				const item = payload as TahunAkademik;
@@ -166,7 +166,6 @@ export const mutateTahunAkademikServer = createServerFn({ method: "POST" })
 				}
 				await prisma.tahunAkademik.delete({ where: { id } }).catch(() => {});
 			}
-			audit(caller, "tahunAkademik", action, payload);
 			return { ok: true as const };
 		} catch (e: any) {
 			console.error("[mutateTahunAkademikServer] Error:", e);
@@ -193,6 +192,7 @@ export const mutateSemesterServer = createServerFn({ method: "POST" })
 			const caller = await requireSuperAdmin();
 			if (!caller) return { ok: false as const, error: "Akses ditolak: Hanya Super Admin yang diizinkan." };
 			const { action, payload } = data;
+			await audit(caller, "semester", action, payload);
 
 			if (action === "upsert") {
 				const item = payload as Semester;
@@ -213,7 +213,6 @@ export const mutateSemesterServer = createServerFn({ method: "POST" })
 				}
 				await prisma.semester.delete({ where: { id } }).catch(() => {});
 			}
-			audit(caller, "semester", action, payload);
 			return { ok: true as const };
 		} catch (e: any) {
 			console.error("[mutateSemesterServer] Error:", e);
@@ -240,6 +239,7 @@ export const mutateMataKuliahServer = createServerFn({ method: "POST" })
 			const caller = await requireSuperAdmin();
 			if (!caller) return { ok: false as const, error: "Akses ditolak: Hanya Super Admin yang diizinkan." };
 			const { action, payload } = data;
+			await audit(caller, "mataKuliah", action, payload);
 
 			if (action === "upsert") {
 				const item = payload as MataKuliah;
@@ -272,7 +272,6 @@ export const mutateMataKuliahServer = createServerFn({ method: "POST" })
 				}
 				await prisma.mataKuliah.delete({ where: { id } }).catch(() => {});
 			}
-			audit(caller, "mataKuliah", action, payload);
 			return { ok: true as const };
 		} catch (e: any) {
 			console.error("[mutateMataKuliahServer] Error:", e);
@@ -291,6 +290,7 @@ export const mutatePenawaranMataKuliahServer = createServerFn({ method: "POST" }
 		try {
 			const caller = await requireSuperAdmin();
 			if (!caller) return { ok: false as const, error: "Akses ditolak: Hanya Super Admin yang diizinkan." };
+			await audit(caller, "penawaranMataKuliah", data.action, data.payload);
 			if (data.action === "upsert") {
 				const item = data.payload as PenawaranMataKuliah;
 				const lockedExam = await prisma.ujian.findFirst({
@@ -317,7 +317,6 @@ export const mutatePenawaranMataKuliahServer = createServerFn({ method: "POST" }
 				if (used) return { ok: false as const, error: "Penawaran tidak dapat dihapus karena masih digunakan paket ujian." };
 				await prisma.penawaranMataKuliah.delete({ where: { id: data.payload.id } });
 			}
-			audit(caller, "penawaranMataKuliah", data.action, data.payload);
 			return { ok: true as const };
 		} catch (error) {
 			console.error("[mutatePenawaranMataKuliahServer]", error);
@@ -362,6 +361,7 @@ export const mutatePenawaranMembershipServer = createServerFn({ method: "POST" }
 		const caller = await requireSuperAdmin();
 		if (!caller) return { ok: false as const, error: "Akses ditolak: Hanya Super Admin yang diizinkan." };
 		try {
+			await audit(caller, "penawaran", "membership", data);
 			const row = await prisma.$transaction((tx) => compareAndSetMembership(
 				async () => (await tx.penawaranMataKuliah.updateMany({
 					where: {
@@ -379,7 +379,6 @@ export const mutatePenawaranMembershipServer = createServerFn({ method: "POST" }
 			if (!row) {
 				return { ok: false as const, error: "Data anggota telah berubah. Muat ulang lalu coba lagi." };
 			}
-			audit(caller, "penawaran", "membership", data);
 			return { ok: true as const, penawaran: mapPenawaran(row) };
 		} catch {
 			return { ok: false as const, error: "Gagal memperbarui anggota kelas mata kuliah." };

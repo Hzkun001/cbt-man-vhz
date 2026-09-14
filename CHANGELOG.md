@@ -8,6 +8,110 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Security
+
+- Seed demo di image production tidak lagi memaksa `NODE_ENV=development`; `SEED_DEMO=true` tetap mengisi dataset demo penuh dan mewajibkan `ADMIN_PASSWORD` (#150).
+
+### Deprecated
+
+### Removed
+
+## [0.1.2] - 2026-09-13
+
+Patch setelah sisa F-06, F-10, F-16, F-18, F-21, F-22, dan WAL merapat ke `main`. Ini **bukan** klaim siap produksi.
+
+Yang dikerjakan sejak `v0.1.1`:
+
+- **#154 / #172** — freeze acceptance baseline `v0.1.1` di PRD dan tasks (F-21).
+- **#150 / #173** — tolak unggah file tersimpan di atas 10 MB (F-16).
+- **#155 / #174** — snapshot mahasiswa tanpa seluruh bank soal (F-06).
+- **#159 / #175** — SQLite `WAL` dan `busy_timeout=5000` (bukan hop PostgreSQL).
+- **#155 / #176** — kontrak kolom JSON `String` untuk v0.1.x (F-18).
+- **#156 / #177** — kunci sesi setelah pindah tab, cabut session, audit tanpa isi jawaban (F-22 / F-24 / F-25).
+- **#154 / #178** — smoke Playwright landing publik di CI (F-10).
+
+Sengaja belum masuk: hop PostgreSQL, lazy snapshot admin/operator, F-02 `npm audit`, F-12 `z.any()`, F-11 seed Dockerfile.
+
+### Added
+
+- Tambahkan smoke Playwright landing publik di CI setelah build (#154, #178).
+
+### Changed
+
+- Catat kontrak kolom JSON `String` untuk v0.1.x; normalisasi ditunda ke migrasi additive (#155, #176).
+- Bekukan acceptance baseline `v0.1.1` di PRD dan tasks: yang sudah diterima vs yang sengaja belum masuk (#154, #172).
+
+### Fixed
+
+- Aktifkan SQLite `WAL` dan `busy_timeout=5000` pada Prisma jika `DATABASE_URL` berawalan `file:` (#159, #175).
+- Muat snapshot mahasiswa tanpa seluruh bank soal: hanya soal+jawaban yang dirujuk sesi peserta (#155, #174).
+
+### Security
+
+- Catat pindah tab di kerjakan, kunci sesi setelah `maxPindahTab`, cabut session, dan audit tanpa isi jawaban (#156, #177).
+- Tolak unggah file tersimpan di atas 10 MB setelah decode, sebelum ditulis ke disk (#150, #173).
+
+### Deprecated
+
+### Removed
+
+## [0.1.1] - 2026-09-13
+
+Patch snapshot setelah antrian audit #150–#156 dan keputusan mesin #159 merapat ke `main`. Ini **bukan** klaim siap produksi.
+
+Yang dikerjakan sejak `v0.1.0`:
+
+- **#153 / #160** — jejak audit, restore/reset satu alur, readiness tanpa membocorkan dependensi, metadata `jurusanId` pada backup.
+- **#151 / #163** — dialog konfirmasi admin yang dapat diakses; `aria-label` pada toolbar ikon RichEditor (F-17).
+- **#152 / #164** — ambang login gagal 5 percobaan / 10 menit; kuota hanya bertambah setelah gagal (F-03).
+- **#150 / #165** — baca file langsung operator ter-scope jurusan dan topik/mata kuliah (F-08).
+- **#151 / #166** — rollback cache (dan UI bila belum ada edit baru) segera setelah autosave peserta gagal (F-14).
+- **#154 / #167** — ignore `.zed/`, `scratch/`, `data/uploads/`; cabut media lokal yang sempat ter-commit (F-01).
+- **#155 / #168** — monitor live menyelesaikan `operatorCanTouchUjian` sekali per ujian unik (F-15).
+- **#156 / #169** — batalkan copy/cut/paste/klik kanan di halaman kerjakan bila `blokirShortcut` (F-23).
+- **#159 / #170** — README: SQLite single-node sekarang; target berikutnya PostgreSQL, bukan MySQL.
+
+Sengaja belum masuk: snapshot penuh (F-06), normalisasi JSON (F-18), Playwright (F-10), freeze PRD (F-21), alarm/force-logout ujian (F-22/F-24/F-25), hop PostgreSQL, pengukuran WAL, dan beberapa batas upload/audit dependensi.
+
+### Added
+
+### Changed
+
+- Catat keputusan persistensi: SQLite single-node untuk production sekarang; target client/server berikutnya PostgreSQL, bukan MySQL (#159, #170).
+
+### Fixed
+
+- Batalkan copy, cut, paste, dan menu klik kanan di halaman kerjakan saat sesi `sedang` dan `blokirShortcut` aktif (#156, #169).
+- Batch pemeriksaan scope operator pada monitor live sekali per ujian unik, bukan per sesi aktif (#155, #168).
+- Abaikan `.zed/`, `scratch/`, dan `data/uploads/` di working tree, dan cabut media lokal yang sempat ter-commit (#154, #167).
+- Kembalikan potongan sesi cache (dan UI bila belum ada edit baru) segera setelah autosave peserta gagal, tanpa menunggu hydrate penuh (#151, #166).
+- Ganti konfirmasi destruktif admin dari `confirm()` native ke dialog bersama yang dapat diakses, dan tambahkan `aria-label` pada toolbar ikon RichEditor (#151, #163).
+- Jangan hapus cookie logout bila sesi server gagal dihapus; audit mutation pengguna wajib; baca media tidak diblokir lock restore; cleanup folder restore bersifat best-effort (#153, #160).
+- Catat keberhasilan restore/reset dalam transaksi yang sama dan batasi respons readiness publik tanpa detail dependensi (#153, #160).
+- Jadikan restore database dan media satu alur yang tervalidasi, menghapus media stale, dan mengembalikan folder lama saat promosi gagal (#153, #160).
+- Lindungi mutation audit, token, sesi, pengguna, akademik, modul, dan ujian dengan audit precondition yang eksplisit (#153, #160).
+
+### Security
+
+- Terapkan scope jurusan dan topik/mata kuliah pada pembacaan file langsung operator, sama seperti daftar file dan operasi server lain (#150, #165).
+- Batasi login gagal menjadi 5 percobaan per 10 menit dan hanya catat kegagalan, bukan percobaan yang masih dicek atau yang berhasil (#152, #164).
+- Pertahankan metadata `jurusanId` saat backup/restore, serialisasi operasi file, dan cadangkan ekstensi `.json` untuk metadata internal (#153, #160).
+
+### Deprecated
+
+### Removed
+
+## [0.1.0] - 2026-09-10
+
+Rilis awal: snapshot bertanda dari `main`, bukan klaim siap produksi. Issue audit #150–#156 masih terbuka.
+
+### Added
+
+- Tambahkan cuplikan layar landing, login, dasbor admin, paket ujian, bank soal, dan portal peserta pada README (#157).
 - Tambahkan aturan satu PR aktif per kontributor dan penggunaan CodeRabbit pada head final untuk mengurangi fragmentasi review (#146).
 - Tambahkan pilihan font SN Pro atau font sistem serta tema Neumorphism pada halaman Pengaturan admin (diekstrak dari #104).
 - Tambahkan pedoman kontribusi, instruksi agen AI, dan template pull request untuk menjaga perubahan tetap fokus, tervalidasi, dan aman.
@@ -39,6 +143,7 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Security
 
+- Perbarui dependensi sanitizer, import Word, dan build melalui lockfile; gunakan override `deepmerge-ts@8.0.0` khusus `@prisma/config@6.19.3` untuk menutup GHSA-ggr8-5vv4-36mx tanpa mengganti versi Prisma. Override perlu ditinjau ulang ketika Prisma diperbarui; sertakan tes objek melingkar dan pemuatan konfigurasi.
 - Wajibkan `ADMIN_PASSWORD` saat seed production agar akun admin tidak dibuat dengan password acak yang tidak dapat dipulihkan operator (#144).
 - Sembunyikan kredensial akun demo dari halaman login admin pada build production (#143).
 - Hapus endpoint daftar ujian penuh yang tidak digunakan agar tidak menjadi permukaan baca di luar scope operator (#142).
@@ -66,3 +171,8 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 - Gunakan kalimat singkat, berorientasi dampak, dan sertakan nomor PR/issue bila tersedia: `- Perbaiki ... (#123)`.
 - Jangan mencatat formatting/refactor internal murni kecuali perilaku atau risiko operasional ikut berubah.
 - Saat membuat rilis, pindahkan item `Unreleased` ke heading versi bertanggal, misalnya `## [1.2.0] - 2026-08-09`.
+
+[Unreleased]: https://github.com/mannnrachman/cbt-man/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/mannnrachman/cbt-man/releases/tag/v0.1.2
+[0.1.1]: https://github.com/mannnrachman/cbt-man/releases/tag/v0.1.1
+[0.1.0]: https://github.com/mannnrachman/cbt-man/releases/tag/v0.1.0

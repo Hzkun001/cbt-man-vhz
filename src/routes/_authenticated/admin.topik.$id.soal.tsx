@@ -327,6 +327,7 @@ function SoalPage() {
         onOpenChange={(open) => !open && setDeleteId(null)}
         title="Hapus Soal"
         description="Apakah Anda yakin ingin menghapus soal ini secara permanen?"
+        confirmLabel="Hapus"
         onConfirm={confirmDelete}
       />
       <ConfirmDialog
@@ -334,6 +335,7 @@ function SoalPage() {
         onOpenChange={setBulkDeleteOpen}
         title="Hapus Soal Terpilih"
         description={`Apakah Anda yakin ingin menghapus ${selectedIds.length} soal terpilih secara permanen?`}
+        confirmLabel="Hapus"
         onConfirm={confirmBulkDelete}
       />
     </AdminPage>

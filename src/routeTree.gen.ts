@@ -13,6 +13,7 @@ import { Route as LoginAdminRouteImport } from './routes/login-admin'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiHealthRouteImport } from './routes/api.health'
 import { Route as AuthenticatedPesertaRouteImport } from './routes/_authenticated/peserta'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedPesertaIndexRouteImport } from './routes/_authenticated/peserta.index'
@@ -25,6 +26,7 @@ import { Route as AuthenticatedAdminPengaturanRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminPanduanRouteImport } from './routes/_authenticated/admin.panduan'
 import { Route as AuthenticatedAdminModulRouteImport } from './routes/_authenticated/admin.modul'
 import { Route as AuthenticatedAdminFilesRouteImport } from './routes/_authenticated/admin.files'
+import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin.audit'
 import { Route as AuthenticatedAdminAkademikRouteImport } from './routes/_authenticated/admin.akademik'
 import { Route as AuthenticatedAdminPesertaIndexRouteImport } from './routes/_authenticated/admin.peserta.index'
 import { Route as AuthenticatedAdminLeaderboardIndexRouteImport } from './routes/_authenticated/admin.leaderboard.index'
@@ -72,6 +74,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHealthRoute = ApiHealthRouteImport.update({
+  id: '/api/health',
+  path: '/api/health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedPesertaRoute = AuthenticatedPesertaRouteImport.update({
@@ -135,6 +142,11 @@ const AuthenticatedAdminModulRoute = AuthenticatedAdminModulRouteImport.update({
 const AuthenticatedAdminFilesRoute = AuthenticatedAdminFilesRouteImport.update({
   id: '/files',
   path: '/files',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminAuditRoute = AuthenticatedAdminAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
 const AuthenticatedAdminAkademikRoute =
@@ -318,7 +330,9 @@ export interface FileRoutesByFullPath {
   '/login-admin': typeof LoginAdminRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/peserta': typeof AuthenticatedPesertaRouteWithChildren
+  '/api/health': typeof ApiHealthRoute
   '/admin/akademik': typeof AuthenticatedAdminAkademikRouteWithChildren
+  '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/files': typeof AuthenticatedAdminFilesRoute
   '/admin/modul': typeof AuthenticatedAdminModulRouteWithChildren
   '/admin/panduan': typeof AuthenticatedAdminPanduanRoute
@@ -362,6 +376,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/login-admin': typeof LoginAdminRoute
+  '/api/health': typeof ApiHealthRoute
+  '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/files': typeof AuthenticatedAdminFilesRoute
   '/admin/modul': typeof AuthenticatedAdminModulRouteWithChildren
   '/admin/panduan': typeof AuthenticatedAdminPanduanRoute
@@ -409,7 +425,9 @@ export interface FileRoutesById {
   '/login-admin': typeof LoginAdminRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/peserta': typeof AuthenticatedPesertaRouteWithChildren
+  '/api/health': typeof ApiHealthRoute
   '/_authenticated/admin/akademik': typeof AuthenticatedAdminAkademikRouteWithChildren
+  '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/_authenticated/admin/files': typeof AuthenticatedAdminFilesRoute
   '/_authenticated/admin/modul': typeof AuthenticatedAdminModulRouteWithChildren
   '/_authenticated/admin/panduan': typeof AuthenticatedAdminPanduanRoute
@@ -457,7 +475,9 @@ export interface FileRouteTypes {
     | '/login-admin'
     | '/admin'
     | '/peserta'
+    | '/api/health'
     | '/admin/akademik'
+    | '/admin/audit'
     | '/admin/files'
     | '/admin/modul'
     | '/admin/panduan'
@@ -501,6 +521,8 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/login-admin'
+    | '/api/health'
+    | '/admin/audit'
     | '/admin/files'
     | '/admin/modul'
     | '/admin/panduan'
@@ -547,7 +569,9 @@ export interface FileRouteTypes {
     | '/login-admin'
     | '/_authenticated/admin'
     | '/_authenticated/peserta'
+    | '/api/health'
     | '/_authenticated/admin/akademik'
+    | '/_authenticated/admin/audit'
     | '/_authenticated/admin/files'
     | '/_authenticated/admin/modul'
     | '/_authenticated/admin/panduan'
@@ -593,6 +617,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
   LoginAdminRoute: typeof LoginAdminRoute
+  ApiHealthRoute: typeof ApiHealthRoute
   ApiFilesIdRoute: typeof ApiFilesIdRoute
 }
 
@@ -624,6 +649,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/health': {
+      id: '/api/health'
+      path: '/api/health'
+      fullPath: '/api/health'
+      preLoaderRoute: typeof ApiHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/peserta': {
@@ -708,6 +740,13 @@ declare module '@tanstack/react-router' {
       path: '/files'
       fullPath: '/admin/files'
       preLoaderRoute: typeof AuthenticatedAdminFilesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/audit': {
+      id: '/_authenticated/admin/audit'
+      path: '/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AuthenticatedAdminAuditRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/akademik': {
@@ -1008,6 +1047,7 @@ const AuthenticatedAdminUsersRouteWithChildren =
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAkademikRoute: typeof AuthenticatedAdminAkademikRouteWithChildren
+  AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
   AuthenticatedAdminFilesRoute: typeof AuthenticatedAdminFilesRoute
   AuthenticatedAdminModulRoute: typeof AuthenticatedAdminModulRouteWithChildren
   AuthenticatedAdminPanduanRoute: typeof AuthenticatedAdminPanduanRoute
@@ -1033,6 +1073,7 @@ interface AuthenticatedAdminRouteChildren {
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAkademikRoute: AuthenticatedAdminAkademikRouteWithChildren,
+  AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
   AuthenticatedAdminFilesRoute: AuthenticatedAdminFilesRoute,
   AuthenticatedAdminModulRoute: AuthenticatedAdminModulRouteWithChildren,
   AuthenticatedAdminPanduanRoute: AuthenticatedAdminPanduanRoute,
@@ -1099,6 +1140,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
   LoginAdminRoute: LoginAdminRoute,
+  ApiHealthRoute: ApiHealthRoute,
   ApiFilesIdRoute: ApiFilesIdRoute,
 }
 export const routeTree = rootRouteImport
