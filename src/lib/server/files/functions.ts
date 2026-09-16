@@ -17,6 +17,8 @@ import type { UserRow } from "@/lib/server/repos/mappers";
 const uploadsDir = ["data", "uploads"] as const;
 /** Decoded payload cap for `uploadStoredFile` only. Restore/import of existing backups is not gated. */
 const MAX_STORED_FILE_BYTES = 10 * 1024 * 1024;
+export const MAX_FILE_BYTES = MAX_STORED_FILE_BYTES;
+export const MAX_STORAGE_BYTES = 500 * 1024 * 1024;
 const DEFAULT_OPERATOR_ROLE_ACCESS: NavKey[] = [
   "dashboard",
   "peserta",
@@ -49,17 +51,78 @@ const fileSchema = z.object({
   jurusanId: z.string().optional(),
 });
 
+const ALLOWED_FILE_EXTENSIONS: Record<string, readonly string[]> = {
+  "image/jpeg": [".jpg", ".jpeg"],
+  "image/png": [".png"],
+  "image/gif": [".gif"],
+  "image/webp": [".webp"],
+  "audio/mpeg": [".mp3"],
+  "audio/wav": [".wav"],
+  "audio/ogg": [".ogg"],
+  "audio/webm": [".webm"],
+  "audio/mp4": [".m4a", ".mp4"],
+};
+const ALLOWED_FILE_MIMES = Object.keys(ALLOWED_FILE_EXTENSIONS) as [string, ...string[]];
+const BASE64_PATTERN = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+
+function decodedBase64Size(value: string): number {
+  if (!BASE64_PATTERN.test(value)) return -1;
+  const padding = value.endsWith("==") ? 2 : value.endsWith("=") ? 1 : 0;
+  return (value.length / 4) * 3 - padding;
+}
+
+function extensionFromName(name: string): string {
+  return /\.[^.]+$/.exec(name)?.[0].toLowerCase() ?? "";
+}
+
+function validateMediaFile(
+  item: { name: string; mime: string; dataBase64: string; extension?: string; size?: number },
+  ctx: z.RefinementCtx,
+): void {
+  const decodedSize = decodedBase64Size(item.dataBase64);
+  if (decodedSize < 0) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["dataBase64"], message: "Data file bukan base64 yang valid" });
+    return;
+  }
+  if (decodedSize > MAX_FILE_BYTES) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["dataBase64"], message: `Ukuran file maksimal ${MAX_FILE_BYTES} byte` });
+  }
+  if (item.size !== undefined && decodedSize !== item.size) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["size"], message: "Ukuran file tidak sesuai isi" });
+  }
+  const extension = (item.extension ?? extensionFromName(item.name)).toLowerCase();
+  if (!ALLOWED_FILE_EXTENSIONS[item.mime]?.includes(extension)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["mime"], message: "Tipe dan ekstensi file tidak diizinkan" });
+  }
+}
+
+const fileNameSchema = z.string().trim().min(1).max(255)
+  .refine((name) => !/[\\/\0]/.test(name), "Nama file tidak valid");
+
+const uploadFileSchema = z.object({
+  name: fileNameSchema,
+  mime: z.enum(ALLOWED_FILE_MIMES),
+  dataBase64: z.string().min(1),
+  jurusanId: z.string().min(1).optional(),
+}).superRefine(validateMediaFile);
+
 export const fileBackupSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  mime: z.string(),
-  size: z.number(),
-  createdAt: z.number(),
-  extension: z.string(),
-  dataBase64: z.string(),
-  jurusanId: z.string().optional(),
-});
+  id: z.string().regex(/^[A-Za-z0-9_-]+$/),
+  name: fileNameSchema,
+  mime: z.enum(ALLOWED_FILE_MIMES),
+  size: z.number().int().nonnegative(),
+  createdAt: z.number().finite(),
+  extension: z.string().regex(/^\.[A-Za-z0-9]{1,16}$/),
+  dataBase64: z.string().min(1),
+  jurusanId: z.string().min(1).optional(),
+}).superRefine(validateMediaFile);
 export type FileBackup = z.infer<typeof fileBackupSchema>;
+
+const importFilesSchema = z.array(fileBackupSchema).max(5000).superRefine((items, ctx) => {
+  if (items.reduce((total, item) => total + item.size, 0) > MAX_STORAGE_BYTES) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Kuota penyimpanan maksimal ${MAX_STORAGE_BYTES} byte` });
+  }
+});
 
 type FileLockWaiter = { exclusive: boolean; resolve: () => void };
 
@@ -353,23 +416,20 @@ export const listStoredFiles = createServerFn({ method: "GET" }).handler(async (
 });
 
 export const uploadStoredFile = createServerFn({ method: "POST" })
-  .validator(
-    z.object({
-      name: z.string().min(1),
-      mime: z.string().min(1),
-      dataBase64: z.string().min(1),
-      jurusanId: z.string().optional(),
-    }),
-  )
+  .validator(uploadFileSchema)
   .handler(async ({ data }) => {
     const auth = await requireFileManagerAccess();
     if (!auth.ok) throw new Error(auth.error);
 
     return withFileOperationLock(async () => {
+      const currentBytes = (await listMetas()).reduce((total, file) => total + file.size, 0);
+      if (currentBytes + decodedBase64Size(data.dataBase64) > MAX_STORAGE_BYTES) {
+        throw new Error(`Kuota penyimpanan maksimal ${MAX_STORAGE_BYTES} byte`);
+      }
       await ensureUploadsDir();
       const [{ extname }, { writeFile }] = await Promise.all([pathApi(), fsApi()]);
       const id = uid("f_");
-      const extension = extname(data.name).slice(0, 16);
+      const extension = extname(data.name).toLowerCase();
       if (extension.toLowerCase() === ".json") throw new Error("Ekstensi .json dicadangkan untuk metadata file");
       const buffer = Buffer.from(data.dataBase64, "base64");
       if (buffer.byteLength > MAX_STORED_FILE_BYTES) {
@@ -527,7 +587,7 @@ export async function finalizeFileRestore(plan: FileRestorePlan): Promise<void> 
 }
 
 export const importFilesServer = createServerFn({ method: "POST" })
-  .validator(z.array(fileBackupSchema))
+  .validator(importFilesSchema)
   .handler(async ({ data }) => {
     const auth = await requireAdmin();
     if (!auth.ok) return { ok: false as const, error: auth.error };

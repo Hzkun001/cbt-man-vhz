@@ -6,6 +6,7 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: file:/app/data/cbt.db
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:?set ADMIN_PASSWORD for production}"
       SEED_DEMO: "${SEED_DEMO:-false}"
       SESSION_COOKIE_SECURE: "${SESSION_COOKIE_SECURE:-true}"
     volumes:

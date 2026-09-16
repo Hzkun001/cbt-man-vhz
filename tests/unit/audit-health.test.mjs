@@ -70,6 +70,11 @@ test("restore and reset roll back when their completion audit fails", async () =
         return { ok: false, error: "Audit failed" };
       } },
       "../db/json": { stringifyJson: JSON.stringify },
+      "@/lib/cbt/types": Object.fromEntries([
+        "ConfigSchema", "MataKuliahSchema", "ModulSchema", "PenawaranMataKuliahSchema",
+        "SesiUjianSchema", "SoalSchema", "TokenClaimSchema", "TokenUjianSchema",
+        "TopikSchema", "UnitAkademikSchema", "UjianSchema", "UserSchema",
+      ].map((name) => [name, z.any()])),
       "../files/functions": {
         fileBackupSchema: z.object({}),
         withFileOperationLock: (run) => run(),

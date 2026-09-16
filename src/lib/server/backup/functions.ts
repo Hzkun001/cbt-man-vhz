@@ -11,28 +11,42 @@ import {
 	stageFileRestore,
 	withFileOperationLock,
 } from "../files/functions";
+import {
+	ConfigSchema,
+	MataKuliahSchema,
+	ModulSchema,
+	PenawaranMataKuliahSchema,
+	SesiUjianSchema,
+	SoalSchema,
+	TokenClaimSchema,
+	TokenUjianSchema,
+	TopikSchema,
+	UnitAkademikSchema,
+	UjianSchema,
+	UserSchema,
+} from "@/lib/cbt/types";
 import type { User, UnitAkademik, MataKuliah, PenawaranMataKuliah, Modul, Topik, Soal, Ujian, TokenUjian, TokenClaim, SesiUjian, AppConfig } from "@/lib/cbt/types";
 
 import { stringifyJson, toBigInt } from "../db/json";
 
+const backupImportSchema = z.object({
+	users: z.array(UserSchema),
+	unitAkademik: z.array(UnitAkademikSchema),
+	mataKuliah: z.array(MataKuliahSchema),
+	modul: z.array(ModulSchema),
+	topik: z.array(TopikSchema),
+	soal: z.array(SoalSchema),
+	ujian: z.array(UjianSchema),
+	penawaran: z.array(PenawaranMataKuliahSchema).default([]),
+	token: z.array(TokenUjianSchema),
+	tokenClaims: z.array(TokenClaimSchema).default([]),
+	sesi: z.array(SesiUjianSchema),
+	config: ConfigSchema,
+	files: z.array(fileBackupSchema).optional(),
+}).strict();
+
 export const importBackupServer = createServerFn({ method: "POST" })
-	.validator(
-		z.object({
-			users: z.array(z.any()),
-			unitAkademik: z.array(z.any()),
-			mataKuliah: z.array(z.any()),
-			modul: z.array(z.any()),
-			topik: z.array(z.any()),
-			soal: z.array(z.any()),
-			ujian: z.array(z.any()),
-			penawaran: z.array(z.any()).default([]),
-			token: z.array(z.any()),
-			tokenClaims: z.array(z.any()).default([]),
-			sesi: z.array(z.any()),
-			config: z.any(),
-			files: z.array(fileBackupSchema).optional(),
-		}),
-	)
+	.validator(backupImportSchema)
 	.handler(async ({ data }) => {
 		const auth = await requireAdminResult();
 		if (!auth.ok) return { ok: false as const, error: auth.error };
