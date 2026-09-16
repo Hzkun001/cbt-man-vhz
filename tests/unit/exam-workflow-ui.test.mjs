@@ -13,6 +13,22 @@ test("exam list exposes class assignment and lifecycle status", () => {
   assert.match(route, /u\.status === "published"/);
 });
 
+test("file drive exposes jurusan buckets and date sorting", () => {
+  const route = read("src/routes/_authenticated/admin.files.tsx");
+  const filesServer = read("src/lib/server/files/functions.ts");
+  assert.match(route, /Bucket penyimpanan/);
+  assert.match(route, /Buat Bucket/);
+  assert.match(route, /tipe: "kategori_bebas"/);
+  assert.match(route, /u\.tipe === "jurusan" \|\| u\.tipe === "prodi"/);
+  assert.match(route, /Paling baru/);
+  assert.match(route, /Paling lama/);
+  assert.match(route, /sortOrder === "newest"/);
+  assert.match(route, /bucketCounts\[jurusan\.id\]/);
+  assert.match(route, /putFile\(f, targetJurusan, targetBucketId\)/);
+  assert.match(filesServer, /bucket\.tipe !== "kategori_bebas"/);
+  assert.match(filesServer, /bucketId: data\.bucketId/);
+});
+
 test("unused broad exam-list server endpoint stays removed", () => {
   const server = read("src/lib/server/ujian/functions.ts");
   assert.doesNotMatch(server, /export const getUjiansList/);

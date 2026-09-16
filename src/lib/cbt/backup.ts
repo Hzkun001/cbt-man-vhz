@@ -43,6 +43,7 @@ const FileBackupSchema = z.object({
   extension: z.string(),
   dataBase64: z.string(),
   jurusanId: z.string().optional(),
+  bucketId: z.string().optional(),
 });
 
 export const BackupSchema = z.object({

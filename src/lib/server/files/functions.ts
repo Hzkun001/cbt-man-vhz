@@ -37,6 +37,7 @@ type StoredFileRecord = {
   createdAt: number;
   extension: string;
   jurusanId?: string;
+  bucketId?: string;
 };
 
 const fileSchema = z.object({
@@ -47,6 +48,7 @@ const fileSchema = z.object({
   createdAt: z.number(),
   extension: z.string().default(""),
   jurusanId: z.string().optional(),
+  bucketId: z.string().min(1).optional(),
 });
 
 export const fileBackupSchema = z.object({
@@ -58,6 +60,7 @@ export const fileBackupSchema = z.object({
   extension: z.string(),
   dataBase64: z.string(),
   jurusanId: z.string().optional(),
+  bucketId: z.string().min(1).optional(),
 });
 export type FileBackup = z.infer<typeof fileBackupSchema>;
 
@@ -359,11 +362,25 @@ export const uploadStoredFile = createServerFn({ method: "POST" })
       mime: z.string().min(1),
       dataBase64: z.string().min(1),
       jurusanId: z.string().optional(),
+      bucketId: z.string().min(1).optional(),
     }),
   )
   .handler(async ({ data }) => {
     const auth = await requireFileManagerAccess();
     if (!auth.ok) throw new Error(auth.error);
+
+    let jurusanId = auth.caller.role === "super_admin" ? data.jurusanId : auth.caller.unitId ?? undefined;
+    if (data.bucketId) {
+      const bucket = await prisma.unitAkademik.findUnique({
+        where: { id: data.bucketId },
+        select: { id: true, tipe: true, parentId: true },
+      });
+      if (!bucket || bucket.tipe !== "kategori_bebas") throw new Error("Bucket penyimpanan tidak ditemukan");
+      if (auth.caller.role !== "super_admin" && bucket.parentId !== auth.caller.unitId) {
+        throw new Error("Bucket penyimpanan bukan milik jurusan Anda");
+      }
+      jurusanId = bucket.parentId ?? undefined;
+    }
 
     return withFileOperationLock(async () => {
       await ensureUploadsDir();
@@ -382,7 +399,8 @@ export const uploadStoredFile = createServerFn({ method: "POST" })
         size: buffer.byteLength,
         createdAt: Date.now(),
         extension,
-        jurusanId: auth.caller.role === "super_admin" ? data.jurusanId : auth.caller.unitId ?? undefined,
+        jurusanId,
+        bucketId: data.bucketId,
       };
 
       await writeFile(await filePath(id, extension), buffer);
