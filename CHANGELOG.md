@@ -122,7 +122,10 @@ Rilis awal: snapshot bertanda dari `main`, bukan klaim siap produksi. Issue audi
 
 ### Changed
 
+- Rapikan halaman Peserta Online dengan ringkasan terpisah, daftar sesi yang sejajar, dialog tindakan bertema, serta kosakata pengawasan yang konsisten menggunakan istilah pelanggaran.
 - Rapikan dashboard admin V2 dengan aksen hijau, ringkasan operasional, jadwal terdekat, penyelesaian terbaru, serta antrean koreksi essay; kecualikan draft dari ujian aktif.
+- Selaraskan halaman Data Akademik dengan shell admin, palet warna utama, navigasi yang lebih jelas, dan kartu kelas mata kuliah yang lebih mudah dipahami.
+- Perjelas dashboard admin dengan ringkasan yang dapat dibuka, konteks monitoring per ujian, navigasi mobile yang ramah keyboard, dan kontras tombol yang lebih terbaca.
 
 - Perjelas form pembuatan modul bank soal dan sederhanakan toolbar menjadi search bar saja (#147).
 - Perbarui header dan layout editor paket ujian admin agar menggunakan ruang layar lebih luas serta menampilkan ringkasan total soal; tambahkan akses Kelola Token untuk semua status ujian, render nested route token, dan rapikan halaman token (#130).
@@ -145,6 +148,7 @@ Rilis awal: snapshot bertanda dari `main`, bukan klaim siap produksi. Issue audi
 
 - Perbarui dependensi sanitizer, import Word, dan build melalui lockfile; gunakan override `deepmerge-ts@8.0.0` khusus `@prisma/config@6.19.3` untuk menutup GHSA-ggr8-5vv4-36mx tanpa mengganti versi Prisma. Override perlu ditinjau ulang ketika Prisma diperbarui; sertakan tes objek melingkar dan pemuatan konfigurasi.
 - Wajibkan `ADMIN_PASSWORD` saat seed production agar akun admin tidak dibuat dengan password acak yang tidak dapat dipulihkan operator (#144).
+- Perketat validasi mutation server, scope akses file operator, batas ukuran/quota upload, dan default production (#150).
 - Sembunyikan kredensial akun demo dari halaman login admin pada build production (#143).
 - Hapus endpoint daftar ujian penuh yang tidak digunakan agar tidak menjadi permukaan baca di luar scope operator (#142).
 - Perbarui SheetJS ke 0.20.3 untuk menutup prototype pollution dan ReDoS saat membaca file Excel buatan khusus (#141).
