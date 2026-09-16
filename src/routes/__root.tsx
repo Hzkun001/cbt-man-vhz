@@ -37,6 +37,7 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const showDetails = import.meta.env.DEV;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -47,6 +48,16 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <p className="mt-2 text-sm text-muted-foreground">
           Something went wrong on our end. You can try refreshing or head back home.
         </p>
+        {showDetails && (
+          <details open className="mt-5 text-left">
+            <summary className="cursor-pointer text-sm font-medium text-foreground">
+              Detail error (development)
+            </summary>
+            <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border border-destructive/30 bg-destructive/5 p-3 text-left text-xs text-destructive">
+              {error?.stack ?? error?.message ?? String(error)}
+            </pre>
+          </details>
+        )}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             type="button"
