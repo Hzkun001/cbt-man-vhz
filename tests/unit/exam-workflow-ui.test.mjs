@@ -99,12 +99,33 @@ test("leaderboard pages use the full admin layout and scroll wide tables", () =>
   const index = read("src/routes/_authenticated/admin.leaderboard.index.tsx");
   const detail = read("src/routes/_authenticated/admin.leaderboard.$id.tsx");
 
-  assert.match(index, /<AdminPage className="w-full pb-20">/);
+  assert.match(index, /<AdminPage className="pb-12">/);
   assert.doesNotMatch(index, /max-w-4xl/);
-  assert.match(detail, /<AdminPage className="w-full pb-12">/);
-  assert.match(detail, /<Card className="w-full">/);
+  assert.match(detail, /<AdminPage className="pb-12">/);
+  assert.match(detail, /<AdminPageContent className="overflow-hidden p-0">/);
   assert.match(detail, /overflow-x-auto/);
-  assert.match(detail, /min-w-\[720px\] w-full/);
+  assert.match(detail, /w-full min-w-\[680px\]/);
+});
+
+test("user management table switches to cards before it needs horizontal scrolling", () => {
+  const route = read("src/routes/_authenticated/admin.users.tsx");
+
+  assert.match(route, /<div className="hidden lg:block">[\s\S]*<Table className="w-full table-fixed" wrapperClassName="overflow-hidden">/);
+  assert.match(route, /<div className="divide-y[^\n]*lg:hidden">/);
+  assert.match(route, /break-words/);
+});
+
+test("academic pages use the shared admin shell and a consistent palette", () => {
+  const layout = read("src/routes/_authenticated/admin.akademik.tsx");
+  const structure = read("src/routes/_authenticated/admin.akademik.index.tsx");
+  const offerings = read("src/routes/_authenticated/admin.akademik.kelas-mata-kuliah.tsx");
+
+  assert.match(layout, /<AdminPage className="mx-auto w-full max-w-\[1600px\] pb-12">/);
+  assert.match(layout, /aria-label="Navigasi data akademik"/);
+  assert.match(structure, /bg-primary\/10/);
+  assert.doesNotMatch(structure, /bg-(?:blue|indigo|emerald)-50/);
+  assert.match(offerings, /Atur kelas, pengampu, dan peserta/);
+  assert.match(offerings, /grid gap-4 lg:grid-cols-2/);
 });
 
 test("settings page keeps full width and balanced two-column sections", () => {
@@ -139,7 +160,40 @@ test("admin dashboard uses shared layout, searchable schedules, and accurate sum
   assert.match(dashboard, /getExamAvailabilityStatus\(exam, now\)/);
   assert.match(dashboard, /essayIds\.has\(j\.soalId\) && typeof j\.skor !== "number"/);
   assert.match(dashboard, /aria-label="Ringkasan ujian"/);
+  assert.match(dashboard, /to=\{href\}/);
+  assert.match(dashboard, /search=\{\{ ujianId: exam\.id \}\}/);
   assert.doesNotMatch(dashboard, /bg-slate-950 p-5 text-white/);
+});
+
+test("online participant monitor uses the shared layout and clear supervision terms", () => {
+  const route = read("src/routes/_authenticated/admin.peserta.online.tsx");
+
+  assert.match(route, /<AdminPage className="pb-12">/);
+  assert.match(route, /aria-label="Ringkasan peserta online"/);
+  assert.match(route, /Catatan pelanggaran/);
+  assert.match(route, /<ConfirmDialog/);
+  assert.doesNotMatch(route, /\bconfirm\(/);
+  assert.doesNotMatch(route, /\bInsiden\b/i);
+  assert.match(route, /session\.totalSoal > 0/);
+  assert.match(route, /activeCount/);
+  assert.match(route, /validateSearch/);
+  assert.match(route, /session\.ujianId === ujianId/);
+  assert.match(route, /isSubmitting/);
+  assert.match(route, /busy=\{isSubmitting\}/);
+  assert.match(route, /xl:grid-cols-\[minmax\(14rem,1\.2fr\)_minmax\(12rem,1fr\)_7rem_9rem_auto\]/);
+});
+
+test("admin shell keeps mobile navigation accessible by keyboard", () => {
+  const shell = read("src/routes/_authenticated/admin.tsx");
+  const button = read("src/components/ui/button.tsx");
+  const styles = read("src/styles.css");
+
+  assert.match(shell, /event\.key === "Escape"/);
+  assert.match(shell, /role=\{mobileMenuOpen \? "dialog" : undefined\}/);
+  assert.match(shell, /menuButtonRef\.current\?\.focus\(\)/);
+  assert.match(shell, /matchMedia\("\(min-width: 1024px\)"\)/);
+  assert.match(button, /hover:bg-slate-100 hover:text-slate-900/);
+  assert.match(styles, /--primary: #007A43/);
 });
 
 test("course classes are nested under the academic structure navigation", () => {

@@ -172,7 +172,7 @@ const articlesMap: Record<string, DocArticle> = {
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <DocMenuLink to="/admin/modul">Buka Bank Soal →</DocMenuLink>
-            <DocMenuLink to="/admin/peserta/online">Buka Monitoring →</DocMenuLink>
+            <DocMenuLink to="/admin/peserta/online" search={{ ujianId: undefined }}>Buka Monitoring →</DocMenuLink>
             <DocMenuLink to="/admin/evaluasi">Buka Evaluasi Essay →</DocMenuLink>
           </div>
         </section>
@@ -314,7 +314,7 @@ const articlesMap: Record<string, DocArticle> = {
     title: "Monitoring Live & Proctoring",
     category: "pengawasan",
     categoryLabel: "Pengawasan & Evaluasi",
-    description: "Pengawasan sesi aktif, insiden pelanggaran, dan aksi pengawas.",
+    description: "Pengawasan sesi aktif, catatan pelanggaran, dan tindakan pengawas.",
     toc: [
       { id: "fitur-pengawas", label: "Fitur Pengawasan" },
       { id: "aksi-interaktif", label: "Aksi Pengawas" },
@@ -324,7 +324,7 @@ const articlesMap: Record<string, DocArticle> = {
         <section id="fitur-pengawas" data-heading="fitur-pengawas" className="space-y-4">
           <h2 className="text-lg font-bold text-foreground tracking-tight">Fitur Dashboard Pengawas</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Buka menu <DocMenuLink to="/admin/peserta/online">Monitoring Live</DocMenuLink> saat ujian berlangsung.
+            Buka menu <DocMenuLink to="/admin/peserta/online" search={{ ujianId: undefined }}>Monitoring Live</DocMenuLink> saat ujian berlangsung.
           </p>
 
           <Card className="border-border overflow-hidden shadow-none rounded-xl">
@@ -346,7 +346,7 @@ const articlesMap: Record<string, DocArticle> = {
                 </TableRow>
                 <TableRow className="border-border">
                   <TableCell className="font-medium text-foreground text-xs">Aksi Pengawas</TableCell>
-                  <TableCell className="text-muted-foreground text-xs">Fitur paksa kumpulkan, tambah waktu pengerjaan, atau riset insiden.</TableCell>
+                  <TableCell className="text-muted-foreground text-xs">Fitur paksa kumpulkan, tambah waktu pengerjaan, atau reset pelanggaran.</TableCell>
                 </TableRow>
               </TableBody>
             </Table>
@@ -356,7 +356,7 @@ const articlesMap: Record<string, DocArticle> = {
         <section id="aksi-interaktif" data-heading="aksi-interaktif" className="space-y-3">
           <h2 className="text-lg font-bold text-foreground tracking-tight">Aksi Pengawas</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Pengawas dapat melakukan aksi langsung dari dasbor: <Strong>Paksa Kumpulkan</Strong>, <Strong>Tambah Waktu</Strong>, atau <Strong>Riset Insiden</Strong>.
+            Pengawas dapat melakukan tindakan langsung dari dasbor: <Strong>Paksa Kumpulkan</Strong>, <Strong>Tambah Waktu</Strong>, atau <Strong>Reset Pelanggaran</Strong>.
           </p>
         </section>
       </div>
@@ -599,7 +599,7 @@ function PanduanPage() {
               </Link>
             </Button>
             <Button variant="outline" size="sm" asChild className="rounded-lg h-8 px-3 text-xs border-border bg-card text-foreground hover:bg-muted hover:text-foreground transition-colors">
-              <Link to="/admin/peserta/online">
+              <Link to="/admin/peserta/online" search={{ ujianId: undefined }}>
                 <BookOpen className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" /> Monitoring
               </Link>
             </Button>
@@ -768,10 +768,10 @@ function Strong({ children }: { children: React.ReactNode }) {
   return <strong className="font-semibold text-foreground">{children}</strong>;
 }
 
-function DocMenuLink({ to, children }: { to: string; children: React.ReactNode }) {
+function DocMenuLink({ to, search, children }: { to: string; search?: { ujianId?: string }; children: React.ReactNode }) {
   return (
     <Button variant="outline" size="sm" asChild className="rounded-lg font-semibold h-8 px-3 text-xs border border-border bg-card text-foreground hover:bg-muted hover:text-foreground transition-colors">
-      <Link to={to} className="inline-flex items-center gap-1.5">
+      <Link to={to} search={search} className="inline-flex items-center gap-1.5">
         {children} <ExternalLink className="h-3 w-3 opacity-60" />
       </Link>
     </Button>

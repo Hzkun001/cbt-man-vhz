@@ -77,28 +77,28 @@ function TahunAkademikPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-foreground">Daftar Tahun Akademik</h2>
-          <p className="text-sm text-muted-foreground">Kelola periode waktu perkuliahan institusi.</p>
+          <h2 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">Tahun Akademik</h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Kelola periode waktu yang digunakan dalam perkuliahan dan ujian.</p>
         </div>
-        <Button onClick={handleAdd} size="sm" className="shadow-sm">
+        <Button onClick={handleAdd} size="sm" className="h-9 w-full shadow-sm sm:w-auto">
           <Plus className="mr-2 h-4 w-4" /> Tambah Tahun Akademik
         </Button>
       </div>
 
-      <Card className="shadow-sm border-border overflow-hidden">
-        <Table>
-          <TableHeader className="bg-muted/30">
+      <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <Table className="w-full" wrapperClassName="overflow-hidden">
+          <TableHeader className="bg-slate-50 dark:bg-slate-900">
             <TableRow>
-              <TableHead className="w-[50%]">Tahun Akademik</TableHead>
-              <TableHead className="w-[30%]">Status</TableHead>
-              <TableHead className="w-[20%] text-right">Aksi</TableHead>
+              <TableHead className="w-[50%] font-semibold text-slate-700 dark:text-slate-300">Tahun Akademik</TableHead>
+              <TableHead className="w-[30%] font-semibold text-slate-700 dark:text-slate-300">Status</TableHead>
+              <TableHead className="w-[20%] text-right font-semibold text-slate-700 dark:text-slate-300">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {items.map((item) => (
-              <TableRow key={item.id} className="group hover:bg-muted/30 transition-colors">
+              <TableRow key={item.id} className="group transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-900/50">
                 <TableCell className="font-semibold text-foreground">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />

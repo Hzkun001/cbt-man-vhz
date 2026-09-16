@@ -139,7 +139,7 @@
   --card-foreground: oklch(0.2 0.02 150);
   --popover: #ffffff;
   --popover-foreground: oklch(0.2 0.02 150);
-  --primary: #03A559;
+  --primary: #007A43;
   --primary-foreground: #ffffff;
   --secondary: oklch(0.96 0.01 150);
   --secondary-foreground: oklch(0.3 0.04 150);
@@ -149,24 +149,24 @@
   --accent-foreground: #ffffff;
   --destructive: oklch(0.58 0.22 27);
   --destructive-foreground: #ffffff;
-  --success: #03A559;
+  --success: #007A43;
   --warning: #FFC107;
   --border: oklch(0.92 0.01 150);
   --input: oklch(0.92 0.01 150);
-  --ring: #03A559;
-  --chart-1: #03A559;
+  --ring: #007A43;
+  --chart-1: #007A43;
   --chart-2: #3B82F6;
   --chart-3: #EAB308;
   --chart-4: oklch(0.6 0.2 25);
   --chart-5: oklch(0.55 0.15 220);
   --sidebar: #FCFBFC;
   --sidebar-foreground: oklch(0.25 0.02 150);
-  --sidebar-primary: #03A559;
+  --sidebar-primary: #007A43;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: oklch(0.95 0.04 150);
   --sidebar-accent-foreground: oklch(0.35 0.12 150);
   --sidebar-border: oklch(0.92 0.01 150);
-  --sidebar-ring: #03A559;
+  --sidebar-ring: #007A43;
 }
 
 
@@ -177,7 +177,7 @@
   --card-foreground: #FCFBFC;
   --popover: oklch(0.15 0.02 150);
   --popover-foreground: #FCFBFC;
-  --primary: #03A559;
+  --primary: #007A43;
   --primary-foreground: #ffffff;
   --secondary: oklch(0.25 0.03 150);
   --secondary-foreground: #FCFBFC;
@@ -189,20 +189,20 @@
   --destructive-foreground: #FCFBFC;
   --border: oklch(0.25 0.03 150);
   --input: oklch(0.25 0.03 150);
-  --ring: #03A559;
-  --chart-1: #03A559;
+  --ring: #007A43;
+  --chart-1: #007A43;
   --chart-2: #3B82F6;
   --chart-3: #EAB308;
   --chart-4: oklch(0.62 0.26 303);
   --chart-5: oklch(0.64 0.24 16);
   --sidebar: oklch(0.12 0.02 150);
   --sidebar-foreground: #FCFBFC;
-  --sidebar-primary: #03A559;
+  --sidebar-primary: #007A43;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: oklch(0.25 0.03 150);
   --sidebar-accent-foreground: #FCFBFC;
   --sidebar-border: oklch(0.25 0.03 150);
-  --sidebar-ring: #03A559;
+  --sidebar-ring: #007A43;
 }
 
 @layer base {
@@ -312,7 +312,7 @@
   --card-foreground: oklch(0.25 0.02 240);
   --popover: #f0f3f8;
   --popover-foreground: oklch(0.25 0.02 240);
-  --primary: #03a559;
+  --primary: #007a43;
   --primary-foreground: #ffffff;
   --secondary: #e2e8f0;
   --secondary-foreground: oklch(0.25 0.02 240);
@@ -322,16 +322,16 @@
   --accent-foreground: oklch(0.25 0.02 240);
   --border: #d5dce6;
   --input: #e6ebf2;
-  --ring: #03a559;
+  --ring: #007a43;
 
   --sidebar: #e8edf4;
   --sidebar-foreground: oklch(0.25 0.02 240);
-  --sidebar-primary: #03a559;
+  --sidebar-primary: #007a43;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #dee4ed;
   --sidebar-accent-foreground: oklch(0.25 0.02 240);
   --sidebar-border: #d5dce6;
-  --sidebar-ring: #03a559;
+  --sidebar-ring: #007a43;
 
   /* Neumorphism Shadow Variables */
   --neo-shadow: 5px 5px 12px rgba(166, 180, 200, 0.55), -5px -5px 12px rgba(255, 255, 255, 0.9);
@@ -366,7 +366,6 @@
 [data-theme='neumorphism'] [role="button"]:not(:disabled):active {
   box-shadow: inset 3px 3px 6px rgba(166, 180, 200, 0.5), inset -3px -3px 6px rgba(255, 255, 255, 0.8) !important;
 }
-
 
 
 

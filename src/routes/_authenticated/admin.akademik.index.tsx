@@ -36,35 +36,39 @@ function UnitAkademikExplorer() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <FolderTree className="h-5 w-5 text-primary" />
-            Struktur Organisasi Akademik
-          </h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Kelola hierarki Fakultas, Program Studi, dan Kelas / Rombel perkuliahan.
-          </p>
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:p-5">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <FolderTree className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+              Struktur Akademik
+            </h2>
+            <p className="mt-1 text-sm leading-5 text-slate-500 dark:text-slate-400">
+              Kelola fakultas, program studi, dan kelas yang menjadi dasar pengelompokan peserta ujian.
+            </p>
+          </div>
         </div>
       </div>
 
       <Tabs defaultValue="fakultas" className="w-full">
-        <TabsList className="grid grid-cols-3 w-full max-w-md h-10 p-1 bg-slate-100 dark:bg-slate-800">
-          <TabsTrigger value="fakultas" className="text-xs font-semibold flex items-center gap-1.5">
+        <TabsList className="grid h-auto w-full max-w-xl grid-cols-3 gap-1 rounded-lg border border-slate-200 bg-slate-100/80 p-1 dark:border-slate-800 dark:bg-slate-900">
+          <TabsTrigger value="fakultas" className="flex min-h-9 items-center justify-center gap-1.5 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-950">
             <Building2 className="h-3.5 w-3.5" />
             Fakultas
             <span className="ml-1 px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-slate-700 text-[10px]">
               {fakultasList.length}
             </span>
           </TabsTrigger>
-          <TabsTrigger value="prodi" className="text-xs font-semibold flex items-center gap-1.5">
+          <TabsTrigger value="prodi" className="flex min-h-9 items-center justify-center gap-1.5 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-950">
             <Library className="h-3.5 w-3.5" />
             Program Studi
             <span className="ml-1 px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-slate-700 text-[10px]">
               {prodiList.length}
             </span>
           </TabsTrigger>
-          <TabsTrigger value="kelas" className="text-xs font-semibold flex items-center gap-1.5">
+          <TabsTrigger value="kelas" className="flex min-h-9 items-center justify-center gap-1.5 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-950">
             <Users className="h-3.5 w-3.5" />
             Kelas / Rombel
             <span className="ml-1 px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-slate-700 text-[10px]">
@@ -139,14 +143,14 @@ function FakultasSection({ data, onUpdated }: { data: UnitAkademik[]; onUpdated:
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-      <Card className="lg:col-span-2 border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
-        <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 pb-3 flex flex-row items-center justify-between gap-4">
+    <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-3">
+      <Card className="overflow-hidden border-slate-200 shadow-sm xl:col-span-2 dark:border-slate-800">
+        <CardHeader className="flex flex-col items-start justify-between gap-3 border-b border-slate-100 bg-slate-50/50 pb-3 dark:border-slate-800 dark:bg-slate-900/50 sm:flex-row sm:items-center">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <Building2 className="h-4 w-4 text-primary" />
             Daftar Fakultas ({filtered.length})
           </CardTitle>
-          <div className="relative w-48 sm:w-64">
+          <div className="relative w-full sm:w-64">
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
             <Input
               placeholder="Cari fakultas..."
@@ -164,7 +168,7 @@ function FakultasSection({ data, onUpdated }: { data: UnitAkademik[]; onUpdated:
                 className="flex items-center justify-between p-3.5 px-5 hover:bg-slate-50/70 dark:hover:bg-slate-900/50 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 border border-blue-100 dark:border-blue-900/40">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
                     <Building2 className="h-4 w-4" />
                   </div>
                   <div>
@@ -209,7 +213,7 @@ function FakultasSection({ data, onUpdated }: { data: UnitAkademik[]; onUpdated:
         </CardContent>
       </Card>
 
-      <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
+      <Card className="border-slate-200 shadow-sm dark:border-slate-800">
         <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 pb-3">
           <CardTitle className="text-base font-semibold">
             {form.id ? "Edit Fakultas" : "Tambah Fakultas Baru"}
@@ -313,14 +317,14 @@ function ProdiSection({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-      <Card className="lg:col-span-2 border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
-        <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 pb-3 flex flex-row items-center justify-between gap-4">
+    <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-3">
+      <Card className="overflow-hidden border-slate-200 shadow-sm xl:col-span-2 dark:border-slate-800">
+        <CardHeader className="flex flex-col items-start justify-between gap-3 border-b border-slate-100 bg-slate-50/50 pb-3 dark:border-slate-800 dark:bg-slate-900/50 sm:flex-row sm:items-center">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <Library className="h-4 w-4 text-primary" />
             Daftar Program Studi ({filtered.length})
           </CardTitle>
-          <div className="relative w-48 sm:w-64">
+          <div className="relative w-full sm:w-64">
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
             <Input
               placeholder="Cari program studi..."
@@ -340,7 +344,7 @@ function ProdiSection({
                   className="flex items-center justify-between p-3.5 px-5 hover:bg-slate-50/70 dark:hover:bg-slate-900/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 border border-indigo-100 dark:border-indigo-900/40">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
                       <Library className="h-4 w-4" />
                     </div>
                     <div>
@@ -393,7 +397,7 @@ function ProdiSection({
         </CardContent>
       </Card>
 
-      <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
+      <Card className="border-slate-200 shadow-sm dark:border-slate-800">
         <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 pb-3">
           <CardTitle className="text-base font-semibold">
             {form.id ? "Edit Program Studi" : "Tambah Program Studi"}
@@ -518,14 +522,14 @@ function KelasSection({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-      <Card className="lg:col-span-2 border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
-        <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 pb-3 flex flex-row items-center justify-between gap-4">
+    <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-3">
+      <Card className="overflow-hidden border-slate-200 shadow-sm xl:col-span-2 dark:border-slate-800">
+        <CardHeader className="flex flex-col items-start justify-between gap-3 border-b border-slate-100 bg-slate-50/50 pb-3 dark:border-slate-800 dark:bg-slate-900/50 sm:flex-row sm:items-center">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <Users className="h-4 w-4 text-primary" />
             Daftar Kelas / Rombel ({filtered.length})
           </CardTitle>
-          <div className="relative w-48 sm:w-64">
+          <div className="relative w-full sm:w-64">
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
             <Input
               placeholder="Cari kelas..."
@@ -545,7 +549,7 @@ function KelasSection({
                   className="flex items-center justify-between p-3.5 px-5 hover:bg-slate-50/70 dark:hover:bg-slate-900/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 border border-emerald-100 dark:border-emerald-900/40">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
                       <Users className="h-4 w-4" />
                     </div>
                     <div>
@@ -598,7 +602,7 @@ function KelasSection({
         </CardContent>
       </Card>
 
-      <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
+      <Card className="border-slate-200 shadow-sm dark:border-slate-800">
         <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 pb-3">
           <CardTitle className="text-base font-semibold">
             {form.id ? "Edit Kelas / Rombel" : "Tambah Kelas Baru"}

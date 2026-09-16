@@ -130,11 +130,11 @@ function MataKuliahPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-foreground">Daftar Mata Kuliah</h2>
-          <p className="text-sm text-muted-foreground">
-            Kelola mata kuliah untuk penjadwalan ujian.
+          <h2 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">Mata Kuliah</h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Kelola mata kuliah yang menjadi sumber modul dan ujian.
           </p>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -147,21 +147,21 @@ function MataKuliahPage() {
               className="pl-9 h-9 text-sm"
             />
           </div>
-          <Button onClick={handleAdd} size="sm" className="shadow-sm h-9 shrink-0">
+          <Button onClick={handleAdd} size="sm" className="h-9 shrink-0 shadow-sm">
             <Plus className="mr-2 h-4 w-4" /> Tambah MK
           </Button>
         </div>
       </div>
 
-      <Card className="shadow-sm border-border overflow-hidden">
-        <Table>
-          <TableHeader className="bg-muted/30">
+      <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <Table className="w-full" wrapperClassName="overflow-hidden">
+          <TableHeader className="bg-slate-50 dark:bg-slate-900">
             <TableRow>
-              <TableHead className="w-[15%]">Kode</TableHead>
-              <TableHead className="w-[35%]">Nama Mata Kuliah</TableHead>
-              <TableHead className="w-[25%]">Unit & Semester</TableHead>
-              <TableHead className="w-[10%] text-center">SKS</TableHead>
-              <TableHead className="w-[15%] text-right">Aksi</TableHead>
+              <TableHead className="w-[15%] font-semibold text-slate-700 dark:text-slate-300">Kode</TableHead>
+              <TableHead className="w-[35%] font-semibold text-slate-700 dark:text-slate-300">Nama Mata Kuliah</TableHead>
+              <TableHead className="w-[25%] font-semibold text-slate-700 dark:text-slate-300">Unit & Semester</TableHead>
+              <TableHead className="w-[10%] text-center font-semibold text-slate-700 dark:text-slate-300">SKS</TableHead>
+              <TableHead className="w-[15%] text-right font-semibold text-slate-700 dark:text-slate-300">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -171,7 +171,7 @@ function MataKuliahPage() {
               const ta = taList.find((t) => t.id === semester?.tahunAkademikId);
 
               return (
-                <TableRow key={item.id} className="group hover:bg-muted/30 transition-colors">
+                <TableRow key={item.id} className="group transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-900/50">
                   <TableCell>
                     <Badge
                       variant="outline"

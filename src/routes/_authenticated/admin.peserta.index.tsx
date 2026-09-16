@@ -178,7 +178,7 @@ function PesertaPage() {
                 <UsersIcon className="mr-2 h-4 w-4" /> Unit Akademik
               </Button>
             </Link>
-            <Link to="/admin/peserta/online">
+            <Link to="/admin/peserta/online" search={{ ujianId: undefined }}>
               <Button variant="outline" size="sm" className="h-9">
                 <Activity className="mr-2 h-4 w-4" /> Live Ujian
               </Button>

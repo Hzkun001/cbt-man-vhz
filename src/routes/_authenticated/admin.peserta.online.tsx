@@ -1,240 +1,221 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useState, useMemo, useRef } from "react";
-import { actionLiveSesiServer, getLiveOnlineSesis } from "@/lib/server/sesi/functions";
-import { Activity, AlertTriangle, Users, Timer, CheckCircle2, Search, MonitorPlay, StopCircle, RefreshCcw } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, Clock3, MonitorPlay, RefreshCcw, Search, StopCircle, Users } from "lucide-react";
 import { toast } from "sonner";
-import { AdminPage, AdminPageHeader, AdminPageContent } from "@/components/cbt/AdminPage";
-import { useConfirmDialog } from "@/components/cbt/ConfirmDialog";
-
+import { AdminPage, AdminPageContent, AdminPageHeader } from "@/components/cbt/AdminPage";
+import { ConfirmDialog } from "@/components/cbt/ConfirmDialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { actionLiveSesiServer, getLiveOnlineSesis } from "@/lib/server/sesi/functions";
 
 export const Route = createFileRoute("/_authenticated/admin/peserta/online")({
   component: OnlinePage,
-  loader: async () => {
-    const rawSesis = await getLiveOnlineSesis();
-    return { rawSesis };
-  }
+  loader: async () => ({ rawSesis: await getLiveOnlineSesis() }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    ujianId: typeof search.ujianId === "string" ? search.ujianId : undefined,
+  }),
 });
 
 function fmtSisa(ms: number): string {
   if (ms <= 0) return "00:00";
-  const m = Math.floor(ms / 60000);
-  const s = Math.floor((ms % 60000) / 1000);
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  const minutes = Math.floor(ms / 60_000);
+  const seconds = Math.floor((ms % 60_000) / 1_000);
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
-  type LiveSession = Awaited<ReturnType<typeof getLiveOnlineSesis>>[number];
+type LiveSession = Awaited<ReturnType<typeof getLiveOnlineSesis>>[number];
+type PendingAction = { type: "forceSubmit" | "resetPelanggaran"; session: LiveSession } | null;
 
 function OnlinePage() {
-  const { confirm, dialog } = useConfirmDialog();
   const { rawSesis } = Route.useLoaderData();
+  const { ujianId } = Route.useSearch();
   const router = useRouter();
-
-  const tickRef = useRef(0);
-  const [tick, setTick] = useState(0);
+  const pollRef = useRef(0);
+  const [now, setNow] = useState(() => Date.now());
   const [search, setSearch] = useState("");
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const selectedExamName = rawSesis.find((session) => session.ujianId === ujianId)?.ujian?.nama;
 
   useEffect(() => {
-    const t = window.setInterval(() => {
-      tickRef.current += 1;
-      setTick(tickRef.current);
-      // Poll every 15 seconds
-      if (tickRef.current % 15 === 0) {
-        router.invalidate();
-      }
-    }, 1000);
-    return () => window.clearInterval(t);
+    const timer = window.setInterval(() => {
+      pollRef.current += 1;
+      setNow(Date.now());
+      if (pollRef.current % 15 === 0) router.invalidate();
+    }, 1_000);
+    return () => window.clearInterval(timer);
   }, [router]);
 
-  async function handleForceSubmit(session: LiveSession) {
-    if (!(await confirm({ title: "Paksa kumpulkan ujian", description: `Paksa kumpulkan ujian untuk ${session.user?.namaLengkap ?? "Peserta"}? Sesi ini akan ditutup secara permanen.`, confirmLabel: "Kumpulkan" }))) return;
+  async function confirmAction() {
+    if (!pendingAction || isSubmitting) return;
+    const { type, session } = pendingAction;
+    setIsSubmitting(true);
+
     try {
-      const res = await actionLiveSesiServer({
-        data: { sesiId: session.id, action: "forceSubmit" },
-      });
-      if (res.ok) {
-        toast.success("Sesi berhasil dihentikan paksa");
-        router.invalidate();
-      } else {
-        toast.error(res.error ?? "Gagal menghentikan sesi");
+      const result = await actionLiveSesiServer({ data: { sesiId: session.id, action: type } });
+      if (!result.ok) {
+        toast.error(result.error ?? "Aksi pengawas gagal dijalankan");
+        return;
       }
-    } catch (e) {
+      toast.success(type === "forceSubmit" ? "Ujian peserta berhasil dikumpulkan" : "Catatan pelanggaran berhasil direset");
+      setPendingAction(null);
+      router.invalidate();
+    } catch {
       toast.error("Terjadi kesalahan jaringan");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
-  async function handleResetPelanggaran(session: LiveSession) {
-    if (!(await confirm({ title: "Reset pelanggaran", description: `Reset jumlah pelanggaran untuk ${session.user?.namaLengkap ?? "Peserta"} menjadi 0?`, confirmLabel: "Reset", destructive: false }))) return;
-    try {
-      const res = await actionLiveSesiServer({
-        data: { sesiId: session.id, action: "resetPelanggaran" },
-      });
-      if (res.ok) {
-        toast.success("Pelanggaran berhasil di-reset");
-        router.invalidate();
-      } else {
-        toast.error(res.error ?? "Gagal mereset pelanggaran");
-      }
-    } catch (e) {
-      toast.error("Terjadi kesalahan jaringan");
-    }
-  }
-
-  const { sesis, totalPelanggaran, avgProgress } = useMemo(() => {
-    let violations = 0;
-    let totalPct = 0;
-
-    const enriched = rawSesis.map((s: LiveSession) => {
-      const progress = (s.dijawab / s.totalSoal) * 100;
-      
-      violations += s.pelanggaran;
-      totalPct += progress;
-
-      return { s, u: s.user, ex: s.ujian, dijawab: s.dijawab, totalSoal: s.totalSoal, progress };
-    });
-
-    const filtered = enriched.filter(({ u, ex }: { u: LiveSession['user'], ex: LiveSession['ujian'] }) => 
-      (u?.namaLengkap || "").toLowerCase().includes(search.toLowerCase()) ||
-      (ex?.nama || "").toLowerCase().includes(search.toLowerCase())
-    );
+  const { activeCount, sessions, totalPelanggaran, avgProgress } = useMemo(() => {
+    const scopedSesis = ujianId
+      ? rawSesis.filter((session) => session.ujianId === ujianId)
+      : rawSesis;
+    const enriched = scopedSesis.map((session: LiveSession) => ({
+      session,
+      progress: session.totalSoal > 0 ? Math.min(100, (session.dijawab / session.totalSoal) * 100) : 0,
+    }));
+    const query = search.trim().toLowerCase();
 
     return {
-      sesis: filtered,
-      totalPelanggaran: violations,
-      avgProgress: rawSesis.length > 0 ? totalPct / rawSesis.length : 0
+      activeCount: scopedSesis.length,
+      sessions: enriched.filter(({ session }) =>
+        !query ||
+        (session.user?.namaLengkap ?? "").toLowerCase().includes(query) ||
+        (session.ujian?.nama ?? "").toLowerCase().includes(query)),
+      totalPelanggaran: scopedSesis.reduce((total: number, session: LiveSession) => total + session.pelanggaran, 0),
+      avgProgress: enriched.length > 0
+        ? enriched.reduce((total, item) => total + item.progress, 0) / enriched.length
+        : 0,
     };
-  }, [search, rawSesis]);
+  }, [rawSesis, search, ujianId]);
+
+  const targetName = pendingAction?.session.user?.namaLengkap ?? "peserta ini";
+  const isForceSubmit = pendingAction?.type === "forceSubmit";
 
   return (
-    <AdminPage className="">
-      
-      {/* Header */}
+    <AdminPage className="pb-12">
       <AdminPageHeader
-        title="Pantau Ujian Live"
-        description="Monitoring aktivitas peserta secara real-time."
-        action={
-          <div className="flex items-center gap-8 text-sm">
-            <div className="flex flex-col items-end">
-              <span className="text-[10px] font-medium uppercase tracking-widest text-slate-400 mb-0.5">Sesi Aktif</span>
-              <span className="text-xl font-medium text-slate-900 dark:text-white tabular-nums leading-none">{sesis.length}</span>
-            </div>
-            <div className="w-px h-8 bg-slate-200 dark:bg-slate-800" />
-            <div className="flex flex-col items-end">
-              <span className="text-[10px] font-medium uppercase tracking-widest text-slate-400 mb-0.5">Pelanggaran</span>
-              <span className="text-xl font-medium text-red-600 dark:text-red-400 tabular-nums leading-none">{totalPelanggaran}</span>
-            </div>
-            <div className="w-px h-8 bg-slate-200 dark:bg-slate-800" />
-            <div className="flex flex-col items-end">
-              <span className="text-[10px] font-medium uppercase tracking-widest text-slate-400 mb-0.5">Rata-rata Progress</span>
-              <span className="text-xl font-medium text-slate-900 dark:text-white tabular-nums leading-none">{Math.round(avgProgress)}%</span>
-            </div>
-          </div>
-        }
+        title="Peserta Online"
+        description={selectedExamName ? `Pantau peserta pada ujian ${selectedExamName}.` : "Pantau peserta yang sedang mengerjakan ujian dan lakukan tindakan pengawasan bila diperlukan."}
       />
 
-      {/* Main Content Area */}
-      {/* Search */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <Input 
-          placeholder="Cari nama atau ujian..." 
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
-        />
-      </div>
+      <section aria-label="Ringkasan peserta online" className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-xl border bg-card p-4">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>Sesi aktif</span><Users className="h-4 w-4 text-primary" />
+          </div>
+          <p className="mt-3 text-2xl font-semibold tabular-nums">{activeCount}</p>
+          <p className="mt-1 text-xs text-muted-foreground">Peserta sedang mengerjakan</p>
+        </div>
+        <div className="rounded-xl border bg-card p-4">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>Catatan pelanggaran</span><AlertTriangle className="h-4 w-4 text-destructive" />
+          </div>
+          <p className="mt-3 text-2xl font-semibold tabular-nums">{totalPelanggaran}</p>
+          <p className="mt-1 text-xs text-muted-foreground">Pindah tab atau keluar layar</p>
+        </div>
+        <div className="rounded-xl border bg-card p-4">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>Rata-rata progres</span><Clock3 className="h-4 w-4 text-primary" />
+          </div>
+          <p className="mt-3 text-2xl font-semibold tabular-nums">{Math.round(avgProgress)}%</p>
+          <p className="mt-1 text-xs text-muted-foreground">Soal terjawab pada sesi aktif</p>
+        </div>
+      </section>
 
       <AdminPageContent className="p-0">
-          <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
-            {sesis.map(({ s, u, ex, dijawab, totalSoal, progress }) => {
-              const sisaMs = s.endsAt ? Math.max(0, s.endsAt - Date.now()) : 0;
-              const isCritical = sisaMs > 0 && sisaMs < 300000;
-              
-              return (
-                <div key={s.id} className="group p-4 flex flex-col xl:flex-row xl:items-center justify-between gap-6 transition-all duration-300 ease-spring hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                  
-                  {/* User Info & Progress Group */}
-                  <div className="flex flex-col md:flex-row md:items-center gap-6 flex-1 min-w-0">
-                    {/* User Info */}
-                    <div className="flex items-center gap-3 min-w-0 md:w-1/2 lg:w-1/3">
-                      <div className="flex h-8 w-8 shrink-0 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center border border-slate-200 dark:border-slate-700">
-                        <Users className="h-3.5 w-3.5 text-slate-500" />
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="font-medium text-sm text-slate-900 dark:text-slate-100 truncate group-hover:text-primary transition-colors duration-300 ease-spring">{u?.namaLengkap ?? "Unknown"}</h3>
-                        <div className="text-xs text-slate-500 truncate">{ex?.nama ?? "Unknown Exam"}</div>
-                      </div>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="flex-1 w-full max-w-md">
-                      <div className="flex justify-between items-center text-xs text-slate-500 mb-1.5">
-                        <span>{dijawab} / {totalSoal} Soal</span>
-                        <span className="font-medium text-slate-700 dark:text-slate-300 tabular-nums">{Math.round(progress)}%</span>
-                      </div>
-                      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                        <div className="bg-primary h-full rounded-full transition-all duration-500 ease-out" style={{ width: `${progress}%` }} />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Status, Time & Actions Group */}
-                  <div className="flex flex-wrap sm:flex-nowrap items-center gap-4 sm:gap-6 shrink-0 justify-between xl:justify-end mt-2 xl:mt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800 pt-4 sm:pt-0">
-                    
-                    <div className="flex items-center gap-6">
-                      <div className="text-right">
-                        <div className="text-[10px] font-medium uppercase tracking-widest text-slate-400 mb-0.5">Sisa Waktu</div>
-                        <div className={`font-mono text-sm font-medium tabular-nums ${isCritical ? 'text-red-600 animate-pulse' : 'text-slate-700 dark:text-slate-300'}`}>
-                          {fmtSisa(sisaMs)}
-                        </div>
-                      </div>
-
-                      <div className="w-24 text-right">
-                        <div className="text-[10px] font-medium uppercase tracking-widest text-slate-400 mb-1">Status</div>
-                        {s.pelanggaran > 0 ? (
-                          <div className="flex items-center justify-end gap-1.5 text-xs font-medium text-red-600 dark:text-red-400">
-                            <span className="relative flex h-2 w-2">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                            </span>
-                            {s.pelanggaran} Insiden
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-end gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                            Aman
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Action Menu */}
-                    <div className="flex items-center sm:pl-4 sm:border-l border-slate-200 dark:border-slate-700 gap-2 w-full sm:w-auto justify-end">
-                      <Button onClick={() => handleForceSubmit(s)} variant="outline" size="sm" className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 border-red-200 dark:border-red-900/50 flex-1 sm:flex-none">
-                        <StopCircle className="mr-1.5 h-3.5 w-3.5" /> Paksa Selesai
-                      </Button>
-                      {s.pelanggaran > 0 && (
-                        <Button onClick={() => handleResetPelanggaran(s)} variant="outline" size="sm" className="h-8 text-xs flex-1 sm:flex-none">
-                          <RefreshCcw className="mr-1.5 h-3.5 w-3.5" /> Reset
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                </div>
-              );
-            })}
-
-            {sesis.length === 0 && (
-              <div className="py-12 flex flex-col items-center justify-center text-center">
-                <MonitorPlay className="h-8 w-8 text-slate-300 dark:text-slate-700 mb-3" />
-                <p className="text-slate-500 text-sm">Belum ada peserta yang aktif.</p>
-              </div>
-            )}
+        <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">Aktivitas peserta</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Data diperbarui otomatis setiap 15 detik.</p>
           </div>
-      </AdminPageContent>
-      {dialog}
-    </AdminPage>
+          {ujianId && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="rounded-md bg-primary/10 px-2 py-1 font-medium text-primary">{selectedExamName ?? "Ujian dipilih"}</span>
+              <Link to="/admin/peserta/online" search={{ ujianId: undefined }} className="font-medium text-primary hover:underline">Lihat semua</Link>
+            </div>
+          )}
+          <div className="relative w-full sm:max-w-xs">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input aria-label="Cari peserta atau ujian" placeholder="Cari peserta atau ujian" value={search} onChange={(event) => setSearch(event.target.value)} className="pl-9" />
+          </div>
+        </div>
 
+        <div className="divide-y">
+          {sessions.map(({ session, progress }) => {
+            const remaining = session.endsAt ? Math.max(0, session.endsAt - now) : 0;
+            const isCritical = remaining > 0 && remaining < 300_000;
+
+            return (
+              <article key={session.id} className="grid gap-4 px-4 py-5 transition-colors hover:bg-muted/30 sm:px-5 xl:grid-cols-[minmax(14rem,1.2fr)_minmax(12rem,1fr)_7rem_9rem_auto] xl:items-center">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><Users className="h-4 w-4" /></div>
+                  <div className="min-w-0">
+                    <h3 className="truncate text-sm font-medium text-foreground">{session.user?.namaLengkap ?? "Peserta tidak dikenal"}</h3>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">{session.ujian?.nama ?? "Ujian tidak ditemukan"}</p>
+                  </div>
+                </div>
+
+                <div className="min-w-0">
+                  <div className="mb-1.5 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                    <span>{session.dijawab} dari {session.totalSoal} soal</span>
+                    <span className="font-medium tabular-nums text-foreground">{Math.round(progress)}%</span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full bg-primary transition-[width] duration-500" style={{ width: `${progress}%` }} />
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs text-muted-foreground">Sisa waktu</p>
+                  <p className={`mt-1 font-mono text-sm font-medium tabular-nums ${isCritical ? "text-destructive" : "text-foreground"}`}>{fmtSisa(remaining)}</p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-muted-foreground">Pengawasan</p>
+                  {session.pelanggaran > 0 ? (
+                    <span className="mt-1 inline-flex rounded-md bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive">{session.pelanggaran} pelanggaran</span>
+                  ) : (
+                    <span className="mt-1 inline-flex rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">Normal</span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap gap-2 lg:justify-end">
+                  <Button variant="outline" size="sm" className="h-8 text-xs text-destructive" onClick={() => setPendingAction({ type: "forceSubmit", session })}>
+                    <StopCircle className="h-3.5 w-3.5" />Paksa kumpulkan
+                  </Button>
+                  {session.pelanggaran > 0 && (
+                    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setPendingAction({ type: "resetPelanggaran", session })}>
+                      <RefreshCcw className="h-3.5 w-3.5" />Reset pelanggaran
+                    </Button>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+
+          {sessions.length === 0 && (
+            <div className="flex flex-col items-center justify-center px-5 py-14 text-center">
+              <MonitorPlay className="mb-3 h-8 w-8 text-muted-foreground" />
+              <p className="text-sm font-medium text-foreground">{search.trim() ? "Peserta tidak ditemukan" : "Belum ada peserta aktif"}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{search.trim() ? "Coba gunakan kata kunci lain." : "Sesi akan muncul ketika peserta mulai mengerjakan ujian."}</p>
+            </div>
+          )}
+        </div>
+      </AdminPageContent>
+
+      <ConfirmDialog
+        open={pendingAction !== null}
+        onOpenChange={(open) => !open && !isSubmitting && setPendingAction(null)}
+        title={isForceSubmit ? "Paksa Kumpulkan Ujian" : "Reset Catatan Pelanggaran"}
+        description={isForceSubmit ? `Ujian ${targetName} akan langsung dikumpulkan dan sesi ditutup.` : `Catatan pelanggaran ${targetName} akan dikembalikan menjadi 0.`}
+        confirmLabel={isSubmitting ? "Memproses..." : isForceSubmit ? "Paksa Kumpulkan" : "Reset Pelanggaran"}
+        icon={isForceSubmit ? <StopCircle className="h-5 w-5" /> : <RefreshCcw className="h-5 w-5" />}
+        destructive={isForceSubmit}
+        busy={isSubmitting}
+        onConfirm={confirmAction}
+      />
+    </AdminPage>
   );
 }

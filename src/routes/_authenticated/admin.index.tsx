@@ -53,10 +53,10 @@ function CommandCenter() {
     .sort((a, b) => (b.selesaiAt ?? 0) - (a.selesaiAt ?? 0))
     .slice(0, 4);
   const metrics = [
-    { label: "Ujian aktif", value: activeExams.length, detail: "Sudah dipublikasikan & tersedia", icon: Radio },
-    { label: "Terjadwal", value: upcoming.length, detail: "Ujian mendatang yang terbit", icon: CalendarClock },
-    { label: "Sedang mengerjakan", value: inProgress, detail: "Peserta dengan sesi berjalan", icon: Users },
-    ...(canAccess("/admin/evaluasi") ? [{ label: "Menunggu koreksi", value: pendingSessions.length, detail: "Lembar dengan essay belum dinilai", icon: ClipboardCheck }] : []),
+    { label: "Ujian aktif", value: activeExams.length, detail: "Sudah dipublikasikan & tersedia", icon: Radio, href: "/admin/ujian" as const },
+    { label: "Terjadwal", value: upcoming.length, detail: "Ujian mendatang yang terbit", icon: CalendarClock, href: "/admin/ujian" as const },
+    { label: "Sedang mengerjakan", value: inProgress, detail: "Peserta dengan sesi berjalan", icon: Users, href: "/admin/peserta/online" as const },
+    ...(canAccess("/admin/evaluasi") ? [{ label: "Menunggu koreksi", value: pendingSessions.length, detail: "Lembar dengan essay belum dinilai", icon: ClipboardCheck, href: "/admin/evaluasi" as const }] : []),
   ];
 
   return (
@@ -67,10 +67,10 @@ function CommandCenter() {
         action={
           <>
             {canAccess("/admin/peserta/online") && (
-              <Button variant="outline" asChild><Link to="/admin/peserta/online"><Radio className="h-4 w-4" />Pantau Peserta</Link></Button>
+              <Button variant="outline" asChild><Link to="/admin/peserta/online" search={{ ujianId: undefined }}><Radio className="h-4 w-4" />Pantau Peserta</Link></Button>
             )}
             {canAccess("/admin/ujian") && (
-              <Button asChild><Link to="/admin/ujian"><Plus className="h-4 w-4" />Buat Ujian</Link></Button>
+              <Button asChild><Link to="/admin/ujian"><Plus className="h-4 w-4" />Kelola Ujian</Link></Button>
             )}
           </>
         }
@@ -84,14 +84,19 @@ function CommandCenter() {
           <span className="text-xs text-muted-foreground">Berdasarkan data yang dimuat</span>
         </div>
         <div className={`grid divide-y sm:grid-cols-2 sm:divide-y-0 ${metrics.length === 4 ? "xl:grid-cols-4" : "xl:grid-cols-3"}`}>
-          {metrics.map(({ label, value, detail, icon: Icon }) => (
-            <div key={label} className="min-w-0 p-5 sm:border-r sm:last:border-r-0">
+          {metrics.map(({ label, value, detail, icon: Icon, href }) => (
+            <Link
+              key={label}
+              to={href}
+              aria-label={`${label}: ${value}. ${detail}`}
+              className="block min-w-0 p-5 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:border-r sm:last:border-r-0"
+            >
               <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
                 <span>{label}</span><Icon className="h-4 w-4 shrink-0 text-primary" />
               </div>
               <p className="mt-3 text-3xl font-semibold tracking-tight tabular-nums">{value}</p>
               <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
-            </div>
+            </Link>
           ))}
         </div>
       </section>
@@ -138,7 +143,7 @@ function CommandCenter() {
                         <span>{exam.durasiMenit} menit</span>
                       </div>
                       {canAccess("/admin/peserta/online") && (
-                        <Button variant="outline" size="sm" asChild><Link to="/admin/peserta/online">Pantau Peserta<ArrowRight className="h-3.5 w-3.5" /></Link></Button>
+                        <Button variant="outline" size="sm" asChild><Link to="/admin/peserta/online" search={{ ujianId: exam.id }}>Pantau Peserta<ArrowRight className="h-3.5 w-3.5" /></Link></Button>
                       )}
                     </div>
                   </div>

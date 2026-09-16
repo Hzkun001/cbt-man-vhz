@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   createFileRoute,
   Outlet,
@@ -223,6 +223,10 @@ function AdminLayout() {
 
   const [theme, setTheme] = useState("light");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const menuWasOpen = useRef(false);
   const visibleNavGroups = React.useMemo(
     () =>
       navGroups
@@ -260,6 +264,58 @@ function AdminLayout() {
   };
 
   useEffect(() => {
+    if (!mobileMenuOpen) {
+      if (menuWasOpen.current) {
+        menuWasOpen.current = false;
+        menuButtonRef.current?.focus();
+      }
+      return;
+    }
+
+    menuWasOpen.current = true;
+    closeButtonRef.current?.focus();
+
+    const handleMenuKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setMobileMenuOpen(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      const focusable = Array.from(
+        sidebarRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleMenuKeyDown);
+    return () => document.removeEventListener("keydown", handleMenuKeyDown);
+  }, [mobileMenuOpen]);
+
+  useEffect(() => {
+    const desktopQuery = window.matchMedia("(min-width: 1024px)");
+    const closeMobileMenuOnDesktop = (event: MediaQueryListEvent) => {
+      if (event.matches) setMobileMenuOpen(false);
+    };
+
+    desktopQuery.addEventListener("change", closeMobileMenuOnDesktop);
+    return () => desktopQuery.removeEventListener("change", closeMobileMenuOnDesktop);
+  }, []);
+
+  useEffect(() => {
     setOpenGroupId(activeGroupId(pathname, visibleNavGroups));
     setMobileMenuOpen(false);
   }, [pathname, visibleNavGroups]);
@@ -270,17 +326,24 @@ function AdminLayout() {
         
         {/* Mobile Menu Overlay */}
         {mobileMenuOpen && (
-          <div 
+          <div
+            aria-hidden="true"
             className="fixed inset-0 z-40 bg-slate-900/40 lg:hidden backdrop-blur-sm transition-opacity"
             onClick={() => setMobileMenuOpen(false)}
           />
         )}
 
         {/* Sidebar */}
-        <aside className={cn(
+        <aside
+          ref={sidebarRef}
+          role={mobileMenuOpen ? "dialog" : undefined}
+          aria-modal={mobileMenuOpen ? true : undefined}
+          aria-label="Menu administrasi"
+          className={cn(
             "w-64 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 lg:block transition-transform duration-200 z-50 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto scrollbar-thin",
             mobileMenuOpen ? "fixed inset-y-0 left-0 h-screen overflow-y-auto shadow-xl" : "hidden"
-          )}>
+          )}
+        >
             <div className="flex h-16 items-center justify-between border-b border-slate-200 dark:border-slate-800 px-5">
               <div className="flex items-center gap-3">
                 {cfg.appLogo ? (
@@ -293,7 +356,7 @@ function AdminLayout() {
                 <span className="font-bold text-slate-900 dark:text-slate-100 text-base tracking-tight truncate">{appName}</span>
               </div>
               {mobileMenuOpen && (
-                <Button variant="ghost" size="icon" title="Tutup menu navigasi" aria-label="Tutup menu navigasi" className="lg:hidden h-8 w-8 text-slate-500 hover:text-slate-900" onClick={() => setMobileMenuOpen(false)}>
+                <Button ref={closeButtonRef} variant="ghost" size="icon" title="Tutup menu navigasi" aria-label="Tutup menu navigasi" className="lg:hidden h-8 w-8 text-slate-500 hover:text-slate-900" onClick={() => setMobileMenuOpen(false)}>
                   <X className="h-5 w-5" />
                 </Button>
               )}
@@ -354,6 +417,7 @@ function AdminLayout() {
           <header className="flex h-16 items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md px-4 lg:px-6 sticky top-0 z-30">
             <div className="flex items-center gap-4">
               <Button
+                ref={menuButtonRef}
                 variant="ghost"
                 size="icon"
                 title="Buka menu navigasi"

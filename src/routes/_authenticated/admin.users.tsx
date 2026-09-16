@@ -5,7 +5,6 @@ import { getUnitAkademikList } from "@/lib/server/akademik/functions";
 import { uid } from "@/lib/cbt/storage";
 import type { Role, User, UnitAkademik } from "@/lib/cbt/types";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -139,30 +138,29 @@ function UsersPage() {
       </div>
 
       <AdminPageContent className="p-0">
-        <Card className="border-0 shadow-none sm:border sm:shadow-sm">
-          <CardContent className="p-0">
-            <Table>
+        <div className="hidden lg:block">
+            <Table className="w-full table-fixed" wrapperClassName="overflow-hidden">
               <TableHeader>
                 <TableRow className="bg-slate-50/50 dark:bg-slate-900/50">
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Username</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Nama Lengkap</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300 text-center">Peran</TableHead>
+                  <TableHead className="w-[16%] font-semibold text-slate-700 dark:text-slate-300">Username</TableHead>
+                  <TableHead className="w-[20%] font-semibold text-slate-700 dark:text-slate-300">Nama Lengkap</TableHead>
+                  <TableHead className="w-32 font-semibold text-slate-700 dark:text-slate-300 text-center">Peran</TableHead>
                   <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Unit / Jurusan</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300 text-center">Status</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300 text-center">Aksi</TableHead>
+                  <TableHead className="w-28 font-semibold text-slate-700 dark:text-slate-300 text-center">Status</TableHead>
+                  <TableHead className="w-32 font-semibold text-slate-700 dark:text-slate-300 text-center">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {shown.map((u) => (
                   <TableRow key={u.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
-                    <TableCell className="font-medium text-slate-900 dark:text-slate-100">{u.username}</TableCell>
-                    <TableCell className="text-slate-600 dark:text-slate-400">{u.namaLengkap}</TableCell>
+                    <TableCell className="break-words font-medium text-slate-900 dark:text-slate-100">{u.username}</TableCell>
+                    <TableCell className="break-words text-slate-600 dark:text-slate-400">{u.namaLengkap}</TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="outline" className="bg-slate-50 dark:bg-slate-900 font-medium">
+                      <Badge variant="outline" className="max-w-full whitespace-normal bg-slate-50 text-center font-medium dark:bg-slate-900">
                         {u.role === "super_admin" ? "Super Admin" : u.role === "admin_prodi" ? "Admin Jurusan" : u.role === "evaluator" ? "Evaluator" : u.role}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-slate-600 dark:text-slate-400">
+                    <TableCell className="break-words text-sm text-slate-600 dark:text-slate-400">
                       {u.role === "super_admin" ? "Semua Unit (Global)" : units.find((unit) => unit.id === u.unitId)?.nama ?? "Tanpa Unit"}
                     </TableCell>
                     <TableCell className="text-center">
@@ -205,44 +203,101 @@ function UsersPage() {
                 )}
               </TableBody>
             </Table>
-            
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 dark:border-slate-800">
-                <div className="text-sm text-slate-500">
-                  Menampilkan {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filtered.length)} dari {filtered.length} admin
+        </div>
+
+        <div className="divide-y divide-slate-200 dark:divide-slate-800 lg:hidden">
+          {shown.map((u) => (
+            <article key={u.id} className="space-y-4 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="break-words font-medium text-slate-900 dark:text-slate-100">{u.namaLengkap}</p>
+                  <p className="mt-1 break-all text-sm text-slate-500">@{u.username}</p>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="h-8 w-8" 
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
-                    aria-label="Halaman sebelumnya"
-                    title="Halaman sebelumnya"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <div className="text-sm font-medium px-2">
-                    {currentPage} / {totalPages}
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="h-8 w-8" 
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages}
-                    aria-label="Halaman berikutnya"
-                    title="Halaman berikutnya"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
+                {u.aktif ? (
+                  <Badge variant="outline" className="shrink-0 font-medium shadow-none border-slate-200 dark:border-slate-800">
+                    <span className="mr-2 h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    Aktif
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="shrink-0 font-medium text-slate-500 shadow-none border-slate-200 dark:border-slate-800">
+                    <span className="mr-2 h-1.5 w-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
+                    Nonaktif
+                  </Badge>
+                )}
               </div>
-            )}
-          </CardContent>
-        </Card>
+
+              <dl className="grid grid-cols-2 gap-3 text-sm">
+                <div className="min-w-0">
+                  <dt className="text-xs font-medium text-slate-500">Peran</dt>
+                  <dd className="mt-1">
+                    <Badge variant="outline" className="max-w-full truncate bg-slate-50 font-medium dark:bg-slate-900">
+                      {u.role === "super_admin" ? "Super Admin" : u.role === "admin_prodi" ? "Admin Jurusan" : u.role === "evaluator" ? "Evaluator" : u.role}
+                    </Badge>
+                  </dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="text-xs font-medium text-slate-500">Unit / Jurusan</dt>
+                  <dd className="mt-1 break-words text-slate-600 dark:text-slate-400">
+                    {u.role === "super_admin" ? "Semua Unit (Global)" : units.find((unit) => unit.id === u.unitId)?.nama ?? "Tanpa Unit"}
+                  </dd>
+                </div>
+              </dl>
+
+              <div className="flex justify-end gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+                <Button variant="outline" size="sm" onClick={() => { setEditing(u); setOpen(true); }} className="h-8 w-8 p-0" aria-label={`Edit pengguna ${u.namaLengkap}`} title={`Edit pengguna ${u.namaLengkap}`}>
+                  <Pencil className="h-4 w-4 text-slate-500" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setLogoutId(u.id)} className="h-8 w-8 p-0 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/50 hover:text-amber-600" aria-label={`Hentikan sesi ${u.namaLengkap}`} title={`Hentikan sesi ${u.namaLengkap}`}>
+                  <LogOut className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setDeleteId(u.id)} className="h-8 w-8 p-0 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:text-rose-600" aria-label={`Hapus pengguna ${u.namaLengkap}`} title={`Hapus pengguna ${u.namaLengkap}`}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </article>
+          ))}
+          {shown.length === 0 && (
+            <div className="flex min-h-48 flex-col items-center justify-center p-6 text-center text-slate-500">
+              <FileX className="mb-3 h-10 w-10 text-slate-300 dark:text-slate-600" />
+              <p>Tidak ada data pengguna yang sesuai.</p>
+            </div>
+          )}
+        </div>
+
+        {totalPages > 1 && (
+          <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
+            <div className="text-sm text-slate-500">
+              Menampilkan {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filtered.length)} dari {filtered.length} admin
+            </div>
+            <div className="flex items-center gap-1 self-end sm:self-auto">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                aria-label="Halaman sebelumnya"
+                title="Halaman sebelumnya"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="px-2 text-sm font-medium">
+                {currentPage} / {totalPages}
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                aria-label="Halaman berikutnya"
+                title="Halaman berikutnya"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </AdminPageContent>
 
       <UserDialog open={open} onOpenChange={setOpen} editing={editing} onSaved={refresh} units={units} />
