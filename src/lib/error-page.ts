@@ -1,4 +1,14 @@
-export function renderErrorPage(): string {
+export function renderErrorPage(error?: unknown): string {
+  const detail =
+    process.env.NODE_ENV === "development"
+      ? error instanceof Error
+        ? error.stack ?? error.message
+        : String(error ?? "Unknown error")
+      : "";
+  const detailHtml = detail
+    ? `<details open><summary>Detail error (development)</summary><pre>${escapeHtml(detail)}</pre></details>`
+    : "";
+
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -14,12 +24,16 @@ export function renderErrorPage(): string {
       a, button { padding: 0.5rem 1rem; border-radius: 0.375rem; font: inherit; cursor: pointer; text-decoration: none; border: 1px solid transparent; }
       .primary { background: #111; color: #fff; }
       .secondary { background: #fff; color: #111; border-color: #d1d5db; }
+      details { margin: 1rem 0 1.5rem; text-align: left; }
+      summary { cursor: pointer; font-weight: 600; }
+      pre { max-height: 16rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; background: #fff1f2; border: 1px solid #fecdd3; color: #9f1239; padding: 0.75rem; border-radius: 0.375rem; font-size: 0.75rem; }
     </style>
   </head>
   <body>
     <div class="card">
       <h1>This page didn't load</h1>
       <p>Something went wrong on our end. You can try refreshing or head back home.</p>
+      ${detailHtml}
       <div class="actions">
         <button class="primary" onclick="location.reload()">Try again</button>
         <a class="secondary" href="/">Go home</a>
@@ -27,4 +41,13 @@ export function renderErrorPage(): string {
     </div>
   </body>
 </html>`;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }

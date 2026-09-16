@@ -14,7 +14,7 @@ import {
 import type { NavKey, Role } from "@/lib/cbt/types";
 import type { UserRow } from "@/lib/server/repos/mappers";
 
-const uploadsDir = [process.cwd(), "data", "uploads"] as const;
+const uploadsDir = ["data", "uploads"] as const;
 /** Decoded payload cap for `uploadStoredFile` only. Restore/import of existing backups is not gated. */
 const MAX_STORED_FILE_BYTES = 10 * 1024 * 1024;
 const DEFAULT_OPERATOR_ROLE_ACCESS: NavKey[] = [
@@ -128,7 +128,7 @@ async function fsApi() {
 
 async function resolveUploadsDir() {
   const { resolve } = await pathApi();
-  return resolve(...uploadsDir);
+  return resolve(process.cwd(), ...uploadsDir);
 }
 
 async function ensureUploadsDir() {
