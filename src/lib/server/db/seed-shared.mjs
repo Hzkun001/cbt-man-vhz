@@ -388,6 +388,30 @@ export async function createSeedDataset({ uid, now, hashPassword }) {
       createdBy: admin.id,
       createdAt: ts + 302,
     },
+    {
+      id: uid("ex_"),
+      nama: "Ujian Demo Peserta",
+      deskripsi: "<p>Ujian demo dengan soal dummy untuk mencoba alur peserta.</p>",
+      durasiMenit: 30,
+      poinBenar: 10,
+      poinSalah: 0,
+      poinKosong: 0,
+      beginAt: ts - parseDurationMinutes(60),
+      endAt: ts + parseDurationMinutes(1440),
+      tokenAktif: false,
+      ipRange: "",
+      groupIds: unitAkademik.map((item) => item.id),
+      topicSets: [
+        { id: uid("ts_"), topikId: topik[0].id, jumlah: 3, jumlahOpsi: 4, acakSoal: false, acakJawaban: false },
+      ],
+      showResult: true,
+      showResultDetail: true,
+      fullscreenWajib: false,
+      maxPindahTab: 5,
+      blokirShortcut: false,
+      createdBy: admin.id,
+      createdAt: ts + 303,
+    },
   ];
 
   for (let i = 1; i <= 20; i++) {

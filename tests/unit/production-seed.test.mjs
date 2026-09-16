@@ -75,6 +75,10 @@ test("SEED_DEMO=true seeds the full demo dataset in production with ADMIN_PASSWO
     assert.equal(dataset.users[0].passwordHash, "hash:configured-secret");
     assert.ok(dataset.users.some((user) => user.username === "operator1"));
     assert.ok(dataset.ujian.length > 0);
+    const demoExam = dataset.ujian.find((exam) => exam.nama === "Ujian Demo Peserta");
+    assert.ok(demoExam);
+    assert.equal(demoExam.topicSets.length, 1);
+    assert.equal(demoExam.topicSets[0].jumlah, 3);
   } finally {
     restoreEnv("NODE_ENV", previousNodeEnv);
     restoreEnv("ADMIN_PASSWORD", previousAdminPassword);
