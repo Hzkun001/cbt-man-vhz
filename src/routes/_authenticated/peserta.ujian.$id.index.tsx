@@ -355,7 +355,7 @@ function PreUjianContent({
                     <div className="relative flex items-center justify-center shrink-0 mt-0.5">
                       <input 
                         type="checkbox" 
-                        className="peer appearance-none w-5 h-5 border-2 border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-900 checked:bg-primary checked:border-primary transition-all cursor-pointer" 
+                        className="peer appearance-none w-5 h-5 border-2 border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-900 checked:bg-primary checked:border-primary transition-all cursor-pointer"
                         checked={agree} 
                         onChange={(e) => setAgree(e.target.checked)} 
                       />
@@ -370,7 +370,7 @@ function PreUjianContent({
                   
                   <Button 
                     size="lg" 
-                    className="w-full h-14 rounded-xl text-sm font-bold tracking-wide shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:-translate-y-0.5 transition-all bg-primary hover:bg-primary/90 border-0" 
+                    className="w-full h-14 rounded-xl text-sm font-bold tracking-wide shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:-translate-y-0.5 transition-all bg-primary hover:bg-primary/90 border-0"
                     onClick={mulai} 
                     disabled={!examAllowed || !agree}
                   >
