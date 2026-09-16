@@ -128,7 +128,7 @@ async function fsApi() {
 
 async function resolveUploadsDir() {
   const { resolve } = await pathApi();
-  return resolve(...uploadsDir);
+  return resolve(process.cwd(), ...uploadsDir);
 }
 
 async function ensureUploadsDir() {
