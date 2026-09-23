@@ -164,5 +164,5 @@ test("essay question textarea provides clean distraction-free card with auto-sav
   assert.doesNotMatch(kerjakan, /blur transition duration-300/);
   assert.match(kerjakan, /Jawaban tersimpan otomatis/);
   assert.match(kerjakan, /kata · .*karakter/);
-  assert.match(kerjakan, /aria-label=\{`Jawaban esai soal nomor \$\{currentIndex \+ 1\}`\}/);
+  assert.match(kerjakan, /aria-label=\{`Jawaban esai soal nomor \$\{idx \+ 1\}`\}/);
 });
