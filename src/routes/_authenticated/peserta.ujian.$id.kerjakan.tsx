@@ -521,6 +521,7 @@ function RouteComponent() {
                     <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
                       <Textarea
                         rows={10}
+                        aria-label={`Jawaban esai soal nomor ${currentIndex + 1}`}
                         value={currentJawaban.jawabanEssay ?? ""}
                         onChange={(e) => updateJawaban({ jawabanEssay: e.target.value })}
                         placeholder="Ketik jawaban esai Anda secara lengkap dan jelas di sini..."
