@@ -10,6 +10,7 @@ import {
 	operatorCanTouchUjian,
 	pesertaCanTouchUjian,
 } from "../db/auth";
+import { SesiUjianSchema } from "@/lib/cbt/types";
 import type { SesiUjian, NavKey } from "@/lib/cbt/types";
 import { requireAuditLog } from "../db/audit";
 import { deleteSessionsForUser } from "../db/session";
@@ -30,6 +31,25 @@ const OPERATOR_SESSION_KEYS: NavKey[] = [
 	"leaderboard",
 ];
 const SUBMIT_GRACE_MS = 30_000;
+
+const idPayloadSchema = z.object({ id: z.string().min(1) }).strict();
+const sesiMutationItemSchema = SesiUjianSchema.superRefine((item, ctx) => {
+	const soalIds = new Set(item.soalIds);
+	if (soalIds.size !== item.soalIds.length) {
+		ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Daftar soal sesi tidak boleh duplikat." });
+	}
+	if (item.mulaiAt !== undefined && item.selesaiAt !== undefined && item.selesaiAt < item.mulaiAt) {
+		ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Waktu selesai sesi tidak valid." });
+	}
+	if (item.jawaban.some((answer) => !soalIds.has(answer.soalId))) {
+		ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Jawaban mengacu pada soal yang tidak ada di sesi." });
+	}
+});
+const sesiMutationSchema = z.discriminatedUnion("action", [
+	z.object({ action: z.literal("upsert"), payload: sesiMutationItemSchema }),
+	z.object({ action: z.literal("remove"), payload: idPayloadSchema }),
+	z.object({ action: z.literal("bulkSet"), payload: z.array(sesiMutationItemSchema) }),
+]);
 
 // Authoritative server-side grading at submit time. The participant's client
 // also computes a provisional grade for instant display, but the persisted
@@ -287,12 +307,7 @@ export const reportExamViolation = createServerFn({ method: "POST" })
 	});
 
 export const mutateSesiServer = createServerFn({ method: "POST" })
-	.validator(
-		z.object({
-			action: z.enum(["upsert", "remove", "bulkSet"]),
-			payload: z.any(),
-		}),
-	)
+	.validator(sesiMutationSchema)
 	.handler(async ({ data }) => {
 		try {
 			await seedIfNeeded();
@@ -380,8 +395,18 @@ export const mutateSesiServer = createServerFn({ method: "POST" })
 				entityId: typeof payload === "object" && payload && "id" in payload ? String(payload.id) : undefined,
 			});
 			await prisma.$transaction(async (tx) => {
-				if (action === "remove")
+				if (action === "remove") {
+					const targetSesi = await tx.sesiUjian.findUnique({
+						where: { id: String(payload.id) },
+						select: { ujianId: true, pesertaId: true },
+					});
 					await tx.sesiUjian.delete({ where: { id: String(payload.id) } });
+					if (targetSesi) {
+						await tx.tokenClaim.deleteMany({
+							where: { ujianId: targetSesi.ujianId, pesertaId: targetSesi.pesertaId },
+						});
+					}
+				}
 				else if (action === "bulkSet") {
 					await tx.sesiUjian.deleteMany();
 					await tx.sesiUjian.createMany({
@@ -447,6 +472,32 @@ export const mutateSesiServer = createServerFn({ method: "POST" })
 				ok: false as const,
 				error: err instanceof Error ? err.message : String(err),
 			};
+		}
+	});
+
+export const deleteAllExamSessionsServer = createServerFn({ method: "POST" })
+	.validator(z.object({ ujianId: z.string().min(1) }))
+	.handler(async ({ data }) => {
+		try {
+			const caller = await requireCaller();
+			if (!caller || caller.role === "mahasiswa") return { ok: false as const, error: "Forbidden" };
+			if (caller.role !== "super_admin" && !(await operatorCanTouchUjian(caller, data.ujianId))) {
+				return { ok: false as const, error: "Forbidden" };
+			}
+			await requireAuditLog({
+				userId: caller.id,
+				userRole: caller.role,
+				action: "sesi.deleteAll",
+				entity: "ujian",
+				entityId: data.ujianId,
+			});
+			await prisma.$transaction(async (tx) => {
+				await tx.sesiUjian.deleteMany({ where: { ujianId: data.ujianId } });
+				await tx.tokenClaim.deleteMany({ where: { ujianId: data.ujianId } });
+			});
+			return { ok: true as const };
+		} catch (err) {
+			return { ok: false as const, error: err instanceof Error ? err.message : String(err) };
 		}
 	});
 

@@ -8,9 +8,20 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Added
 
+- Fitur perpanjangan jadwal ujian ("Perpanjang Jadwal") di manajemen paket ujian melalui server action terisolasi (`extendJadwalUjianServer`) agar paket yang telah ditutup atau sedang berjalan dapat dibuka kembali untuk peserta tanpa merusak integritas butir soal dan riwayat sesi sebelumnya.
+- Fitur reset dan hapus sesi peserta ujian ("Hapus Sesi" satuan dan "Hapus Semua Sesi") dengan dialog konfirmasi bertema di halaman monitoring peserta ujian (`/admin/ujian/$id/peserta`) dan analitik (`/admin/analitik/$id`) melalui server mutation transaksional (`deleteAllExamSessionsServer` dan `deleteExamSessionServer`) yang turut membersihkan klaim token terkait untuk memungkinkan ujian ulang peserta.
+
 ### Changed
 
+- Penyederhanaan interaksi daftar paket ujian (`/admin/ujian`): klik baris paket ujian membuka langsung editor paket (`/admin/ujian/$id`), penambahan tombol aksi eksplisit "Lihat Peserta", serta perbaikan tampilan status ujian (persiapan vs berlangsung vs selesai).
+- Perombakan tata letak editor paket ujian (`/admin/ujian/$id`) menjadi 2 kolom terstruktur yang bersih, menyederhanakan konfigurasi waktu dan identitas, mengintegrasikan dialog konfirmasi penghapusan ujian bertema, dan menghilangkan banner peringatan mode berlangsung yang mengganggu.
+- Pembersihan antarmuka kotak teks soal esai peserta (`/peserta/ujian/$id/kerjakan`): menghilangkan lapisan gradien neon kabur (*glow blur*) dan latar belakang semi-transparan, beralih ke kontainer kartu solid ergonomis dengan indikator autosave dan penghitung kata serta karakter real-time.
+- Navigasi tombol "Kembali" pada halaman daftar peserta ujian (`/admin/ujian/$id/peserta`) kini kembali secara konsisten ke halaman editor paket ujian terkait (`/admin/ujian/$id`).
+
 ### Fixed
+
+- Peserta dapat melanjutkan sesi ujian yang masih berlangsung dari `/peserta` meskipun jadwal ujian sudah lewat.
+- Sinkronisasi korelasi status ujian berlangsung dan selesai antara portal peserta dan ringkasan operasional admin.
 
 ### Security
 

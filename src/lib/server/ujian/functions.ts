@@ -154,11 +154,29 @@ export const mutateUjianServer = createServerFn({ method: "POST" })
 					validateUjianForSave(item);
 					const existing = await tx.ujian.findUnique({
 						where: { id: item.id },
-						select: { id: true, status: true, createdAt: true },
+						select: {
+							id: true,
+							status: true,
+							topicSets: true,
+							poinBenar: true,
+							poinSalah: true,
+							poinKosong: true,
+						},
 					});
-					if (existing?.status === "published") throw new Error("Paket published hanya dapat diubah melalui alur revisi.");
-					if (existing && await tx.sesiUjian.count({ where: { ujianId: item.id } }) > 0) {
-						throw new Error("Paket tidak dapat diubah karena sudah memiliki sesi peserta.");
+					const hasSessions = existing && (await tx.sesiUjian.count({ where: { ujianId: item.id } })) > 0;
+					if (hasSessions) {
+						const topicSetsChanged = existing.topicSets !== stringifyJson(item.topicSets);
+						const scoringChanged =
+							Number(existing.poinBenar) !== item.poinBenar ||
+							Number(existing.poinSalah) !== item.poinSalah ||
+							Number(existing.poinKosong) !== item.poinKosong;
+						if (topicSetsChanged || scoringChanged) {
+							throw new Error("Paket tidak dapat diubah karena sudah memiliki sesi peserta (Sumber soal dan bobot nilai dikunci).");
+						}
+					}
+					if (existing?.status === "published") {
+						const error = await getPublishError({ ...item, status: "draft" }, tx);
+						if (error) throw new Error(error);
 					}
 					const writeData = {
 						nama: item.nama,
@@ -186,8 +204,8 @@ export const mutateUjianServer = createServerFn({ method: "POST" })
 						allowNilaiNormal: item.allowNilaiNormal,
 					};
 					if (existing) {
-						const updated = await tx.ujian.updateMany({ where: { id: item.id, status: "draft" }, data: writeData });
-						if (updated.count !== 1) throw new Error("Paket ujian sudah dipublikasikan.");
+						const updated = await tx.ujian.updateMany({ where: { id: item.id }, data: writeData });
+						if (updated.count !== 1) throw new Error("Paket ujian tidak ditemukan.");
 					} else {
 						await tx.ujian.create({
 							data: {
@@ -201,6 +219,60 @@ export const mutateUjianServer = createServerFn({ method: "POST" })
 					}
 				}
 			});
+			return { ok: true as const };
+		} catch (err) {
+			return {
+				ok: false as const,
+				error: err instanceof Error ? err.message : String(err),
+			};
+		}
+	});
+
+export const extendJadwalUjianServer = createServerFn({ method: "POST" })
+	.validator(
+		z.object({
+			ujianId: z.string().min(1),
+			newEndAt: z.number().int().positive(),
+		}),
+	)
+	.handler(async ({ data }) => {
+		try {
+			await seedIfNeeded();
+			const caller = await requireCaller();
+			if (!caller) return { ok: false as const, error: "Forbidden" };
+
+			if (caller.role === "admin_prodi") {
+				if (!(await operatorHasNav(caller, "ujian"))) {
+					return { ok: false as const, error: "Forbidden" };
+				}
+				if (!(await operatorCanTouchUjian(caller, data.ujianId))) {
+					return { ok: false as const, error: "Forbidden" };
+				}
+			} else if (caller.role !== "super_admin") {
+				return { ok: false as const, error: "Forbidden" };
+			}
+
+			await audit(caller, "ujian", "extendJadwal", { id: data.ujianId, newEndAt: data.newEndAt });
+
+			await prisma.$transaction(async (tx) => {
+				const exam = await tx.ujian.findUnique({
+					where: { id: data.ujianId },
+					select: { id: true, status: true, beginAt: true, endAt: true },
+				});
+				if (!exam) throw new Error("Paket ujian tidak ditemukan.");
+				if (exam.beginAt && data.newEndAt <= Number(exam.beginAt)) {
+					throw new Error("Waktu selesai baru harus setelah waktu mulai.");
+				}
+				if (data.newEndAt <= Date.now()) {
+					throw new Error("Waktu selesai baru harus di masa mendatang.");
+				}
+
+				await tx.ujian.update({
+					where: { id: data.ujianId },
+					data: { endAt: BigInt(data.newEndAt) },
+				});
+			});
+
 			return { ok: true as const };
 		} catch (err) {
 			return {
