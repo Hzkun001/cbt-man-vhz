@@ -217,6 +217,8 @@ export const mutateUjianServer = createServerFn({ method: "POST" })
 		}
 	});
 
+class ExamScheduleValidationError extends Error {}
+
 export const extendJadwalUjianServer = createServerFn({ method: "POST" })
 	.validator(
 		z.object({
@@ -246,23 +248,23 @@ export const extendJadwalUjianServer = createServerFn({ method: "POST" })
 					where: { id: data.ujianId },
 					select: { id: true, status: true, beginAt: true, endAt: true },
 				});
-				if (!exam) throw new Error("Paket ujian tidak ditemukan.");
-				if (exam.status !== "published") throw new Error("Hanya paket published yang dapat diperpanjang.");
+				if (!exam) throw new ExamScheduleValidationError("Paket ujian tidak ditemukan.");
+				if (exam.status !== "published") throw new ExamScheduleValidationError("Hanya paket published yang dapat diperpanjang.");
 				if (exam.endAt !== null && data.newEndAt <= Number(exam.endAt)) {
-					throw new Error("Waktu selesai baru harus lebih besar dari waktu selesai sebelumnya.");
+					throw new ExamScheduleValidationError("Waktu selesai baru harus lebih besar dari waktu selesai sebelumnya.");
 				}
 				if (exam.beginAt && data.newEndAt <= Number(exam.beginAt)) {
-					throw new Error("Waktu selesai baru harus setelah waktu mulai.");
+					throw new ExamScheduleValidationError("Waktu selesai baru harus setelah waktu mulai.");
 				}
 				if (data.newEndAt <= Date.now()) {
-					throw new Error("Waktu selesai baru harus di masa mendatang.");
+					throw new ExamScheduleValidationError("Waktu selesai baru harus di masa mendatang.");
 				}
 
 				const updated = await tx.ujian.updateMany({
 					where: { id: data.ujianId, status: "published", endAt: exam.endAt },
 					data: { endAt: BigInt(data.newEndAt) },
 				});
-				if (updated.count !== 1) throw new Error("Jadwal ujian telah berubah. Muat ulang lalu coba lagi.");
+				if (updated.count !== 1) throw new ExamScheduleValidationError("Jadwal ujian telah berubah. Muat ulang lalu coba lagi.");
 				const auditResult = await writeAuditLog({
 					userId: caller.id,
 					userRole: caller.role,
@@ -275,6 +277,7 @@ export const extendJadwalUjianServer = createServerFn({ method: "POST" })
 
 			return { ok: true as const };
 		} catch (err) {
+			if (err instanceof ExamScheduleValidationError) return { ok: false as const, error: err.message };
 			console.error("Gagal memperpanjang jadwal ujian", err);
 			return { ok: false as const, error: "Gagal memperpanjang jadwal ujian. Muat ulang lalu coba lagi." };
 		}

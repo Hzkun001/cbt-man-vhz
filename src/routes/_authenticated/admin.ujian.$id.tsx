@@ -20,7 +20,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, Save, Lock, ArrowLeft, FileSignature, KeyRound, Users, BarChart3, CalendarClock, Calendar, Clock, Info, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { RichEditor } from "@/components/cbt/RichEditor";
+import { RichEditor, RichView } from "@/components/cbt/RichEditor";
 import { AdminPage, AdminPageHeader } from "@/components/cbt/AdminPage";
 import { ConfirmDialog } from "@/components/cbt/ConfirmDialog";
 import {
@@ -243,6 +243,7 @@ function UjianEditor() {
   const allowedSet = allowedTopikIdSet(user);
 
   function set<K extends keyof Ujian>(k: K, v: Ujian[K]) {
+    if (u!.status !== "draft" || sesiRepo.all().some((s) => s.ujianId === id)) return;
     setU({ ...u!, [k]: v });
   }
 
@@ -389,6 +390,7 @@ function UjianEditor() {
   }
 
   const hasSessions = sesiRepo.all().some((s) => s.ujianId === id);
+  const locked = u.status !== "draft" || hasSessions;
   const totalSoal = u.topicSets.reduce((total, topicSet) => total + (Number(topicSet.jumlah) || 0), 0);
 
   return (
@@ -443,7 +445,7 @@ function UjianEditor() {
                 Publikasikan
               </Button>
             )}
-            {u.status === "draft" && !hasSessions && <Button onClick={save} className="h-9 text-xs font-semibold shadow-xs">
+            {!locked && <Button onClick={save} className="h-9 text-xs font-semibold shadow-xs">
               <Save className="mr-1 h-4 w-4" />
               Simpan Perubahan
             </Button>}
@@ -488,6 +490,8 @@ function UjianEditor() {
         )}
       </div>
 
+      {locked && <p className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200" role="status">Paket yang sudah dipublikasikan atau memiliki sesi tidak dapat diedit.</p>}
+      <fieldset disabled={locked} aria-disabled={locked} className="min-w-0 space-y-4">
       <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
         <CardContent className="space-y-4 p-4">
           <div className="flex items-center gap-2.5 border-b pb-3">
@@ -518,7 +522,7 @@ function UjianEditor() {
           <div>
             <Label className="text-xs font-medium">Deskripsi / Instruksi</Label>
             <div className="mt-1">
-              <RichEditor value={u.deskripsi} onChange={(v) => set("deskripsi", v)} minHeight={80} />
+              {locked ? <RichView html={u.deskripsi} /> : <RichEditor value={u.deskripsi} onChange={(v) => set("deskripsi", v)} minHeight={80} />}
             </div>
           </div>
           <details className="rounded-md border">
@@ -627,7 +631,7 @@ Perpanjang batas mulai ujian baru. Batas waktu sesi peserta yang sudah berjalan 
                 className="w-full text-sm"
               />
               <p className="text-[11px] text-muted-foreground">
-                Pilih waktu di masa mendatang. Setelah disimpan, status ujian akan diperpanjang secara otomatis.
+                Berlaku untuk peserta yang memulai sesi baru. Sesi yang sudah berjalan tidak berubah.
               </p>
             </div>
           </div>
@@ -1054,6 +1058,7 @@ Perpanjang batas mulai ujian baru. Batas waktu sesi peserta yang sudah berjalan 
         </CardContent>
         </details>
       </Card>
+      </fieldset>
     </AdminPage>
   );
 }

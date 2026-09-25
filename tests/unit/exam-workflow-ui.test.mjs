@@ -50,7 +50,8 @@ test("published and ongoing exams keep the edit action with question source guar
   assert.match(list, /Users className=.*Peserta/);
   assert.doesNotMatch(list, /\{sesiCount === 0 && \(\s*<Link to="\/admin\/ujian\/\$id"/);
   assert.match(editor, /hasSessions/);
-  assert.match(editor, /u\.status === "draft" && !hasSessions/);
+  assert.match(editor, /const locked = u\.status !== "draft" \|\| hasSessions/);
+  assert.match(editor, /<fieldset disabled=\{locked\}/);
   assert.match(editor, /const result = await ujianRepo\.flush\(\)/);
   assert.match(server, /if \(existing\?\.status === "published"\) throw new Error/);
   assert.match(server, /where: \{ id: item\.id, status: "draft" \}, data: writeData/);
