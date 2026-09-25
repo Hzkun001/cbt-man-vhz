@@ -62,8 +62,8 @@ function PesertaUjian() {
       }
       refresh();
       toast.success("Sesi peserta berhasil dihapus. Peserta dapat ujian ulang.");
-    } catch (e) {
-      toast.error(`Gagal menghapus sesi: ${e instanceof Error ? e.message : String(e)}`);
+    } catch {
+      toast.error("Gagal menghapus sesi. Coba lagi.");
     } finally {
       setIsDeleting(false);
       setDeleteSessionId(null);
@@ -80,8 +80,8 @@ function PesertaUjian() {
       }
       refresh();
       toast.success("Semua sesi peserta berhasil dihapus");
-    } catch (e) {
-      toast.error(`Gagal menghapus semua sesi: ${e instanceof Error ? e.message : String(e)}`);
+    } catch {
+      toast.error("Gagal menghapus semua sesi. Coba lagi.");
     } finally {
       setIsDeleting(false);
       setDeleteAllOpen(false);

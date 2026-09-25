@@ -136,6 +136,7 @@ function UjianEditor() {
   const [loadingRemote, setLoadingRemote] = useState(initial === undefined);
   const [denied, setDenied] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [extendOpen, setExtendOpen] = useState(false);
   const [newEndAtInput, setNewEndAtInput] = useState("");
   const [isExtending, setIsExtending] = useState(false);
@@ -262,6 +263,10 @@ function UjianEditor() {
   }
 
   async function save() {
+    if (u!.status !== "draft" || sesiRepo.all().some((s) => s.ujianId === id)) {
+      toast.error("Paket yang telah dipublikasikan atau memiliki sesi tidak dapat diubah melalui editor");
+      return;
+    }
     if (!u!.nama.trim()) {
       toast.error("Nama wajib");
       return;
@@ -299,6 +304,7 @@ function UjianEditor() {
   }
 
   async function publish() {
+    if (u!.status !== "draft") return;
     ujianRepo.upsert(u!);
     const saveResult = await ujianRepo.flush();
     if (!saveResult.ok) {
@@ -311,8 +317,6 @@ function UjianEditor() {
       return;
     }
     const published = { ...u!, status: "published" as const };
-    ujianRepo.upsert(published);
-    await ujianRepo.flush();
     setU(published);
     toast.success("Paket ujian dipublikasikan");
   }
@@ -355,10 +359,7 @@ function UjianEditor() {
         return;
       }
 
-      const updated = { ...u, endAt: newEndAt };
-      ujianRepo.upsert(updated);
-      await ujianRepo.flush();
-      setU(updated);
+      setU((prev) => prev ? { ...prev, endAt: newEndAt } : prev);
       toast.success("Jadwal ujian berhasil diperpanjang");
       setExtendOpen(false);
     } catch (err) {
@@ -369,14 +370,22 @@ function UjianEditor() {
   }
 
   async function hapus() {
-    ujianRepo.remove(u!.id);
-    const result = await ujianRepo.flush();
-    if (!result.ok) {
-      toast.error(result.error || "Gagal menghapus ujian");
-      return;
+    if (isDeleting) return;
+    setIsDeleting(true);
+    try {
+      ujianRepo.remove(u!.id);
+      const result = await ujianRepo.flush();
+      if (!result.ok) {
+        toast.error(result.error || "Gagal menghapus ujian");
+        return;
+      }
+      toast.success("Ujian dihapus");
+      navigate({ to: "/admin/ujian" });
+    } catch {
+      toast.error("Gagal menghapus ujian");
+    } finally {
+      setIsDeleting(false);
     }
-    toast.success("Ujian dihapus");
-    navigate({ to: "/admin/ujian" });
   }
 
   const hasSessions = sesiRepo.all().some((s) => s.ujianId === id);
@@ -434,10 +443,10 @@ function UjianEditor() {
                 Publikasikan
               </Button>
             )}
-            <Button onClick={save} className="h-9 text-xs font-semibold shadow-xs">
+            {u.status === "draft" && !hasSessions && <Button onClick={save} className="h-9 text-xs font-semibold shadow-xs">
               <Save className="mr-1 h-4 w-4" />
               Simpan Perubahan
-            </Button>
+            </Button>}
           </div>
         }
       />
@@ -579,6 +588,7 @@ function UjianEditor() {
         title="Hapus Ujian"
         description={`Yakin ingin menghapus ujian "${u.nama}" beserta seluruh data yang terkait?`}
         confirmLabel="Hapus"
+        busy={isDeleting}
         onConfirm={hapus}
       />
 
@@ -590,7 +600,7 @@ function UjianEditor() {
               Perpanjang Jadwal Ujian
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Perpanjang batas waktu selesai agar paket ujian dapat dibuka kembali untuk peserta. Konfigurasi butir soal dan riwayat sesi sebelumnya tetap terjaga.
+Perpanjang batas mulai ujian baru. Batas waktu sesi peserta yang sudah berjalan tidak berubah; gunakan pengelolaan sesi terpisah untuk peserta tersebut.
             </DialogDescription>
           </DialogHeader>
 

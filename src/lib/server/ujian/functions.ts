@@ -13,7 +13,7 @@ import {
 	pesertaCanTouchUjian,
 } from "../db/auth";
 import type { Ujian, TokenUjian } from "@/lib/cbt/types";
-import { requireAuditLog } from "../db/audit";
+import { requireAuditLog, writeAuditLog } from "../db/audit";
 import { Prisma } from "@prisma/client";
 import { stringifyJson, toBigInt, parseJson } from "../db/json";
 import { mapToken, mapUjian } from "../repos/mappers";
@@ -163,20 +163,9 @@ export const mutateUjianServer = createServerFn({ method: "POST" })
 							poinKosong: true,
 						},
 					});
-					const hasSessions = existing && (await tx.sesiUjian.count({ where: { ujianId: item.id } })) > 0;
-					if (hasSessions) {
-						const topicSetsChanged = existing.topicSets !== stringifyJson(item.topicSets);
-						const scoringChanged =
-							Number(existing.poinBenar) !== item.poinBenar ||
-							Number(existing.poinSalah) !== item.poinSalah ||
-							Number(existing.poinKosong) !== item.poinKosong;
-						if (topicSetsChanged || scoringChanged) {
-							throw new Error("Paket tidak dapat diubah karena sudah memiliki sesi peserta (Sumber soal dan bobot nilai dikunci).");
-						}
-					}
-					if (existing?.status === "published") {
-						const error = await getPublishError({ ...item, status: "draft" }, tx);
-						if (error) throw new Error(error);
+					if (existing?.status === "published") throw new Error("Paket published tidak dapat diubah melalui editor.");
+					if (existing && await tx.sesiUjian.count({ where: { ujianId: item.id } }) > 0) {
+						throw new Error("Paket tidak dapat diubah karena sudah memiliki sesi peserta.");
 					}
 					const writeData = {
 						nama: item.nama,
@@ -204,8 +193,8 @@ export const mutateUjianServer = createServerFn({ method: "POST" })
 						allowNilaiNormal: item.allowNilaiNormal,
 					};
 					if (existing) {
-						const updated = await tx.ujian.updateMany({ where: { id: item.id }, data: writeData });
-						if (updated.count !== 1) throw new Error("Paket ujian tidak ditemukan.");
+						const updated = await tx.ujian.updateMany({ where: { id: item.id, status: "draft" }, data: writeData });
+						if (updated.count !== 1) throw new Error("Paket ujian sudah dipublikasikan atau tidak ditemukan.");
 					} else {
 						await tx.ujian.create({
 							data: {
@@ -252,14 +241,16 @@ export const extendJadwalUjianServer = createServerFn({ method: "POST" })
 				return { ok: false as const, error: "Forbidden" };
 			}
 
-			await audit(caller, "ujian", "extendJadwal", { id: data.ujianId, newEndAt: data.newEndAt });
-
 			await prisma.$transaction(async (tx) => {
 				const exam = await tx.ujian.findUnique({
 					where: { id: data.ujianId },
 					select: { id: true, status: true, beginAt: true, endAt: true },
 				});
 				if (!exam) throw new Error("Paket ujian tidak ditemukan.");
+				if (exam.status !== "published") throw new Error("Hanya paket published yang dapat diperpanjang.");
+				if (exam.endAt !== null && data.newEndAt <= Number(exam.endAt)) {
+					throw new Error("Waktu selesai baru harus lebih besar dari waktu selesai sebelumnya.");
+				}
 				if (exam.beginAt && data.newEndAt <= Number(exam.beginAt)) {
 					throw new Error("Waktu selesai baru harus setelah waktu mulai.");
 				}
@@ -267,18 +258,25 @@ export const extendJadwalUjianServer = createServerFn({ method: "POST" })
 					throw new Error("Waktu selesai baru harus di masa mendatang.");
 				}
 
-				await tx.ujian.update({
-					where: { id: data.ujianId },
+				const updated = await tx.ujian.updateMany({
+					where: { id: data.ujianId, status: "published", endAt: exam.endAt },
 					data: { endAt: BigInt(data.newEndAt) },
 				});
+				if (updated.count !== 1) throw new Error("Jadwal ujian telah berubah. Muat ulang lalu coba lagi.");
+				const auditResult = await writeAuditLog({
+					userId: caller.id,
+					userRole: caller.role,
+					action: "ujian.extendJadwal",
+					entity: "ujian",
+					entityId: data.ujianId,
+				}, tx);
+				if (!auditResult.ok) throw new Error(auditResult.error);
 			});
 
 			return { ok: true as const };
 		} catch (err) {
-			return {
-				ok: false as const,
-				error: err instanceof Error ? err.message : String(err),
-			};
+			console.error("Gagal memperpanjang jadwal ujian", err);
+			return { ok: false as const, error: "Gagal memperpanjang jadwal ujian. Muat ulang lalu coba lagi." };
 		}
 	});
 

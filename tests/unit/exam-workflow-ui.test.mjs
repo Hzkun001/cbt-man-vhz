@@ -50,26 +50,20 @@ test("published and ongoing exams keep the edit action with question source guar
   assert.match(list, /Users className=.*Peserta/);
   assert.doesNotMatch(list, /\{sesiCount === 0 && \(\s*<Link to="\/admin\/ujian\/\$id"/);
   assert.match(editor, /hasSessions/);
+  assert.match(editor, /u\.status === "draft" && !hasSessions/);
   assert.match(editor, /const result = await ujianRepo\.flush\(\)/);
-  assert.match(editor, /if \(!result\.ok\)/);
-  assert.match(server, /if \(existing\?\.status === "published"\)/);
-  assert.match(server, /getPublishError\(\{ \.\.\.item, status: "draft" \}, tx\)/);
-  assert.match(server, /tx\.sesiUjian\.count\(\{ where: \{ ujianId: item\.id \} \}\)/);
-  assert.match(server, /Sumber soal dan bobot/);
-  assert.match(server, /where: \{ id: item\.id \}, data: writeData/);
+  assert.match(server, /if \(existing\?\.status === "published"\) throw new Error/);
+  assert.match(server, /where: \{ id: item\.id, status: "draft" \}, data: writeData/);
 });
 
-test("participant can resume an existing session after the exam window closes", () => {
+test("participant UI does not offer resume after the exam window closes", () => {
   const dashboard = read("src/routes/_authenticated/peserta.index.tsx");
   const preExam = read("src/routes/_authenticated/peserta.ujian.$id.index.tsx");
 
-  assert.match(dashboard, /const isStartable = status === "sedang" \|\| availability === "active" \|\| availability === "open"/);
-  assert.match(dashboard, /status !== "sedang" && \(availability === "upcoming" \|\| availability === "ended"\)/);
-  assert.match(preExam, /status === "sedang"/);
-  assert.match(preExam, /const canOpen = examAllowed \|\| !+sesiBerlangsung/);
-  assert.match(preExam, /if \(ujian\.tokenAktif && !sesiBerlangsung\)/);
-  assert.match(preExam, /\{ujian\.tokenAktif && !sesiBerlangsung && \(/);
-  assert.match(preExam, /if \(!canOpen\)/);
+  assert.match(dashboard, /const isStartable = availability === "active" \|\| availability === "open"/);
+  assert.match(preExam, /const canOpen = examAllowed/);
+  assert.match(preExam, /s\.endsAt !== undefined && s\.endsAt > Date\.now\(\)/);
+  assert.match(preExam, /ujian\.endAt === undefined \|\| ujian\.endAt > Date\.now\(\)/);
 });
 
 test("creating an exam opens its setup editor immediately", () => {
@@ -127,9 +121,9 @@ test("exam schedule can be extended via narrow server action and list rows stay 
   const server = read("src/lib/server/ujian/functions.ts");
 
   assert.match(server, /export const extendJadwalUjianServer = createServerFn/);
-  assert.match(server, /audit\(caller, "ujian", "extendJadwal"/);
+  assert.match(server, /action: "ujian\.extendJadwal"/);
   assert.match(server, /newEndAt <= Number\(exam\.beginAt\)/);
-  assert.match(server, /tx\.ujian\.update\(\{[\s\S]*where: \{ id: data\.ujianId \},[\s\S]*data: \{ endAt: BigInt\(data\.newEndAt\) \}/);
+  assert.match(server, /tx\.ujian\.updateMany\(\{[\s\S]*where: \{ id: data\.ujianId, status: "published", endAt: exam\.endAt \},[\s\S]*data: \{ endAt: BigInt\(data\.newEndAt\) \}/);
 
   // List rows have clean action buttons
   assert.match(list, /Users className="h-3\.5 w-3\.5"/);
@@ -149,6 +143,9 @@ test("exam sessions can be reset individually or in bulk with themed confirmatio
   assert.match(server, /export const deleteAllExamSessionsServer = createServerFn/);
   assert.match(server, /tx\.sesiUjian\.deleteMany\(\{ where: \{ ujianId: data\.ujianId \} \}\)/);
   assert.match(server, /tx\.tokenClaim\.deleteMany\(\{ where: \{ ujianId: data\.ujianId \} \}\)/);
+  assert.match(server, /caller\.role !== "admin_prodi"/);
+  assert.match(server, /operatorHasAnyNav\(caller, OPERATOR_SESSION_KEYS\)/);
+  assert.match(server, /tx\.tokenUjian\.updateMany\(/);
   assert.match(participants, /Hapus Semua Sesi/);
   assert.match(participants, /Hapus Sesi/);
   assert.match(participants, /<ConfirmDialog[\s\S]*title="Hapus Sesi Peserta\?"/);

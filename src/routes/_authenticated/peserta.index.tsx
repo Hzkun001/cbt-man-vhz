@@ -150,7 +150,7 @@ function PesertaDashboard() {
 										const status = s?.status ?? "belum";
 										const selesai = status === "selesai";
 										const availability = getExamAvailabilityStatus(u);
-										const isStartable = status === "sedang" || availability === "active" || availability === "open";
+										const isStartable = availability === "active" || availability === "open";
 										const isDitutup = availability === "ended" && !selesai;
 
 										return (
@@ -176,7 +176,7 @@ function PesertaDashboard() {
 												{u.deskripsi ? <RichView html={u.deskripsi} className="text-xs text-slate-500" /> : null}
 
 															{/* Timestamps */}
-										{status !== "sedang" && (availability === "upcoming" || availability === "ended") && (
+										{(availability === "upcoming" || availability === "ended") && (
 																<div className="flex items-center gap-1.5 pt-0.5 text-xs font-semibold">
 																	{availability === "upcoming" ? (
 																		<span suppressHydrationWarning className="text-amber-600 dark:text-amber-500 flex items-center gap-1">

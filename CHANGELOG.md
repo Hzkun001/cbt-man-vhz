@@ -8,8 +8,8 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Added
 
-- Fitur perpanjangan jadwal ujian ("Perpanjang Jadwal") di manajemen paket ujian melalui server action terisolasi (`extendJadwalUjianServer`) agar paket yang telah ditutup atau sedang berjalan dapat dibuka kembali untuk peserta tanpa merusak integritas butir soal dan riwayat sesi sebelumnya.
-- Fitur reset dan hapus sesi peserta ujian ("Hapus Sesi" satuan dan "Hapus Semua Sesi") dengan dialog konfirmasi bertema di halaman monitoring peserta ujian (`/admin/ujian/$id/peserta`) dan analitik (`/admin/analitik/$id`) melalui server mutation transaksional (`deleteAllExamSessionsServer` dan `deleteExamSessionServer`) yang turut membersihkan klaim token terkait untuk memungkinkan ujian ulang peserta.
+- Fitur perpanjangan waktu tutup paket ujian published melalui aksi server terbatas (`extendJadwalUjianServer`), untuk peserta yang belum memulai sesi. Batas waktu sesi yang sudah berjalan tidak berubah.
+- Fitur hapus sesi satuan (`mutateSesiServer` aksi `remove`) dan massal (`deleteAllExamSessionsServer`) di halaman monitoring peserta dan analitik, dengan konfirmasi. Tindakan ini **menghapus permanen** jawaban dan nilai sesi serta klaim token; gunakan hanya bila memang perlu mengulang dari awal.
 
 ### Changed
 
@@ -20,7 +20,7 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Fixed
 
-- Peserta dapat melanjutkan sesi ujian yang masih berlangsung dari `/peserta` meskipun jadwal ujian sudah lewat.
+- Portal peserta tidak lagi menawarkan melanjutkan sesi saat jadwal ujian atau batas waktu sesinya sudah habis, karena server menolak penyimpanan jawaban setelah tenggat.
 - Sinkronisasi korelasi status ujian berlangsung dan selesai antara portal peserta dan ringkasan operasional admin.
 
 ### Security

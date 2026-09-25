@@ -12,7 +12,7 @@ import {
 } from "../db/auth";
 import { SesiUjianSchema } from "@/lib/cbt/types";
 import type { SesiUjian, NavKey } from "@/lib/cbt/types";
-import { requireAuditLog } from "../db/audit";
+import { requireAuditLog, writeAuditLog } from "../db/audit";
 import { deleteSessionsForUser } from "../db/session";
 import { stringifyJson, toBigInt, toNumber, parseJson } from "../db/json";
 import { getRequestIP, setResponseHeader } from "@tanstack/start-server-core";
@@ -480,24 +480,38 @@ export const deleteAllExamSessionsServer = createServerFn({ method: "POST" })
 	.handler(async ({ data }) => {
 		try {
 			const caller = await requireCaller();
-			if (!caller || caller.role === "mahasiswa") return { ok: false as const, error: "Forbidden" };
-			if (caller.role !== "super_admin" && !(await operatorCanTouchUjian(caller, data.ujianId))) {
-				return { ok: false as const, error: "Forbidden" };
+			if (!caller) return { ok: false as const, error: "Forbidden" };
+			if (caller.role !== "super_admin") {
+				if (caller.role !== "admin_prodi" ||
+					!(await operatorHasAnyNav(caller, OPERATOR_SESSION_KEYS)) ||
+					!(await operatorCanTouchUjian(caller, data.ujianId))) {
+					return { ok: false as const, error: "Forbidden" };
+				}
 			}
-			await requireAuditLog({
-				userId: caller.id,
-				userRole: caller.role,
-				action: "sesi.deleteAll",
-				entity: "ujian",
-				entityId: data.ujianId,
-			});
+			if (!(await prisma.ujian.findUnique({ where: { id: data.ujianId }, select: { id: true } }))) {
+				return { ok: false as const, error: "Paket ujian tidak ditemukan." };
+			}
 			await prisma.$transaction(async (tx) => {
-				await tx.sesiUjian.deleteMany({ where: { ujianId: data.ujianId } });
+				const deleted = await tx.sesiUjian.deleteMany({ where: { ujianId: data.ujianId } });
 				await tx.tokenClaim.deleteMany({ where: { ujianId: data.ujianId } });
+				await tx.tokenUjian.updateMany({
+					where: { ujianId: data.ujianId },
+					data: { dipakaiOleh: null, dipakaiAt: null },
+				});
+				const auditResult = await writeAuditLog({
+					userId: caller.id,
+					userRole: caller.role,
+					action: "sesi.deleteAll",
+					entity: "ujian",
+					entityId: data.ujianId,
+					details: JSON.stringify({ deletedCount: deleted.count }),
+				}, tx);
+				if (!auditResult.ok) throw new Error(auditResult.error);
 			});
 			return { ok: true as const };
 		} catch (err) {
-			return { ok: false as const, error: err instanceof Error ? err.message : String(err) };
+			console.error("Gagal menghapus seluruh sesi ujian", err);
+			return { ok: false as const, error: "Gagal menghapus sesi ujian." };
 		}
 	});
 

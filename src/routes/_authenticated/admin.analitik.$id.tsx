@@ -119,6 +119,7 @@ function DaftarPesertaTab({ ujian, sesis, refresh }: { ujian: Ujian, sesis: Sesi
   const [editSkor, setEditSkor] = useState<string>("");
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isDeletingSingle, setIsDeletingSingle] = useState(false);
   const [deleteAllOpen, setDeleteAllOpen] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
 
@@ -143,9 +144,9 @@ function DaftarPesertaTab({ ujian, sesis, refresh }: { ujian: Ujian, sesis: Sesi
   }
 
   async function deleteSession() {
-    if (!deleteId) return;
+    if (!deleteId || isDeletingSingle) return;
     const sesiId = deleteId;
-    setDeleteId(null);
+    setIsDeletingSingle(true);
     try {
       sesiRepo.remove(sesiId);
       const result = await sesiRepo.flush();
@@ -155,9 +156,12 @@ function DaftarPesertaTab({ ujian, sesis, refresh }: { ujian: Ujian, sesis: Sesi
       }
       if (openId === sesiId) setOpenId(null);
       refresh();
+      setDeleteId(null);
       toast.success("Sesi ujian berhasil dihapus");
-    } catch (e) {
-      toast.error(`Gagal menghapus sesi ujian: ${e instanceof Error ? e.message : String(e)}`);
+    } catch {
+      toast.error("Gagal menghapus sesi ujian. Coba lagi.");
+    } finally {
+      setIsDeletingSingle(false);
     }
   }
 
@@ -173,8 +177,8 @@ function DaftarPesertaTab({ ujian, sesis, refresh }: { ujian: Ujian, sesis: Sesi
       if (openId) setOpenId(null);
       refresh();
       toast.success("Semua sesi peserta berhasil dihapus");
-    } catch (e) {
-      toast.error(`Gagal menghapus semua sesi: ${e instanceof Error ? e.message : String(e)}`);
+    } catch {
+      toast.error("Gagal menghapus semua sesi. Coba lagi.");
     } finally {
       setIsDeletingAll(false);
     }
@@ -372,6 +376,8 @@ function DaftarPesertaTab({ ujian, sesis, refresh }: { ujian: Ujian, sesis: Sesi
         title="Hapus Sesi Ujian"
         description="Sesi peserta dan seluruh jawaban yang tersimpan akan dihapus secara permanen sehingga peserta dapat mengikuti ujian ulang."
         confirmLabel="Hapus"
+        destructive={true}
+        busy={isDeletingSingle}
         onConfirm={deleteSession}
       />
 
