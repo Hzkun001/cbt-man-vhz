@@ -178,6 +178,15 @@ test("essay question textarea provides clean distraction-free card with auto-sav
   assert.match(kerjakan, /aria-label=\{`Jawaban esai soal nomor \$\{idx \+ 1\}`\}/);
 });
 
+test("exam workspace embeds calculator in the right side panel instead of a dialog popup", () => {
+  const kerjakan = read("src/routes/_authenticated/peserta.ujian.$id.kerjakan.tsx");
+
+  assert.doesNotMatch(kerjakan, /function CalculatorAction/);
+  assert.match(kerjakan, /rightTab === "kalkulator"/);
+  assert.match(kerjakan, /rightTab === "navigasi"/);
+  assert.match(kerjakan, /<ExamCalculator \/>/);
+});
+
 test("admin sidebar navigation disambiguates overlapping paths and controls active state", () => {
   const admin = read("src/routes/_authenticated/admin.tsx");
 
