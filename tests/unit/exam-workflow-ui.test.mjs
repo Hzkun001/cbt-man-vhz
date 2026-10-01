@@ -107,7 +107,7 @@ test("exam editor uses the shared header and 2-column layout", () => {
   const route = read("src/routes/_authenticated/admin.ujian.$id.tsx");
 
   assert.match(route, /<AdminPage className="mx-auto w-full max-w-\[1600px\] pb-12">/);
-  assert.match(route, /<AdminPageHeader[\s\S]*Editor Paket Ujian/);
+  assert.match(route, /<AdminPageHeader[\s\S]*\{u\.nama \|\| "Ujian Baru"\}/);
   assert.match(route, /<ArrowLeft className="mr-1 h-4 w-4" \/>[\s\S]*Kembali/);
   assert.doesNotMatch(route, /Mode Pengaturan Ujian Berlangsung \/ Memiliki Sesi/);
 });

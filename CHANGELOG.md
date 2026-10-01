@@ -13,6 +13,8 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Changed
 
+- Rapikan tata letak editor ujian dan tampilkan alat bantu ujian tanpa buka/tutup.
+
 - Perbarui kontrol drive penyimpanan dan kartu bucket; kontrol hapus tetap khusus super admin.
 
 - Rapikan formulir modul, kesejajaran input, dan jarak antarkartu.

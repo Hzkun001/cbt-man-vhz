@@ -398,9 +398,9 @@ function UjianEditor() {
       <AdminPageHeader
         title={
           <div className="flex flex-wrap items-center gap-2.5">
-            <span className="inline-flex items-center gap-2">
-              <FileSignature className="h-5 w-5 text-primary" />
-              Editor Paket Ujian
+            <span className="inline-flex min-w-0 items-center gap-2">
+              <FileSignature className="h-5 w-5 shrink-0 text-primary" />
+              <span className="truncate">{u.nama || "Ujian Baru"}</span>
             </span>
             <span
               className={cn(
@@ -421,7 +421,7 @@ function UjianEditor() {
         }
         description={
           <span className="text-xs text-muted-foreground block truncate max-w-xl">
-            {u.nama || "Ujian Baru"} · {u.durasiMenit} Menit · {totalSoal} Soal
+            Editor paket ujian · {u.durasiMenit} menit · {totalSoal} soal
           </span>
         }
         action={
@@ -491,8 +491,8 @@ function UjianEditor() {
       </div>
 
       {locked && <p className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200" role="status">Paket yang sudah dipublikasikan atau memiliki sesi tidak dapat diedit.</p>}
-      <fieldset disabled={locked} aria-disabled={locked} className="min-w-0 space-y-4">
-      <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
+      <fieldset disabled={locked} aria-disabled={locked} className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2">
+      <Card className="overflow-hidden border-slate-200 shadow-sm xl:col-span-2 dark:border-slate-800">
         <CardContent className="space-y-4 p-4">
           <div className="flex items-center gap-2.5 border-b pb-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -658,7 +658,7 @@ Perpanjang batas mulai ujian baru. Batas waktu sesi peserta yang sudah berjalan 
         </DialogContent>
       </Dialog>
 
-      <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
+      <Card className="overflow-hidden border-slate-200 shadow-sm xl:col-span-2 dark:border-slate-800">
         <CardContent className="space-y-4 p-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
             <div className="flex items-center gap-2.5">
@@ -770,7 +770,7 @@ Perpanjang batas mulai ujian baru. Batas waktu sesi peserta yang sudah berjalan 
         </CardContent>
       </Card>
 
-      <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
+      <Card className="overflow-hidden border-slate-200 shadow-sm dark:border-slate-800">
           <details>
           <summary className="cursor-pointer p-4 text-sm font-medium">Pengaturan skoring</summary>
       <CardContent className="p-4 space-y-3">
@@ -812,7 +812,7 @@ Perpanjang batas mulai ujian baru. Batas waktu sesi peserta yang sudah berjalan 
         </details>
       </Card>
 
-      <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
+      <Card className="overflow-hidden border-slate-200 shadow-sm xl:col-span-2 dark:border-slate-800">
         <CardContent className="p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div>
@@ -981,10 +981,9 @@ Perpanjang batas mulai ujian baru. Batas waktu sesi peserta yang sudah berjalan 
         </CardContent>
       </Card>
 
-      <Card>
-          <details>
-          <summary className="cursor-pointer p-4 text-sm font-medium">Alat bantu ujian</summary>
+      <Card className="overflow-hidden border-slate-200 shadow-sm dark:border-slate-800">
       <CardContent className="space-y-3 p-4">
+          <h3 className="border-b pb-3 text-sm font-semibold">Alat bantu ujian</h3>
           <div className="flex items-center justify-between rounded border p-2">
             <div>
               <Label htmlFor="allow-calculator">Kalkulator ujian</Label>
@@ -1012,7 +1011,6 @@ Perpanjang batas mulai ujian baru. Batas waktu sesi peserta yang sudah berjalan 
             />
           </div>
         </CardContent>
-        </details>
       </Card>
 
       <Card>
