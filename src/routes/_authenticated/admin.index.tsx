@@ -1,4 +1,41 @@
+import { useEffect, useState, type ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Col,
+  ConfigProvider,
+  Divider,
+  Empty,
+  Flex,
+  Row,
+  Space,
+  Statistic,
+  Tag,
+  Typography,
+  theme as antdTheme,
+} from "antd";
+import {
+  IconActivity,
+  IconAlertCircle,
+  IconArrowRight,
+  IconArrowUpRight,
+  IconBooks,
+  IconCalendarClock,
+  IconCircleCheck,
+  IconClock,
+  IconDeviceDesktopAnalytics,
+  IconFileText,
+  IconKey,
+  IconPlus,
+  IconRadio,
+  IconShieldCheck,
+  IconStack2,
+  IconTrendingUp,
+  IconUsersGroup,
+} from "@tabler/icons-react";
 import { useAuthStore } from "@/lib/cbt/auth-store";
 import {
   usersRepo,
@@ -9,38 +46,34 @@ import {
   configRepo,
 } from "@/lib/cbt/repos";
 import { canAccessAdminPath } from "./admin";
-import {
-  Clock,
-  Plus,
-  ArrowRight,
-  AlertCircle,
-  Users,
-  BookOpen,
-  FileText,
-  Activity,
-  CalendarClock,
-  MonitorPlay,
-  ShieldCheck,
-  CheckCircle2,
-  TrendingUp,
-  Key,
-  Layers,
-  Radio,
-  ArrowUpRight,
-} from "lucide-react";
-
-import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: CommandCenter,
 });
 
+function useDashboardColorScheme() {
+  const [colorScheme, setColorScheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const syncColorScheme = () =>
+      setColorScheme(root.classList.contains("dark") ? "dark" : "light");
+    const observer = new MutationObserver(syncColorScheme);
+
+    syncColorScheme();
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  return colorScheme;
+}
+
 function CommandCenter() {
+  const colorScheme = useDashboardColorScheme();
   const user = useAuthStore((s) => s.user);
   const now = Date.now();
-  const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
+  const oneWeek = 7 * 24 * 60 * 60 * 1000;
 
-  // Data fetching & calculations
   const pesertaList = usersRepo.all().filter((u) => u.role === "mahasiswa");
   const soalList = soalRepo.all();
   const semuaUjian = ujianRepo.all();
@@ -48,10 +81,15 @@ function CommandCenter() {
   if (!user) return null;
   const canAccess = (path: string) => canAccessAdminPath(user, path, cfg);
 
-  const newPeserta = pesertaList.filter(u => u.createdAt && (now - u.createdAt) < ONE_WEEK).length;
-  const newSoal = soalList.filter(s => s.createdAt && (now - s.createdAt) < ONE_WEEK).length;
-  const newUjian = semuaUjian.filter(u => u.createdAt && (now - u.createdAt) < ONE_WEEK).length;
-
+  const newPeserta = pesertaList.filter(
+    (u) => u.createdAt && now - u.createdAt < oneWeek,
+  ).length;
+  const newSoal = soalList.filter(
+    (s) => s.createdAt && now - s.createdAt < oneWeek,
+  ).length;
+  const newUjian = semuaUjian.filter(
+    (u) => u.createdAt && now - u.createdAt < oneWeek,
+  ).length;
   const counts = {
     peserta: pesertaList.length,
     modul: modulRepo.all().length,
@@ -59,7 +97,6 @@ function CommandCenter() {
     ujian: semuaUjian.length,
     sesi: sesiRepo.all().length,
   };
-
   const activeExams = semuaUjian.filter(
     (u): u is typeof u & { beginAt: number; endAt: number } =>
       typeof u.beginAt === "number" &&
@@ -68,345 +105,428 @@ function CommandCenter() {
       now <= u.endAt,
   );
   const upcoming = semuaUjian
-    .filter((u): u is typeof u & { beginAt: number } => typeof u.beginAt === "number" && now < u.beginAt)
+    .filter(
+      (u): u is typeof u & { beginAt: number } =>
+        typeof u.beginAt === "number" && now < u.beginAt,
+    )
     .sort((a, b) => a.beginAt - b.beginAt);
   const upcomingExamCount = upcoming.length;
   const upcomingExams = upcoming.slice(0, 4);
   const finishedExams = semuaUjian.filter((u) => u.endAt && now > u.endAt);
+  const hasQuickActions = [
+    "/admin/ujian",
+    "/admin/modul",
+    "/admin/peserta/kartu",
+  ].some(canAccess);
 
-  const pendingTasks = finishedExams.length > 0 && canAccess("/admin/evaluasi")
-    ? [{
-        id: "eval-reports",
-        title: "Ujian Selesai (Membutuhkan Evaluasi & Rekap)",
-        desc: `${finishedExams.length} ujian telah selesai dan siap dianalisis nilainya.`,
-        count: finishedExams.length,
-        route: "/admin/evaluasi" as const,
-        icon: <ShieldCheck className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-      }]
-    : [];
-  const hasQuickActions = ["/admin/ujian", "/admin/modul", "/admin/peserta/kartu"].some(canAccess);
-
-  // Format Helper for Numbers
   const formatNumber = (num: number) => {
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}rb`;
+    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+    if (num >= 1_000) return `${(num / 1_000).toFixed(1)}rb`;
     return num.toString();
   };
+  const kpis = [
+    {
+      label: "Total peserta",
+      value: counts.peserta,
+      subtitle: "Mahasiswa terdaftar",
+      icon: <IconUsersGroup size={19} aria-hidden="true" />,
+      color: "blue",
+      trend: newPeserta > 0 ? `+${newPeserta} baru` : null,
+    },
+    {
+      label: "Total ujian",
+      value: counts.ujian,
+      subtitle: `${activeExams.length} aktif · ${upcomingExamCount} mendatang`,
+      icon: <IconDeviceDesktopAnalytics size={19} aria-hidden="true" />,
+      color: "teal",
+      trend: newUjian > 0 ? `+${newUjian} minggu ini` : null,
+    },
+    {
+      label: "Bank soal",
+      value: counts.soal,
+      subtitle: "Soal siap diujikan",
+      icon: <IconFileText size={19} aria-hidden="true" />,
+      color: "orange",
+      trend: newSoal > 0 ? `+${newSoal} baru` : null,
+    },
+    {
+      label: "Sesi ujian",
+      value: counts.sesi,
+      subtitle: `${counts.modul} modul mata kuliah`,
+      icon: <IconStack2 size={19} aria-hidden="true" />,
+      color: "violet",
+      trend: null,
+    },
+  ];
 
   return (
-    <div className="w-full space-y-8 animate-in fade-in duration-500 pb-16">
-
-      {/* 1. TOP OPERATIONAL STATUS BAR (Z-Pattern Zone 1 - Anti-AI Slop: Clean, Functional, Semantic) */}
-      <section className="rounded-2xl bg-slate-900 text-white p-6 sm:p-8 shadow-md border border-slate-800">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md text-xs font-semibold bg-slate-800 text-slate-200 border border-slate-700">
-              <span className="relative flex h-2 w-2">
-                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${activeExams.length > 0 ? "bg-emerald-400" : "bg-slate-400"}`}></span>
-                <span className={`relative inline-flex rounded-full h-2 w-2 ${activeExams.length > 0 ? "bg-emerald-500" : "bg-slate-400"}`}></span>
+    <ConfigProvider
+      theme={{
+        algorithm:
+          colorScheme === "dark"
+            ? antdTheme.darkAlgorithm
+            : antdTheme.defaultAlgorithm,
+        token: {
+          colorPrimary: "#0f9b8e",
+          borderRadius: 14,
+          fontFamily: "inherit",
+        },
+      }}
+    >
+      <div className="space-y-6 pb-8">
+        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-teal-950 px-6 py-7 text-white shadow-lg shadow-slate-950/10 sm:px-8 sm:py-9">
+          <div className="pointer-events-none absolute -right-16 -top-24 size-72 rounded-full border border-white/10" />
+          <div className="pointer-events-none absolute -right-4 -top-12 size-48 rounded-full border border-white/10" />
+          <Flex
+            align="center"
+            justify="space-between"
+            gap={24}
+            wrap="wrap"
+            className="relative"
+          >
+            <div className="max-w-2xl">
+              <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs text-white">
+                <span className={`inline-block size-1.5 rounded-full ${activeExams.length > 0 ? "bg-emerald-400" : "bg-slate-400"}`} />
+                {activeExams.length > 0
+                  ? `${activeExams.length} ujian sedang berlangsung`
+                  : "Sistem CBT siaga operasional"}
               </span>
-              {activeExams.length > 0
-                ? `${activeExams.length} Ujian Sedang Berlangsung`
-                : "Sistem CBT Siaga Operasional"}
+              <Typography.Title
+                level={1}
+                className="!mb-2 !text-2xl !font-semibold !tracking-tight !text-white sm:!text-3xl"
+              >
+                Pusat Kendali Administrasi
+              </Typography.Title>
+              <Typography.Text className="text-sm !text-slate-300">
+                Selamat datang kembali, {user.namaLengkap}. Ringkasan ujian dan
+                aktivitas kampus ada di sini.
+              </Typography.Text>
             </div>
-
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-              Pusat Kendali CBT Administrasi
-            </h1>
-            <p className="text-sm text-slate-400 max-w-xl">
-              Selamat datang kembali, <span className="text-slate-200 font-medium">{user.namaLengkap}</span>. Ringkasan performa dan pengawasan ujian kampus tersedia seketika.
-            </p>
-          </div>
-
-          {/* Quick Primary Actions */}
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
-            {canAccess("/admin/ujian") && (
-              <Button size="lg" className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl shadow border border-emerald-500/30" asChild>
-                <Link to="/admin/ujian">
-                  <Plus className="mr-2 h-4 w-4 stroke-[2.5]" />
-                  Buat Ujian Baru
-                </Link>
-              </Button>
-            )}
-            {canAccess("/admin/peserta/online") && (
-              <Button size="lg" variant="outline" className="bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 font-medium rounded-xl" asChild>
-                <Link to="/admin/peserta/online">
-                  <Radio className="mr-2 h-4 w-4 text-emerald-400" />
-                  Pantau Peserta
-                </Link>
-              </Button>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* 2. EXECUTIVE KPI CARDS GRID (Ruthless Data-Ink & High Contrast) */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <KpiCard
-          label="Total Peserta"
-          value={formatNumber(counts.peserta)}
-          subtitle="Mahasiswa terdaftar"
-          icon={<Users className="h-5 w-5 text-blue-500" />}
-          trend={newPeserta > 0 ? `+${newPeserta} baru` : null}
-          trendPositive={true}
-        />
-        <KpiCard
-          label="Total Ujian"
-          value={formatNumber(counts.ujian)}
-          subtitle={`${activeExams.length} Aktif • ${upcomingExamCount} Mendatang`}
-          icon={<MonitorPlay className="h-5 w-5 text-emerald-500" />}
-          trend={newUjian > 0 ? `+${newUjian} minggu ini` : null}
-          trendPositive={true}
-        />
-        <KpiCard
-          label="Bank Soal"
-          value={formatNumber(counts.soal)}
-          subtitle="Soal siap ujikan"
-          icon={<FileText className="h-5 w-5 text-amber-500" />}
-          trend={newSoal > 0 ? `+${newSoal} baru` : null}
-          trendPositive={true}
-        />
-        <KpiCard
-          label="Total Sesi Ujian"
-          value={formatNumber(counts.sesi)}
-          subtitle={`${counts.modul} Modul Mata Kuliah`}
-          icon={<Layers className="h-5 w-5 text-purple-500" />}
-        />
-      </section>
-
-      {/* 3. MAIN DASHBOARD CONTENT GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
-
-        {/* LEFT COLUMN: Main Workflows (8 Cols) */}
-        <div className="lg:col-span-8 space-y-6">
-
-          {/* Live Surveillance Panel */}
-          <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6">
-            <div className="flex items-center justify-between pb-4 mb-5 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50">
-                  <Activity className="h-5 w-5 stroke-[2.5]" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">Pengawasan Ujian Live</h2>
-                  <p className="text-xs text-slate-500">Monitoring real-time kestabilan dan peserta ujian yang berlangsung</p>
-                </div>
-              </div>
-              {activeExams.length > 0 && (
-                <span className="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                  {activeExams.length} Berlangsung
-                </span>
-              )}
-            </div>
-
-            {activeExams.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-center rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-dashed border-slate-200 dark:border-slate-700 p-6">
-                <div className="h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-3">
-                  <CheckCircle2 className="h-6 w-6 text-emerald-500" />
-                </div>
-                <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 mb-1">Tidak Ada Ujian Aktif Saat Ini</h3>
-                <p className={`text-xs text-slate-500 max-w-md ${canAccess("/admin/ujian") ? "mb-5" : ""}`}>
-                  Sistem dalam kondisi siaga penuh. Anda dapat mengecek ujian mendatang atau menyiapkan bank soal baru.
-                </p>
-                {canAccess("/admin/ujian") && (
-                  <Button variant="outline" size="sm" className="rounded-xl border-slate-300 font-medium" asChild>
-                    <Link to="/admin/ujian">Lihat Semua Jadwal Ujian</Link>
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {activeExams.map((exam) => (
-                  <div key={exam.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 hover:border-emerald-500/50 transition-all">
-                    <div className="flex items-center gap-4 mb-3 sm:mb-0">
-                      <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                        <Radio className="h-5 w-5 animate-pulse" />
-                      </div>
-                      <div>
-                        <h3 className="text-base font-bold text-slate-900 dark:text-white leading-tight">{exam.nama}</h3>
-                        <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
-                          <Clock className="h-3.5 w-3.5" />
-                          <span suppressHydrationWarning>Berakhir pukul {new Date(exam.endAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" })} WIB</span>
-                        </div>
-                      </div>
-                    </div>
-                    {canAccess("/admin/peserta/online") && (
-                      <Button size="sm" className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg px-4" asChild>
-                        <Link to="/admin/peserta/online">
-                          Pantau Peserta <ArrowRight className="ml-2 h-4 w-4" />
-                        </Link>
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Quick Operational Shortcuts Console */}
-          <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6">
-            <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4">Konsol Aksi Cepat Administrasi</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {!hasQuickActions && (
-                <p className="col-span-full text-sm text-slate-500">Tidak ada aksi cepat yang tersedia untuk peran ini.</p>
-              )}
+            <Space wrap size="middle">
               {canAccess("/admin/ujian") && (
-                <>
-                  <ShortcutCard
-                    title="Buat Ujian"
-                    desc="Atur jadwal & durasi"
-                    icon={<Plus className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />}
-                    href="/admin/ujian"
+                <Link to="/admin/ujian">
+                  <Button
+                    type="primary"
+                    size="large"
+                    icon={<IconPlus size={17} aria-hidden="true" />}
+                  >
+                    Buat ujian
+                  </Button>
+                </Link>
+              )}
+              {canAccess("/admin/peserta/online") && (
+                <Link to="/admin/peserta/online">
+                  <Button
+                    size="large"
+                    ghost
+                    icon={<IconRadio size={17} aria-hidden="true" />}
+                    style={{ color: "white", borderColor: "rgba(255,255,255,.5)" }}
+                  >
+                    Pantau peserta
+                  </Button>
+                </Link>
+              )}
+            </Space>
+          </Flex>
+        </section>
+
+        <Row gutter={[16, 16]}>
+          {kpis.map((kpi) => (
+            <Col key={kpi.label} xs={24} sm={12} xl={6}>
+              <KpiCard
+                label={kpi.label}
+                value={formatNumber(kpi.value)}
+                subtitle={kpi.subtitle}
+                icon={kpi.icon}
+                color={kpi.color}
+                trend={kpi.trend}
+              />
+            </Col>
+          ))}
+        </Row>
+
+        <Row gutter={[20, 20]}>
+          <Col xs={24} xl={16}>
+            <div className="flex flex-col gap-5">
+              <Card className="shadow-sm">
+                <Flex justify="space-between" align="center" gap={16} wrap="wrap">
+                  <SectionHeading
+                    icon={<IconActivity size={19} aria-hidden="true" />}
+                    title="Pengawasan ujian live"
+                    subtitle="Kondisi ujian yang sedang berlangsung"
+                    color="teal"
                   />
-                  <ShortcutCard
-                    title="Rilis Token"
-                    desc="Generate token sesi"
-                    icon={<Key className="h-5 w-5 text-amber-600 dark:text-amber-400" />}
-                    href="/admin/ujian"
+                  {activeExams.length > 0 && (
+                    <Badge
+                      status="processing"
+                      text={`${activeExams.length} berlangsung`}
+                    />
+                  )}
+                </Flex>
+                <Divider className="my-5" />
+                {activeExams.length === 0 ? (
+                  <Alert
+                    type="success"
+                    showIcon
+                    icon={<IconCircleCheck size={18} aria-hidden="true" />}
+                    message="Tidak ada ujian aktif saat ini"
+                    description={
+                      <Flex vertical align="flex-start" gap={12}>
+                        <span>
+                          Sistem siaga. Kamu dapat melihat jadwal mendatang atau
+                          menyiapkan bank soal.
+                        </span>
+                        {canAccess("/admin/ujian") && (
+                          <Link to="/admin/ujian">
+                            <Button size="small">Lihat jadwal ujian</Button>
+                          </Link>
+                        )}
+                      </Flex>
+                    }
                   />
-                </>
-              )}
-              {canAccess("/admin/modul") && (
-                <ShortcutCard
-                  title="Bank Soal"
-                  desc="Kelola & import soal"
-                  icon={<BookOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />}
-                  href="/admin/modul"
-                />
-              )}
-              {canAccess("/admin/peserta/kartu") && (
-                <ShortcutCard
-                  title="Kartu Peserta"
-                  desc="Cetak / eksport kartu"
-                  icon={<Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />}
-                  href="/admin/peserta/kartu"
-                />
-              )}
-            </div>
-          </div>
-
-        </div>
-
-        {/* RIGHT COLUMN: Urgent Tasks & Schedule (4 Cols) */}
-        <div className="lg:col-span-4 space-y-6">
-
-          {/* Urgent Action / Pending Tasks Queue */}
-          <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6">
-            <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
-              <AlertCircle className="h-5 w-5 text-amber-500" />
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">Perlu Perhatian & Tindakan</h2>
-            </div>
-
-            {pendingTasks.length === 0 ? (
-              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 flex items-center gap-3">
-                <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
-                <div>
-                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">Semua Antrean Selesai</p>
-                  <p className="text-[11px] text-slate-500">Tidak ada tugas evaluasi tertunda saat ini.</p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {pendingTasks.map((task) => (
-                  <Link key={task.id} to={task.route} className="block p-4 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-900/50 hover:bg-amber-100/50 transition-all group">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="p-1.5 rounded-lg bg-white dark:bg-slate-800 shadow-sm">
-                        {task.icon}
-                      </div>
-                      <span className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-amber-600 text-white">
-                        {task.count} Pending
-                      </span>
-                    </div>
-                    <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1">{task.title}</h3>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mb-3">{task.desc}</p>
-                    <div className="inline-flex items-center text-xs font-semibold text-amber-700 dark:text-amber-400 group-hover:underline">
-                      Proses Sekarang <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Upcoming Exams Timeline */}
-          {upcomingExams.length > 0 && (
-            <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6">
-              <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-2">
-                  <CalendarClock className="h-5 w-5 text-blue-500" />
-                  <h2 className="text-base font-bold text-slate-900 dark:text-white">Ujian Mendatang</h2>
-                </div>
-                <span className="text-xs font-semibold text-slate-400">{upcomingExamCount} Terjadwal</span>
-              </div>
-
-              <div className="space-y-3">
-                {upcomingExams.map((exam) => (
-                  <div key={exam.id} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/60">
-                    <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 mb-1">{exam.nama}</h3>
-                    <div className="flex items-center gap-2 text-[11px] text-slate-500">
-                      <Clock className="h-3 w-3" />
-                      <span suppressHydrationWarning>
-                        {new Date(exam.beginAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", timeZone: "Asia/Jakarta" })} • {new Date(exam.beginAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" })}
-                      </span>
-                    </div>
+                ) : (
+                  <div className="space-y-3">
+                    {activeExams.map((exam) => (
+                      <Card key={exam.id} size="small" className="bg-slate-50/70 dark:bg-slate-900/40">
+                        <Flex justify="space-between" align="center" gap={16} wrap="wrap">
+                          <Flex align="center" gap={12}>
+                            <IconTile color="teal">
+                              <IconRadio size={19} aria-hidden="true" />
+                            </IconTile>
+                            <div>
+                              <Typography.Text strong>{exam.nama}</Typography.Text>
+                              <Typography.Text type="secondary" className="mt-1 block text-xs">
+                                <IconClock size={13} aria-hidden="true" className="mr-1 inline align-[-2px]" />
+                                <span suppressHydrationWarning>
+                                  Berakhir pukul{" "}
+                                  {new Date(exam.endAt).toLocaleTimeString("id-ID", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    timeZone: "Asia/Jakarta",
+                                  })}{" "}
+                                  WIB
+                                </span>
+                              </Typography.Text>
+                            </div>
+                          </Flex>
+                          {canAccess("/admin/peserta/online") && (
+                            <Link to="/admin/peserta/online">
+                              <Button
+                                size="small"
+                                type="default"
+                                icon={<IconArrowRight size={14} aria-hidden="true" />}
+                              >
+                                Pantau peserta
+                              </Button>
+                            </Link>
+                          )}
+                        </Flex>
+                      </Card>
+                    ))}
                   </div>
-                ))}
-              </div>
+                )}
+              </Card>
+
+              <Card className="shadow-sm">
+                <Flex justify="space-between" align="center" className="mb-5">
+                  <SectionHeading
+                    icon={<IconArrowUpRight size={19} aria-hidden="true" />}
+                    title="Aksi cepat"
+                    subtitle="Pintasan ke pekerjaan administrasi"
+                    color="blue"
+                  />
+                </Flex>
+                {hasQuickActions ? (
+                  <Row gutter={[12, 12]}>
+                    {canAccess("/admin/ujian") && (
+                      <Col xs={12} sm={6}>
+                        <ShortcutCard title="Buat ujian" desc="Atur jadwal dan durasi" icon={<IconPlus size={19} aria-hidden="true" />} color="teal" href="/admin/ujian" />
+                      </Col>
+                    )}
+                    {canAccess("/admin/ujian") && (
+                      <Col xs={12} sm={6}>
+                        <ShortcutCard title="Rilis token" desc="Kelola token sesi" icon={<IconKey size={19} aria-hidden="true" />} color="orange" href="/admin/ujian" />
+                      </Col>
+                    )}
+                    {canAccess("/admin/modul") && (
+                      <Col xs={12} sm={6}>
+                        <ShortcutCard title="Bank soal" desc="Kelola dan impor soal" icon={<IconBooks size={19} aria-hidden="true" />} color="blue" href="/admin/modul" />
+                      </Col>
+                    )}
+                    {canAccess("/admin/peserta/kartu") && (
+                      <Col xs={12} sm={6}>
+                        <ShortcutCard title="Kartu peserta" desc="Cetak atau ekspor kartu" icon={<IconUsersGroup size={19} aria-hidden="true" />} color="violet" href="/admin/peserta/kartu" />
+                      </Col>
+                    )}
+                  </Row>
+                ) : (
+                  <Empty description="Tidak ada aksi cepat yang tersedia untuk peran ini." />
+                )}
+              </Card>
             </div>
-          )}
+          </Col>
 
-        </div>
+          <Col xs={24} xl={8}>
+            <div className="flex flex-col gap-5">
+              <Card className="shadow-sm">
+                <SectionHeading
+                  icon={<IconAlertCircle size={19} aria-hidden="true" />}
+                  title="Perlu perhatian"
+                  subtitle="Tugas yang menunggu tindak lanjut"
+                  color="orange"
+                />
+                <Divider className="my-5" />
+                {finishedExams.length > 0 && canAccess("/admin/evaluasi") ? (
+                  <Alert
+                    type="warning"
+                    showIcon
+                    icon={<IconShieldCheck size={18} aria-hidden="true" />}
+                    message={`${finishedExams.length} ujian selesai`}
+                    description={
+                      <Flex vertical align="flex-start" gap={12}>
+                        <span>Ujian selesai dan siap dievaluasi atau direkap.</span>
+                        <Link to="/admin/evaluasi">
+                          <Button size="small" type="primary" ghost>
+                            Proses evaluasi
+                          </Button>
+                        </Link>
+                      </Flex>
+                    }
+                  />
+                ) : (
+                  <Alert
+                    type="success"
+                    showIcon
+                    icon={<IconCircleCheck size={18} aria-hidden="true" />}
+                    message="Semua antrean selesai"
+                    description="Tidak ada tugas evaluasi tertunda saat ini."
+                  />
+                )}
+              </Card>
 
+              {upcomingExams.length > 0 && (
+                <Card className="shadow-sm">
+                  <SectionHeading
+                    icon={<IconCalendarClock size={19} aria-hidden="true" />}
+                    title="Ujian mendatang"
+                    subtitle={`${upcomingExamCount} terjadwal`}
+                    color="blue"
+                  />
+                  <Divider className="my-5" />
+                  <div className="space-y-3">
+                    {upcomingExams.map((exam) => (
+                      <div key={exam.id} className="rounded-xl border border-slate-200/80 p-3 dark:border-slate-700">
+                        <Typography.Text strong className="block leading-snug">
+                          {exam.nama}
+                        </Typography.Text>
+                        <Typography.Text type="secondary" className="mt-2 block text-xs">
+                          <IconClock size={13} aria-hidden="true" className="mr-1 inline align-[-2px]" />
+                          <span suppressHydrationWarning>
+                            {new Date(exam.beginAt).toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "short",
+                              timeZone: "Asia/Jakarta",
+                            })}{" "}
+                            ·{" "}
+                            {new Date(exam.beginAt).toLocaleTimeString("id-ID", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              timeZone: "Asia/Jakarta",
+                            })}{" "}
+                            WIB
+                          </span>
+                        </Typography.Text>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+            </div>
+          </Col>
+        </Row>
       </div>
-
-    </div>
+    </ConfigProvider>
   );
 }
 
-// ----------------------------------------------------------------------
-// REUSABLE DASHBOARD ARCHITECTURE COMPONENTS
-// ----------------------------------------------------------------------
+function IconTile({ color, children }: { color: string; children: ReactNode }) {
+  const colors: Record<string, string> = {
+    blue: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+    teal: "bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300",
+    orange: "bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
+    violet: "bg-violet-50 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
+  };
+
+  return (
+    <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${colors[color] ?? colors.blue}`}>
+      {children}
+    </span>
+  );
+}
 
 function KpiCard({
   label,
   value,
   subtitle,
   icon,
+  color,
   trend,
-  trendPositive
 }: {
   label: string;
   value: string;
   subtitle: string;
-  icon: React.ReactNode;
-  trend?: string | null;
-  trendPositive?: boolean;
+  icon: ReactNode;
+  color: string;
+  trend: string | null;
 }) {
   return (
-    <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</span>
-        <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
-          {icon}
-        </div>
-      </div>
-
-      <div className="flex items-baseline gap-2 mb-1">
-        <span className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{value}</span>
+    <Card className="h-full shadow-sm" styles={{ body: { padding: 18 } }}>
+      <Flex justify="space-between" align="flex-start" gap={12}>
+        <Statistic
+          title={<span className="text-xs font-semibold uppercase tracking-wide">{label}</span>}
+          value={value}
+          valueStyle={{ fontSize: 28, fontWeight: 700, letterSpacing: "-0.04em" }}
+        />
+        <IconTile color={color}>{icon}</IconTile>
+      </Flex>
+      <Flex justify="space-between" align="center" gap={8} className="mt-2">
+        <Typography.Text type="secondary" className="text-xs">
+          {subtitle}
+        </Typography.Text>
         {trend && (
-          <span className={`inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full ${
-            trendPositive
-              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
-              : "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-400"
-          }`}>
-            <TrendingUp className="mr-1 h-3 w-3 inline" />
+          <Tag bordered={false} color="success" className="m-0 rounded-full">
+            <IconTrendingUp size={12} aria-hidden="true" className="mr-1 inline align-[-2px]" />
             {trend}
-          </span>
+          </Tag>
         )}
-      </div>
+      </Flex>
+    </Card>
+  );
+}
 
-      <p className="text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>
-    </div>
+function SectionHeading({
+  icon,
+  title,
+  subtitle,
+  color,
+}: {
+  icon: ReactNode;
+  title: string;
+  subtitle: string;
+  color: string;
+}) {
+  return (
+    <Flex align="center" gap={12}>
+      <IconTile color={color}>{icon}</IconTile>
+      <div>
+        <Typography.Title level={4} className="!mb-0 !text-base">
+          {title}
+        </Typography.Title>
+        <Typography.Text type="secondary" className="text-xs">
+          {subtitle}
+        </Typography.Text>
+      </div>
+    </Flex>
   );
 }
 
@@ -414,20 +534,30 @@ function ShortcutCard({
   title,
   desc,
   icon,
-  href
+  color,
+  href,
 }: {
   title: string;
   desc: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
+  color: string;
   href: "/admin/ujian" | "/admin/modul" | "/admin/peserta/kartu";
 }) {
   return (
-    <Link to={href} className="flex flex-col p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 transition-all group">
-      <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 shadow-sm w-fit mb-2 group-hover:scale-105 transition-transform">
-        {icon}
-      </div>
-      <h3 className="text-xs font-bold text-slate-900 dark:text-white leading-tight mb-0.5">{title}</h3>
-      <p className="text-[11px] text-slate-500 line-clamp-1">{desc}</p>
+    <Link to={href} className="block h-full rounded-xl text-inherit no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
+      <Card hoverable size="small" className="h-full" styles={{ body: { padding: 14 } }}>
+        <Flex vertical gap={12}>
+          <IconTile color={color}>{icon}</IconTile>
+          <div>
+            <Typography.Text strong className="block text-sm">
+              {title}
+            </Typography.Text>
+            <Typography.Text type="secondary" className="text-xs">
+              {desc}
+            </Typography.Text>
+          </div>
+        </Flex>
+      </Card>
     </Link>
   );
 }
