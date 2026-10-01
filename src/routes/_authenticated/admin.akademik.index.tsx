@@ -1,5 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  Button as AntButton,
+  Card as AntCard,
+  ConfigProvider,
+  Input as AntInput,
+  Space,
+  Tabs as AntTabs,
+  Typography,
+  theme as antdTheme,
+} from "antd";
 import { unitAkademikRepo } from "@/lib/cbt/repos";
 import { mutateUnitAkademikServer } from "@/lib/server/akademik/functions";
 import type { UnitAkademik } from "@/lib/cbt/types";
@@ -16,7 +26,6 @@ import {
 } from "@/components/ui/select";
 import { Plus, Edit2, Trash2, Building2, Library, Users, Search, FolderTree } from "lucide-react";
 import { toast } from "sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useConfirmDialog } from "@/components/cbt/ConfirmDialog";
 
 export const Route = createFileRoute("/_authenticated/admin/akademik/")({
@@ -25,6 +34,16 @@ export const Route = createFileRoute("/_authenticated/admin/akademik/")({
 
 function UnitAkademikExplorer() {
   const [units, setUnits] = useState<UnitAkademik[]>(() => unitAkademikRepo.all());
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const syncColorScheme = () => setIsDark(root.classList.contains("dark"));
+    const observer = new MutationObserver(syncColorScheme);
+    syncColorScheme();
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
   const refreshUnits = () => {
     setUnits([...unitAkademikRepo.all()]);
@@ -35,57 +54,73 @@ function UnitAkademikExplorer() {
   const kelasList = units.filter((u) => u.tipe === "kelas");
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <ConfigProvider
+      theme={{
+        algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
+        token: { colorPrimary: "#03a559", borderRadius: 12, fontFamily: "inherit" },
+      }}
+    >
+      <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <FolderTree className="h-5 w-5 text-primary" />
+          <Typography.Title level={2} className="!mb-1 !text-2xl !font-semibold !italic">
+            <FolderTree className="mr-2 inline-block h-5 w-5 text-primary" />
             Struktur Organisasi Akademik
-          </h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          </Typography.Title>
+          <Typography.Text type="secondary" className="block">
             Kelola hierarki Fakultas, Program Studi, dan Kelas / Rombel perkuliahan.
-          </p>
+          </Typography.Text>
         </div>
+
+        <AntTabs
+          className="w-full"
+          items={[
+            {
+              key: "fakultas",
+              label: (
+                <span>
+                  <Building2 className="mr-2 inline h-3.5 w-3.5" />
+                  Fakultas{" "}
+                  <span className="ml-1 rounded-full bg-slate-200 px-1.5 text-[10px] dark:bg-slate-700">
+                    {fakultasList.length}
+                  </span>
+                </span>
+              ),
+              children: <FakultasSection data={fakultasList} onUpdated={refreshUnits} />,
+            },
+            {
+              key: "prodi",
+              label: (
+                <span>
+                  <Library className="mr-2 inline h-3.5 w-3.5" />
+                  Program Studi{" "}
+                  <span className="ml-1 rounded-full bg-slate-200 px-1.5 text-[10px] dark:bg-slate-700">
+                    {prodiList.length}
+                  </span>
+                </span>
+              ),
+              children: (
+                <ProdiSection data={prodiList} fakultas={fakultasList} onUpdated={refreshUnits} />
+              ),
+            },
+            {
+              key: "kelas",
+              label: (
+                <span>
+                  <Users className="mr-2 inline h-3.5 w-3.5" />
+                  Kelas / Rombel{" "}
+                  <span className="ml-1 rounded-full bg-slate-200 px-1.5 text-[10px] dark:bg-slate-700">
+                    {kelasList.length}
+                  </span>
+                </span>
+              ),
+              children: (
+                <KelasSection data={kelasList} prodi={prodiList} onUpdated={refreshUnits} />
+              ),
+            },
+          ]}
+        />
       </div>
-
-      <Tabs defaultValue="fakultas" className="w-full">
-        <TabsList className="grid grid-cols-3 w-full max-w-md h-10 p-1 bg-slate-100 dark:bg-slate-800">
-          <TabsTrigger value="fakultas" className="text-xs font-semibold flex items-center gap-1.5">
-            <Building2 className="h-3.5 w-3.5" />
-            Fakultas
-            <span className="ml-1 px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-slate-700 text-[10px]">
-              {fakultasList.length}
-            </span>
-          </TabsTrigger>
-          <TabsTrigger value="prodi" className="text-xs font-semibold flex items-center gap-1.5">
-            <Library className="h-3.5 w-3.5" />
-            Program Studi
-            <span className="ml-1 px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-slate-700 text-[10px]">
-              {prodiList.length}
-            </span>
-          </TabsTrigger>
-          <TabsTrigger value="kelas" className="text-xs font-semibold flex items-center gap-1.5">
-            <Users className="h-3.5 w-3.5" />
-            Kelas / Rombel
-            <span className="ml-1 px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-slate-700 text-[10px]">
-              {kelasList.length}
-            </span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="fakultas" className="mt-6">
-          <FakultasSection data={fakultasList} onUpdated={refreshUnits} />
-        </TabsContent>
-
-        <TabsContent value="prodi" className="mt-6">
-          <ProdiSection data={prodiList} fakultas={fakultasList} onUpdated={refreshUnits} />
-        </TabsContent>
-
-        <TabsContent value="kelas" className="mt-6">
-          <KelasSection data={kelasList} prodi={prodiList} onUpdated={refreshUnits} />
-        </TabsContent>
-      </Tabs>
-    </div>
+    </ConfigProvider>
   );
 }
 
@@ -127,7 +162,14 @@ function FakultasSection({ data, onUpdated }: { data: UnitAkademik[]; onUpdated:
   };
 
   const remove = async (id: string) => {
-    if (!(await confirm({ title: "Hapus fakultas", description: "Hapus Fakultas ini?", confirmLabel: "Hapus" }))) return;
+    if (
+      !(await confirm({
+        title: "Hapus fakultas",
+        description: "Hapus Fakultas ini?",
+        confirmLabel: "Hapus",
+      }))
+    )
+      return;
     const res = await mutateUnitAkademikServer({ data: { action: "remove", payload: { id } } });
     if (!res.ok) {
       toast.error(res.error || "Gagal menghapus fakultas");
@@ -140,106 +182,94 @@ function FakultasSection({ data, onUpdated }: { data: UnitAkademik[]; onUpdated:
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-      <Card className="lg:col-span-2 border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
-        <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 pb-3 flex flex-row items-center justify-between gap-4">
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
+      <AntCard
+        className="lg:col-span-2 overflow-hidden"
+        title={
+          <Space>
             <Building2 className="h-4 w-4 text-primary" />
             Daftar Fakultas ({filtered.length})
-          </CardTitle>
-          <div className="relative w-48 sm:w-64">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
-            <Input
-              placeholder="Cari fakultas..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-8 pl-8 text-xs"
-            />
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
-            {filtered.map((f) => (
-              <div
-                key={f.id}
-                className="flex items-center justify-between p-3.5 px-5 hover:bg-slate-50/70 dark:hover:bg-slate-900/50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 border border-blue-100 dark:border-blue-900/40">
-                    <Building2 className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      {f.nama}
-                    </h4>
-                    <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-mono">
-                      ID: {f.id}
-                    </span>
-                  </div>
+          </Space>
+        }
+        extra={
+          <AntInput
+            aria-label="Cari fakultas"
+            placeholder="Cari fakultas..."
+            prefix={<Search className="h-4 w-4 text-slate-400" />}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-48 sm:w-64"
+          />
+        }
+        styles={{ body: { padding: 0 } }}
+      >
+        <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
+          {filtered.map((f) => (
+            <div
+              key={f.id}
+              className="flex items-center justify-between p-3.5 px-5 hover:bg-slate-50/70 dark:hover:bg-slate-900/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 border border-blue-100 dark:border-blue-900/40">
+                  <Building2 className="h-4 w-4" />
                 </div>
-                <div className="flex items-center gap-1">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8 text-slate-500 hover:text-primary"
-                    onClick={() => setForm({ id: f.id, nama: f.nama })}
-                    title="Edit"
-                  >
-                    <Edit2 className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8 text-slate-500 hover:text-destructive"
-                    onClick={() => remove(f.id)}
-                    title="Hapus"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    {f.nama}
+                  </h4>
+                  <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-mono">
+                    ID: {f.id}
+                  </span>
                 </div>
               </div>
-            ))}
-            {filtered.length === 0 && (
-              <div className="p-8 text-center text-xs text-muted-foreground">
-                Belum ada data fakultas. Tambahkan melalui form di samping.
+              <div className="flex items-center gap-1">
+                <AntButton
+                  type="text"
+                  aria-label={`Edit fakultas ${f.nama}`}
+                  onClick={() => setForm({ id: f.id, nama: f.nama })}
+                  icon={<Edit2 className="h-4 w-4" />}
+                ></AntButton>
+                <AntButton
+                  type="text"
+                  danger
+                  aria-label={`Hapus fakultas ${f.nama}`}
+                  onClick={() => remove(f.id)}
+                  icon={<Trash2 className="h-4 w-4" />}
+                ></AntButton>
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          ))}
+          {filtered.length === 0 && (
+            <div className="p-8 text-center text-xs text-muted-foreground">
+              Belum ada data fakultas. Tambahkan melalui form di samping.
+            </div>
+          )}
+        </div>
+      </AntCard>
 
-      <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
-        <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 pb-3">
-          <CardTitle className="text-base font-semibold">
-            {form.id ? "Edit Fakultas" : "Tambah Fakultas Baru"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-5 space-y-4">
+      <AntCard title={form.id ? "Edit Fakultas" : "Tambah Fakultas Baru"}>
+        <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium">Nama Fakultas *</Label>
-            <Input
+            <Typography.Text strong>Nama Fakultas *</Typography.Text>
+            <AntInput
               placeholder="Contoh: Fakultas Kedokteran"
               value={form.nama}
               onChange={(e) => setForm({ ...form, nama: e.target.value })}
-              className="text-xs"
             />
           </div>
           <div className="flex gap-2 pt-2">
-            <Button onClick={save} disabled={submitting} className="flex-1 text-xs h-9">
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
+            <AntButton
+              type="primary"
+              icon={<Plus size={16} />}
+              onClick={save}
+              loading={submitting}
+              className="flex-1"
+            >
               {form.id ? "Simpan Perubahan" : "Tambahkan"}
-            </Button>
-            {form.id && (
-              <Button
-                variant="outline"
-                onClick={() => setForm({ id: "", nama: "" })}
-                className="text-xs h-9"
-              >
-                Batal
-              </Button>
-            )}
+            </AntButton>
+            {form.id && <AntButton onClick={() => setForm({ id: "", nama: "" })}>Batal</AntButton>}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </AntCard>
       {dialog}
     </div>
   );
@@ -299,7 +329,14 @@ function ProdiSection({
   };
 
   const remove = async (id: string) => {
-    if (!(await confirm({ title: "Hapus program studi", description: "Hapus Program Studi ini?", confirmLabel: "Hapus" }))) return;
+    if (
+      !(await confirm({
+        title: "Hapus program studi",
+        description: "Hapus Program Studi ini?",
+        confirmLabel: "Hapus",
+      }))
+    )
+      return;
     const res = await mutateUnitAkademikServer({ data: { action: "remove", payload: { id } } });
     if (!res.ok) {
       toast.error(res.error || "Gagal menghapus program studi");
@@ -502,7 +539,14 @@ function KelasSection({
   };
 
   const remove = async (id: string) => {
-    if (!(await confirm({ title: "Hapus kelas", description: "Hapus Kelas ini?", confirmLabel: "Hapus" }))) return;
+    if (
+      !(await confirm({
+        title: "Hapus kelas",
+        description: "Hapus Kelas ini?",
+        confirmLabel: "Hapus",
+      }))
+    )
+      return;
     const res = await mutateUnitAkademikServer({ data: { action: "remove", payload: { id } } });
     if (!res.ok) {
       toast.error(res.error || "Gagal menghapus kelas");
