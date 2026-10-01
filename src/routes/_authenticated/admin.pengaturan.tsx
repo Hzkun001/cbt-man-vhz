@@ -1,13 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
+import { Button as AntButton, ConfigProvider, Input as AntInput, Switch as AntSwitch, theme as antdTheme } from "antd";
 import { configRepo, hydrateRepos } from "@/lib/cbt/repos";
 import { ConfigSchema } from "@/lib/cbt/types";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Settings, Upload, Image as ImageIcon, Save } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPage, AdminPageHeader } from "@/components/cbt/AdminPage";
@@ -29,7 +27,17 @@ export const Route = createFileRoute("/_authenticated/admin/pengaturan")({
 function PengaturanPage() {
   const [cfg, setCfg] = useState(configRepo.get());
   const { theme, setTheme, font, setFont } = useThemeStore();
+  const [isDark, setIsDark] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const syncColorScheme = () => setIsDark(root.classList.contains("dark"));
+    const observer = new MutationObserver(syncColorScheme);
+    syncColorScheme();
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
   async function save() {
     const parsed = ConfigSchema.safeParse(cfg);
@@ -63,14 +71,20 @@ function PengaturanPage() {
   }
 
   return (
+    <ConfigProvider
+      theme={{
+        algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
+        token: { colorPrimary: "#16a34a", borderRadius: 12, fontFamily: "inherit" },
+      }}
+    >
     <AdminPage className="">
       <AdminPageHeader
         title="Pengaturan Aplikasi"
         description="Konfigurasi institusi, keamanan, browser ujian, dan branding CBT."
         action={
-          <Button onClick={save} className="h-10 px-8 shadow-sm">
+          <AntButton type="primary" size="large" onClick={save} icon={<Save size={17} aria-hidden="true" />}>
             Simpan Semua
-          </Button>
+          </AntButton>
         }
       />
 
@@ -87,7 +101,8 @@ function PengaturanPage() {
 
             <div className="space-y-2.5">
               <Label className="text-slate-700 dark:text-slate-300 font-semibold">Nama Aplikasi</Label>
-              <Input
+              <AntInput
+                size="large"
                 value={cfg.appName}
                 onChange={(e) => setCfg({ ...cfg, appName: e.target.value })}
                 className="bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800"
@@ -106,7 +121,8 @@ function PengaturanPage() {
                 </div>
                 <div className="flex-1 space-y-3 w-full">
                   <div className="flex gap-2">
-                    <Input
+                    <AntInput
+                      size="large"
                       value={cfg.appLogo ?? ""}
                       placeholder="https://... atau klik Upload"
                       onChange={(e) => setCfg({ ...cfg, appLogo: e.target.value })}
@@ -120,9 +136,7 @@ function PengaturanPage() {
                       ref={fileInputRef}
                       onChange={handleLogoUpload}
                     />
-                    <Button type="button" variant="secondary" onClick={() => fileInputRef.current?.click()} className="shrink-0 shadow-sm border-slate-200 dark:border-slate-700">
-                      <Upload className="h-4 w-4 mr-2" /> Upload
-                    </Button>
+                    <AntButton size="large" type="default" icon={<Upload size={16} />} onClick={() => fileInputRef.current?.click()} className="shrink-0">Upload</AntButton>
                   </div>
                   <p className="text-xs text-slate-500">Mendukung format PNG/JPG. Gambar akan diubah ukurannya secara otomatis (max 200px).</p>
                 </div>
@@ -131,19 +145,19 @@ function PengaturanPage() {
 
             <div className="space-y-2.5">
               <Label className="text-slate-700 dark:text-slate-300 font-semibold">Deskripsi Singkat</Label>
-              <Textarea
+              <AntInput.TextArea
                 value={cfg.appDeskripsi}
                 onChange={(e) => setCfg({ ...cfg, appDeskripsi: e.target.value })}
-                className="min-h-[80px] bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800"
+                autoSize={{ minRows: 3 }}
               />
             </div>
 
             <div className="space-y-2.5">
               <Label className="text-slate-700 dark:text-slate-300 font-semibold">Pengumuman Halaman Login</Label>
-              <Textarea
+              <AntInput.TextArea
                 value={cfg.pesanLogin}
                 onChange={(e) => setCfg({ ...cfg, pesanLogin: e.target.value })}
-                className="min-h-[80px] bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800"
+                autoSize={{ minRows: 3 }}
                 placeholder="Ketik pengumuman atau instruksi untuk peserta..."
               />
             </div>
@@ -296,6 +310,7 @@ function PengaturanPage() {
       </div>
 
     </AdminPage>
+    </ConfigProvider>
   );
 }
 
@@ -328,7 +343,7 @@ function ToggleRow({
         <p className="text-xs text-slate-500 leading-relaxed pr-6">{desc}</p>
       </div>
       <div className="shrink-0 mt-3 sm:mt-0">
-        <Switch checked={checked} onCheckedChange={onChange} disabled={disabled} className="data-[state=checked]:bg-emerald-500" />
+        <AntSwitch checked={checked} onChange={onChange} disabled={disabled} />
       </div>
     </div>
   );
