@@ -13,6 +13,8 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Changed
 
+- Rapikan kartu kelas mata kuliah dan pemilihan peserta dengan pencarian serta seleksi massal.
+
 - Perbarui tampilan pengelolaan fakultas akademik.
 
 - Rapikan tabel akun admin, padding username, dan jarak toolbar pencarian.
