@@ -13,6 +13,8 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Changed
 
+- Rapikan tabel akun admin, padding username, dan jarak toolbar pencarian.
+
 - Perbarui dashboard admin dengan Ant Design dan ikon Tabler.
 
 - Tambahkan Ant Design dan ikon Tabler sebagai dependency untuk migrasi bertahap halaman admin.
