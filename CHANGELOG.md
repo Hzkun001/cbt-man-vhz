@@ -13,6 +13,8 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Changed
 
+- Perbarui kontrol drive penyimpanan dan kartu bucket; kontrol hapus tetap khusus super admin.
+
 - Rapikan formulir modul, kesejajaran input, dan jarak antarkartu.
 
 - Perbarui toolbar dan tabel pengelolaan akun peserta.

@@ -61,7 +61,7 @@ test("admin demo credentials are development-only", () => {
 
 test("file delete action matches the super-admin server boundary", () => {
   const filesPage = readFileSync("src/routes/_authenticated/admin.files.tsx", "utf8");
-  assert.match(filesPage, /\{isSuper && <Button[\s\S]{0,2000}title="Hapus Permanen"/);
+  assert.match(filesPage, /\{isSuper && <Tooltip title="Hapus file"><AntButton[\s\S]{0,2000}await deleteFile\(f\.id\)/);
 });
 
 test("admin exam parent renders child token routes through Outlet", () => {
