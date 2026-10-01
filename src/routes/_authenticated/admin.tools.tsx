@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useEffect, useState, useRef } from "react";
+import { Button as AntButton, ConfigProvider, theme as antdTheme } from "antd";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -41,6 +41,16 @@ function ToolsPage() {
   const [isResetting, setIsResetting] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const syncColorScheme = () => setIsDark(root.classList.contains("dark"));
+    const observer = new MutationObserver(syncColorScheme);
+    syncColorScheme();
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -128,6 +138,12 @@ function ToolsPage() {
   }
 
   return (
+    <ConfigProvider
+      theme={{
+        algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
+        token: { colorPrimary: "#16a34a", borderRadius: 12, fontFamily: "inherit" },
+      }}
+    >
     <AdminPage className="">
 
       <AdminPageHeader
@@ -150,7 +166,7 @@ function ToolsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 p-6 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
             <div className="flex-1 space-y-1">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                <div className="p-1.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
                   <Download className="h-4 w-4" />
                 </div>
                 <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Unduh Berkas Cadangan</h3>
@@ -158,9 +174,9 @@ function ToolsPage() {
               <p className="text-xs text-slate-500 pl-8">Menghasilkan berkas JSON tunggal berisi snapshot pangkalan data saat ini.</p>
             </div>
             <div className="shrink-0">
-              <Button onClick={handleDownloadBackup} disabled={isDownloading} className="w-full sm:w-auto shadow-sm">
+              <AntButton type="primary" onClick={handleDownloadBackup} loading={isDownloading} className="w-full sm:w-auto">
                 Unduh Backup
-              </Button>
+              </AntButton>
             </div>
           </div>
 
@@ -185,9 +201,9 @@ function ToolsPage() {
 
                 onChange={handleFile}
               />
-              <Button variant="outline" onClick={() => fileRef.current?.click()} className="w-full sm:w-auto bg-white dark:bg-slate-950">
+              <AntButton onClick={() => fileRef.current?.click()} className="w-full sm:w-auto">
                 Pilih Berkas JSON...
-              </Button>
+              </AntButton>
             </div>
           </div>
 
@@ -219,9 +235,9 @@ function ToolsPage() {
               <p className="text-xs text-slate-500 pl-8">Isi pangkalan data kosong dengan sampel otomatis (pengguna, soal, ujian).</p>
             </div>
             <div className="shrink-0">
-              <Button variant="outline" onClick={handleSeed} disabled={isSeeding} className="w-full sm:w-auto bg-white dark:bg-slate-950">
+              <AntButton onClick={handleSeed} loading={isSeeding} className="w-full sm:w-auto">
                 Muat Seed Data
-              </Button>
+              </AntButton>
             </div>
           </div>
 
@@ -238,9 +254,7 @@ function ToolsPage() {
 
             </div>
             <div className="shrink-0">
-              <Button variant="destructive" onClick={() => setConfirmReset(true)} className="w-full sm:w-auto font-semibold">
-                <Trash2 className="mr-2 h-4 w-4" /> Reset Keseluruhan
-              </Button>
+              <AntButton danger onClick={() => setConfirmReset(true)} icon={<Trash2 size={17} />} className="w-full sm:w-auto font-semibold">Reset Keseluruhan</AntButton>
             </div>
           </div>
 
@@ -364,5 +378,6 @@ function ToolsPage() {
         </DialogContent>
       </Dialog>
     </AdminPage>
+    </ConfigProvider>
   );
 }
