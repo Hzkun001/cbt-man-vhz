@@ -47,7 +47,7 @@ test("published and ongoing exams keep the edit action with question source guar
   const server = read("src/lib/server/ujian/functions.ts");
 
   assert.match(list, /to="\/admin\/ujian\/\$id"/);
-  assert.match(list, /Users className=.*Peserta/);
+  assert.match(list, /Users (?:className=.*|size=\{15\} \/>)Peserta/);
   assert.doesNotMatch(list, /\{sesiCount === 0 && \(\s*<Link to="\/admin\/ujian\/\$id"/);
   assert.match(editor, /hasSessions/);
   assert.match(editor, /const locked = u\.status !== "draft" \|\| hasSessions/);
@@ -62,12 +62,15 @@ test("exam list row primary area is a link to editor while shielding action butt
 
   assert.match(list, /to="\/admin\/ujian\/\$id"/);
   assert.match(list, /params=\{\{ id: u\.id \}\}/);
-  assert.match(list, /flex items-center gap-4 flex-1 min-w-0/);
-  assert.match(list, /cursor-pointer/);
-  assert.match(list, /group-hover:text-primary/);
-  assert.match(list, /hover:-translate-y-0\.5/);
-  assert.match(list, /hover:shadow-md/);
-  assert.match(list, /hover:\[&_svg\]:scale-110/);
+  const primary = list.match(/<Link to="\/admin\/ujian\/\$id" params=\{\{ id: u\.id \}\} className="group[^]*?<\/Link>/)?.[0];
+  assert.ok(primary, "Card primary area must be an editor link");
+  assert.match(primary, /\{u\.nama\}/);
+  assert.match(primary, /\{soalCount\}/);
+  assert.match(primary, /\{u\.durasiMenit\}/);
+  assert.doesNotMatch(primary, /to="\/admin\/(?:peserta\/online|analitik|ujian\/\$id\/peserta)"/);
+  assert.match(list, /to="\/admin\/ujian\/\$id\/peserta"/);
+  assert.match(list, /to="\/admin\/peserta\/online"/);
+  assert.match(list, /to="\/admin\/analitik\/\$id"/);
 });
 
 test("participant UI does not offer resume after the exam window closes", () => {
@@ -140,7 +143,7 @@ test("exam schedule can be extended via narrow server action and list rows stay 
   assert.match(server, /tx\.ujian\.updateMany\(\{[\s\S]*where: \{ id: data\.ujianId, status: "published", endAt: exam\.endAt \},[\s\S]*data: \{ endAt: BigInt\(data\.newEndAt\) \}/);
 
   // List rows have clean action buttons
-  assert.match(list, /Users className="h-3\.5 w-3\.5"/);
+  assert.match(list, /Users size=\{15\}/);
 
   // Sub-features live inside the editor
   assert.match(editor, /KeyRound/);

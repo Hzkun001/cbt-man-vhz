@@ -13,6 +13,8 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Changed
 
+- Rombak kartu paket ujian, ringkasan status, dan filter; area utama tetap link editor dengan aksi sekunder terpisah.
+
 - Rapikan tata letak editor ujian dan tampilkan alat bantu ujian tanpa buka/tutup.
 
 - Perbarui kontrol drive penyimpanan dan kartu bucket; kontrol hapus tetap khusus super admin.
