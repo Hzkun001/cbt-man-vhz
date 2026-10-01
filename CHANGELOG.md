@@ -13,6 +13,8 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Changed
 
+- Rapikan tata letak editor ujian dan tampilkan alat bantu ujian tanpa buka/tutup.
+
 - Penyederhanaan interaksi daftar paket ujian (`/admin/ujian`): seluruh area baris/kartu paket ujian kini dapat diklik langsung untuk membuka editor (`/admin/ujian/$id`), mendukung pembukaan di tab baru (klik tengah atau Cmd/Ctrl+klik), dengan efek sorot hover pada judul dan ikon, serta tombol aksi sekunder yang tetap terlindungi.
 - Perombakan tata letak editor paket ujian (`/admin/ujian/$id`) menjadi 2 kolom terstruktur yang bersih, menyederhanakan konfigurasi waktu dan identitas, mengintegrasikan dialog konfirmasi penghapusan ujian bertema, dan menghilangkan banner peringatan mode berlangsung yang mengganggu.
 - Pembersihan antarmuka kotak teks soal esai peserta (`/peserta/ujian/$id/kerjakan`): menghilangkan lapisan gradien neon kabur (*glow blur*) dan latar belakang semi-transparan, beralih ke kontainer kartu solid ergonomis dengan indikator autosave dan penghitung kata serta karakter real-time.
