@@ -13,6 +13,8 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Changed
 
+- Perbarui kontrol drive penyimpanan dan kartu bucket; kontrol hapus tetap khusus super admin.
+
 - Tambahkan Ant Design dan ikon Tabler sebagai dependency untuk migrasi bertahap halaman admin.
 
 - Penyederhanaan interaksi daftar paket ujian (`/admin/ujian`): seluruh area baris/kartu paket ujian kini dapat diklik langsung untuk membuka editor (`/admin/ujian/$id`), mendukung pembukaan di tab baru (klik tengah atau Cmd/Ctrl+klik), dengan efek sorot hover pada judul dan ikon, serta tombol aksi sekunder yang tetap terlindungi.

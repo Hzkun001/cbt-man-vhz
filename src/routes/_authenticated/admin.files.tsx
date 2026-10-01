@@ -1,6 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useMemo } from "react";
 import {
+  Button as AntButton,
+  Card as AntCard,
+  ConfigProvider,
+  Empty,
+  Input as AntInput,
+  Select as AntSelect,
+  Tooltip,
+  Typography,
+  theme as antdTheme,
+} from "antd";
+import {
   listFiles,
   putFile,
   deleteFile,
@@ -10,12 +21,8 @@ import {
 import { unitAkademikRepo, soalRepo } from "@/lib/cbt/repos";
 import type { UnitAkademik } from "@/lib/cbt/types";
 import { useAuthStore } from "@/lib/cbt/auth-store";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Upload, Trash2, FolderOpen, FileAudio, File as FileIcon, Search, Copy, Folder, Database, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AdminPage, AdminPageHeader } from "@/components/cbt/AdminPage";
 import { useConfirmDialog } from "@/components/cbt/ConfirmDialog";
 
@@ -42,7 +49,17 @@ function FilesPage() {
   const [newBucketJurusanId, setNewBucketJurusanId] = useState("global");
   const [isSavingBucket, setIsSavingBucket] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDark, setIsDark] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const syncColorScheme = () => setIsDark(root.classList.contains("dark"));
+    const observer = new MutationObserver(syncColorScheme);
+    syncColorScheme();
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
   const jurusans = units.filter((u) => u.tipe === "jurusan" || u.tipe === "prodi");
   const manualBuckets = units.filter((u) => u.tipe === "kategori_bebas");
@@ -211,6 +228,12 @@ function FilesPage() {
   ];
 
   return (
+    <ConfigProvider
+      theme={{
+        algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
+        token: { colorPrimary: "#16a34a", borderRadius: 12, fontFamily: "inherit" },
+      }}
+    >
     <AdminPage className="">
       <AdminPageHeader
         title={!isSuper && myJurusan ? `Penyimpanan: ${myJurusan.nama}` : "Drive Penyimpanan"}
@@ -228,35 +251,36 @@ function FilesPage() {
                 e.target.value = "";
               }}
             />
-            <Button size="sm" onClick={() => inputRef.current?.click()} disabled={isUploading} className="h-9 font-semibold">
-              {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4 translate-y-[-0.5px]" />}
+            <AntButton type="primary" size="large" onClick={() => inputRef.current?.click()} disabled={isUploading} icon={isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload size={17} aria-hidden="true" />}>
               Upload File
-            </Button>
+            </AntButton>
           </>
         }
       />
 
-      <div className="flex flex-col sm:flex-row gap-4 sm:items-center pb-2">
-        <div className="relative w-full sm:w-64 shrink-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input 
-            placeholder="Cari nama file..." 
-            className="pl-9 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus:ring-primary/20 shadow-sm h-9"
+      <div className="flex flex-col gap-4 pb-2 sm:flex-row sm:items-center">
+        <AntInput
+            allowClear
+            aria-label="Cari nama file"
+            placeholder="Cari nama file..."
+            prefix={<Search size={17} aria-hidden="true" className="text-slate-500" />}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            className="!h-12 w-full sm:!w-64"
           />
-        </div>
         <div className="flex items-center gap-2 sm:ml-auto">
           <span className="text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">Urutkan</span>
-          <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as FileSortOrder)}>
-            <SelectTrigger aria-label="Urutkan file" className="w-full sm:w-36 bg-white dark:bg-slate-900">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="newest">Paling baru</SelectItem>
-              <SelectItem value="oldest">Paling lama</SelectItem>
-            </SelectContent>
-          </Select>
+          <AntSelect
+            aria-label="Urutkan file"
+            value={sortOrder}
+            onChange={(value) => setSortOrder(value as FileSortOrder)}
+            size="large"
+            className="w-full sm:w-44"
+            options={[
+              { value: "newest", label: "Paling baru" },
+              { value: "oldest", label: "Paling lama" },
+            ]}
+          />
         </div>
       </div>
 
@@ -268,9 +292,7 @@ function FilesPage() {
               <span className="text-xs text-slate-500 dark:text-slate-400">Pisahkan file berdasarkan jurusan atau kebutuhan ujian</span>
             </div>
             {isSuper && (
-              <Button type="button" size="sm" variant="outline" className="h-8" onClick={() => setIsCreatingBucket((open) => !open)}>
-                <Plus className="mr-1.5 h-3.5 w-3.5" /> Buat Bucket
-              </Button>
+              <AntButton htmlType="button" icon={<Plus size={17} />} onClick={() => setIsCreatingBucket((open) => !open)}>Buat Bucket</AntButton>
             )}
           </div>
 
@@ -282,28 +304,29 @@ function FilesPage() {
                 void createBucket();
               }}
             >
-              <Input
+              <AntInput
                 autoFocus
                 aria-label="Nama bucket baru"
                 placeholder="Nama bucket, contoh: Logo Ujian"
                 value={newBucketName}
                 onChange={(event) => setNewBucketName(event.target.value)}
                 maxLength={100}
+                size="large"
               />
-              <Select value={newBucketJurusanId} onValueChange={setNewBucketJurusanId}>
-                <SelectTrigger aria-label="Jurusan bucket baru" className="bg-white dark:bg-slate-900">
-                  <SelectValue placeholder="Pilih jurusan" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="global">Umum / Global</SelectItem>
-                  {jurusans.map((jurusan) => <SelectItem key={jurusan.id} value={jurusan.id}>{jurusan.nama}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Button type="submit" size="sm" disabled={isSavingBucket || !newBucketName.trim()}>
-                {isSavingBucket ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+              <AntSelect
+                aria-label="Jurusan bucket baru"
+                value={newBucketJurusanId}
+                onChange={setNewBucketJurusanId}
+                size="large"
+                options={[
+                  { value: "global", label: "Umum / Global" },
+                  ...jurusans.map((jurusan) => ({ value: jurusan.id, label: jurusan.nama })),
+                ]}
+              />
+              <AntButton type="primary" htmlType="submit" size="large" loading={isSavingBucket} disabled={!newBucketName.trim()}>
                 Simpan
-              </Button>
-              <Button type="button" size="sm" variant="ghost" onClick={() => setIsCreatingBucket(false)}>Batal</Button>
+              </AntButton>
+              <AntButton htmlType="button" size="large" onClick={() => setIsCreatingBucket(false)}>Batal</AntButton>
             </form>
           )}
 
@@ -335,24 +358,17 @@ function FilesPage() {
       )}
 
       {filteredFiles.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-28 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 shadow-sm">
-          <div className="h-20 w-20 rounded-full bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center mb-5">
-            <FolderOpen className="h-10 w-10 text-slate-300 dark:text-slate-600" />
-          </div>
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Folder Kosong</h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 text-center max-w-sm mb-6">
-            Penyimpanan untuk {isSuper ? "kategori ini" : "program studi Anda"} masih kosong. Klik tombol Upload untuk menambahkan gambar atau audio.
-          </p>
-          <Button onClick={() => inputRef.current?.click()} variant="outline" className="shadow-sm transition-all duration-300 ease-spring hover:scale-[0.98]">
-            <Upload className="mr-2 h-4 w-4 translate-y-[-0.5px]" /> Mulai Upload
-          </Button>
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-white py-16 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <Empty image={<FolderOpen className="mx-auto h-10 w-10 text-slate-400" />} description={<Typography.Text type="secondary">Folder penyimpanan ini masih kosong.</Typography.Text>}>
+            <AntButton icon={<Upload size={17} />} onClick={() => inputRef.current?.click()}>Mulai Upload</AntButton>
+          </Empty>
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mt-4">
           {filteredFiles.map((f) => {
             const usage = usageMap[f.id] || 0;
             return (
-              <Card key={f.id} className="group overflow-hidden border border-slate-200/80 dark:border-slate-800 hover:border-primary/50 dark:hover:border-primary/50 shadow-sm hover:shadow-md hover:shadow-primary/5 transition-all duration-300 ease-spring bg-white dark:bg-slate-900 rounded-2xl flex flex-col">
+              <AntCard key={f.id} className="group overflow-hidden rounded-2xl transition-shadow hover:shadow-md" styles={{ body: { padding: 0 } }}>
                 <div className="relative h-40 bg-slate-50/80 dark:bg-slate-900/50 flex flex-col items-center justify-center p-2 border-b border-slate-100 dark:border-slate-800/60 overflow-hidden group/media">
                   
                   {f.mime.startsWith("image/") && urls[f.id] ? (
@@ -387,10 +403,11 @@ function FilesPage() {
                   
                   {/* Hover overlay actions */}
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-out flex items-center justify-center gap-2.5 backdrop-blur-[2px] pointer-events-none group-hover:pointer-events-auto">
-                    {isSuper && <Button
-                      size="icon" 
-                      variant="secondary" 
-                      className="h-9 w-9 rounded-full shadow-sm scale-75 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300 ease-spring delay-75 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30"
+                    {isSuper && <Tooltip title="Hapus file"><AntButton
+                      aria-label={`Hapus file ${f.name}`}
+                      shape="circle"
+                      danger
+                      className="scale-75 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300"
                       onClick={async () => {
                         if (usage > 0) {
                           toast.error(`Aksi Ditolak: File ini sedang digunakan di ${usage} soal. Hapus dari soal terlebih dahulu sebelum menghapus file.`);
@@ -409,28 +426,23 @@ function FilesPage() {
                           toast.error(`Gagal menghapus file: ${e instanceof Error ? e.message : String(e)}`);
                         }
                       }}
-                      title="Hapus Permanen"
-                      aria-label="Hapus Permanen"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>}
-                    <Button 
-                      size="icon" 
-                      variant="secondary"
-                      className="h-9 w-9 rounded-full shadow-sm scale-75 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300 ease-spring hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20"
+                      icon={<Trash2 size={17} />}
+                    /></Tooltip>}
+                    <Tooltip title="Salin ID file"><AntButton
+                      aria-label={`Salin ID file ${f.name}`}
+                      shape="circle"
+                      className="scale-75 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300"
                       onClick={() => {
                         const internalUrl = `file://${f.id}`;
                         navigator.clipboard.writeText(internalUrl);
                         toast.success("File ID disalin! (Gunakan ini di Excel)");
                       }}
-                      title="Copy Internal Link (ID)"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
+                      icon={<Copy size={17} />}
+                    /></Tooltip>
                   </div>
                 </div>
                 
-                <CardContent className="p-3.5 flex-1 flex flex-col justify-between">
+                <div className="flex flex-1 flex-col justify-between p-3.5">
                   <div>
                     <div className="text-[13px] font-medium text-slate-900 dark:text-slate-100 line-clamp-1 group-hover:text-primary transition-colors duration-300 ease-spring" title={f.name}>
                       {f.name}
@@ -446,13 +458,14 @@ function FilesPage() {
                       )}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </AntCard>
             );
           })}
         </div>
       )}
       {dialog}
     </AdminPage>
+    </ConfigProvider>
   );
 }
