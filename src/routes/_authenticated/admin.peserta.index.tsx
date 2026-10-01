@@ -1,34 +1,66 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
+import {
+  Button as AntButton,
+  ConfigProvider,
+  Empty,
+  Flex,
+  Input as AntInput,
+  Pagination,
+  Select as AntSelect,
+  Space,
+  Table as AntTable,
+  Tag,
+  Tooltip,
+  Typography,
+  theme as antdTheme,
+  type TableColumnsType,
+} from "antd";
 import { upsertUserServer, getUsersList, mutateUserServer } from "@/lib/server/users/functions";
 import { getUnitAkademikList } from "@/lib/server/akademik/functions";
 import { uid } from "@/lib/cbt/storage";
 import type { UnitAkademik, User } from "@/lib/cbt/types";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { AdminPage, AdminPageHeader, AdminPageContent } from "@/components/cbt/AdminPage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Plus, Printer, Upload, Users as UsersIcon, Activity, Search, Loader2, ChevronLeft, ChevronRight, FileX } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Pencil,
+  Trash2,
+  Plus,
+  Printer,
+  Upload,
+  Users as UsersIcon,
+  Activity,
+  Search,
+  Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useConfirmDialog } from "@/components/cbt/ConfirmDialog";
 
 export const Route = createFileRoute("/_authenticated/admin/peserta/")({
   component: PesertaPage,
   loader: async () => {
-    const [allUsers, allUnits] = await Promise.all([
-      getUsersList(),
-      getUnitAkademikList(),
-    ]);
+    const [allUsers, allUnits] = await Promise.all([getUsersList(), getUnitAkademikList()]);
     return { allUsers, allUnits };
-  }
+  },
 });
 
 type PesertaWithPwd = User & { _initialPassword?: string };
@@ -37,7 +69,7 @@ function PesertaPage() {
   const { confirm, dialog } = useConfirmDialog();
   const { allUsers, allUnits } = Route.useLoaderData();
   const router = useRouter();
-  
+
   const peserta = (allUsers as User[]).filter((u: User) => u.role === "mahasiswa");
   const units = allUnits;
 
@@ -48,11 +80,21 @@ function PesertaPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [filterUnit, setFilterUnit] = useState<string>("all");
   const [query, setQuery] = useState("");
+  const [isDark, setIsDark] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const syncColorScheme = () => setIsDark(root.classList.contains("dark"));
+    const observer = new MutationObserver(syncColorScheme);
+    syncColorScheme();
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
   function refresh() {
     setSelectedIds([]);
@@ -60,8 +102,17 @@ function PesertaPage() {
   }
 
   async function handleBulkDelete() {
-    if (!(await confirm({ title: "Hapus peserta", description: `Hapus ${selectedIds.length} peserta terpilih secara permanen?`, confirmLabel: "Hapus" }))) return;
-    const res = await mutateUserServer({ data: { action: "bulkRemove", payload: { ids: selectedIds } } });
+    if (
+      !(await confirm({
+        title: "Hapus peserta",
+        description: `Hapus ${selectedIds.length} peserta terpilih secara permanen?`,
+        confirmLabel: "Hapus",
+      }))
+    )
+      return;
+    const res = await mutateUserServer({
+      data: { action: "bulkRemove", payload: { ids: selectedIds } },
+    });
     if (res.ok) {
       toast.success(`${selectedIds.length} peserta berhasil dihapus`);
       refresh();
@@ -70,13 +121,13 @@ function PesertaPage() {
     }
   }
 
-  const filtered = peserta.filter((p) =>
-    (filterUnit === "all" || p.unitId === filterUnit) &&
-    (query === "" || p.namaLengkap.toLowerCase().includes(query.toLowerCase()) || p.username.toLowerCase().includes(query.toLowerCase()))
+  const filtered = peserta.filter(
+    (p) =>
+      (filterUnit === "all" || p.unitId === filterUnit) &&
+      (query === "" ||
+        p.namaLengkap.toLowerCase().includes(query.toLowerCase()) ||
+        p.username.toLowerCase().includes(query.toLowerCase())),
   );
-
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const shown = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   // Reset page when filter changes
   useEffect(() => {
@@ -84,8 +135,10 @@ function PesertaPage() {
   }, [query, filterUnit]);
 
   useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(Math.max(1, totalPages));
-  }, [currentPage, totalPages]);
+    if (currentPage > Math.ceil(filtered.length / itemsPerPage)) {
+      setCurrentPage(Math.max(1, Math.ceil(filtered.length / itemsPerPage)));
+    }
+  }, [currentPage, filtered.length]);
 
   async function importExcel(file: File) {
     setIsImporting(true);
@@ -94,11 +147,11 @@ function PesertaPage() {
       const wb = XLSX.read(buf);
       const sheet = wb.Sheets[wb.SheetNames[0]];
       const rows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-      
+
       let added = 0;
       let failed = 0;
       const localUnits = [...units];
-      
+
       for (const r of rows) {
         const username = String(r.username ?? r.Username ?? "").trim();
         const nama = String(r.nama ?? r.Nama ?? r.namaLengkap ?? "").trim();
@@ -122,10 +175,16 @@ function PesertaPage() {
 
         const res = await upsertUserServer({
           data: {
-            id: userId, username, namaLengkap: nama, role: "mahasiswa",
-            allowedTopikIds: existingUser ? existingUser.allowedTopikIds : [], unitId: unitId, aktif: true,
-            createdAt: existingUser ? existingUser.createdAt : Date.now(), newPassword: password,
-          }
+            id: userId,
+            username,
+            namaLengkap: nama,
+            role: "mahasiswa",
+            allowedTopikIds: existingUser ? existingUser.allowedTopikIds : [],
+            unitId: unitId,
+            aktif: true,
+            createdAt: existingUser ? existingUser.createdAt : Date.now(),
+            newPassword: password,
+          },
         });
         if (res.ok) {
           added++;
@@ -158,204 +217,244 @@ function PesertaPage() {
     setDeleteId(null);
   }
 
+  const columns: TableColumnsType<User> = [
+    {
+      title: "Username",
+      dataIndex: "username",
+      key: "username",
+      onCell: () => ({ style: { paddingInlineStart: 20 } }),
+      onHeaderCell: () => ({ style: { paddingInlineStart: 20 } }),
+      render: (username: string) => <Typography.Text strong>{username}</Typography.Text>,
+    },
+    {
+      title: "Nama Lengkap",
+      dataIndex: "namaLengkap",
+      key: "namaLengkap",
+      render: (nama: string) => <Typography.Text type="secondary">{nama}</Typography.Text>,
+    },
+    {
+      title: "Grup / Kelas",
+      key: "unit",
+      align: "center",
+      render: (_: unknown, peserta: User) => (
+        <Tag bordered color="default" className="rounded-full px-3 font-medium">
+          {units.find((unit) => unit.id === peserta.unitId)?.nama ?? "-"}
+        </Tag>
+      ),
+    },
+    {
+      title: "Status",
+      key: "status",
+      align: "center",
+      render: (_: unknown, peserta: User) => (
+        <Tag
+          bordered
+          color={peserta.aktif ? "success" : "default"}
+          className="min-w-20 rounded-full px-3"
+          icon={
+            <span
+              className={`mr-1 inline-block size-1.5 rounded-full ${peserta.aktif ? "bg-emerald-500" : "bg-slate-400"}`}
+            />
+          }
+        >
+          {peserta.aktif ? "Aktif" : "Nonaktif"}
+        </Tag>
+      ),
+    },
+    {
+      title: "Aksi",
+      key: "actions",
+      align: "center",
+      render: (_: unknown, peserta: User) => (
+        <Space size={4}>
+          <Tooltip title="Edit peserta">
+            <AntButton
+              aria-label={`Edit ${peserta.username}`}
+              icon={<Pencil size={17} aria-hidden="true" />}
+              onClick={() => {
+                setEditing(peserta);
+                setOpen(true);
+              }}
+            />
+          </Tooltip>
+          <Tooltip title="Hapus peserta">
+            <AntButton
+              aria-label={`Hapus ${peserta.username}`}
+              type="text"
+              danger
+              icon={<Trash2 size={17} aria-hidden="true" />}
+              onClick={() => setDeleteId(peserta.id)}
+            />
+          </Tooltip>
+        </Space>
+      ),
+    },
+  ];
+
   return (
-    <AdminPage>
-      <AdminPageHeader
-        title="Akun Peserta"
-        description="Kelola data mahasiswa, grup kelas, dan import akun dari Excel."
-        action={
-          <>
-            <input id="file-upload" type="file" accept=".xlsx,.xls" hidden onChange={(e) => {
-              const f = e.target.files?.[0]; if (f) importExcel(f); e.target.value = "";
-            }} />
-            <Button variant="outline" size="sm" onClick={() => document.getElementById("file-upload")?.click()} className="h-9" disabled={isImporting}>
-              {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-              Import Excel
-            </Button>
-            <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1"></div>
-            <Link to="/admin/akademik">
-              <Button variant="outline" size="sm" className="h-9">
-                <UsersIcon className="mr-2 h-4 w-4" /> Unit Akademik
-              </Button>
-            </Link>
-            <Link to="/admin/peserta/online">
-              <Button variant="outline" size="sm" className="h-9">
-                <Activity className="mr-2 h-4 w-4" /> Live Ujian
-              </Button>
-            </Link>
-            <Link to="/admin/peserta/kartu">
-              <Button variant="outline" size="sm" className="h-9">
-                <Printer className="mr-2 h-4 w-4" /> Cetak Kartu
-              </Button>
-            </Link>
-            <Button onClick={() => { setEditing(null); setOpen(true); }} size="sm" className="h-9">
-              <Plus className="mr-2 h-4 w-4" /> Tambah Akun
-            </Button>
-          </>
-        }
-      />
+    <ConfigProvider
+      theme={{
+        algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
+        token: { colorPrimary: "#16a34a", borderRadius: 12, fontFamily: "inherit" },
+      }}
+    >
+      <AdminPage>
+        <AdminPageHeader
+          title="Akun Peserta"
+          description="Kelola data mahasiswa, grup kelas, dan import akun dari Excel."
+          action={
+            <>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".xlsx,.xls"
+                hidden
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) importExcel(f);
+                  e.target.value = "";
+                }}
+              />
+              <AntButton
+                size="large"
+                onClick={() => fileRef.current?.click()}
+                disabled={isImporting}
+                icon={
+                  isImporting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload size={17} aria-hidden="true" />
+                  )
+                }
+              >
+                Import Excel
+              </AntButton>
+              <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1"></div>
+              <Link to="/admin/akademik">
+                <AntButton size="large" icon={<UsersIcon size={17} aria-hidden="true" />}>
+                  Unit Akademik
+                </AntButton>
+              </Link>
+              <Link to="/admin/peserta/online">
+                <AntButton size="large" icon={<Activity size={17} aria-hidden="true" />}>
+                  Live Ujian
+                </AntButton>
+              </Link>
+              <Link to="/admin/peserta/kartu">
+                <AntButton size="large" icon={<Printer size={17} aria-hidden="true" />}>
+                  Cetak Kartu
+                </AntButton>
+              </Link>
+              <AntButton
+                type="primary"
+                size="large"
+                icon={<Plus size={17} aria-hidden="true" />}
+                onClick={() => {
+                  setEditing(null);
+                  setOpen(true);
+                }}
+              >
+                Tambah Akun
+              </AntButton>
+            </>
+          }
+        />
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="relative max-w-xs w-full">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
-          <Input 
-            placeholder="Cari nama atau username..." 
-            value={query} 
-            onChange={(e) => setQuery(e.target.value)} 
-            className="pl-9" 
+        <Flex wrap="wrap" gap={12} style={{ marginBottom: 24 }}>
+          <AntInput
+            allowClear
+            aria-label="Cari nama atau username"
+            placeholder="Cari nama atau username..."
+            prefix={<Search size={17} aria-hidden="true" className="text-slate-500" />}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            className="!h-12 w-full sm:!w-[27rem]"
           />
-        </div>
-        <Select value={filterUnit} onValueChange={setFilterUnit}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="Pilih Unit" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Semua Unit</SelectItem>
-            {units.map((g) => <SelectItem key={g.id} value={g.id}>{g.nama}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        {selectedIds.length > 0 && (
-          <Button variant="destructive" size="sm" onClick={handleBulkDelete} className="sm:ml-auto">
-            <Trash2 className="mr-2 h-4 w-4" /> Hapus Terpilih ({selectedIds.length})
-          </Button>
-        )}
-      </div>
+          <AntSelect
+            aria-label="Filter unit akademik"
+            value={filterUnit}
+            onChange={setFilterUnit}
+            size="large"
+            className="w-full sm:w-64"
+            options={[
+              { value: "all", label: "Semua Unit" },
+              ...units.map((unit) => ({ value: unit.id, label: unit.nama })),
+            ]}
+          />
+          {selectedIds.length > 0 && (
+            <AntButton
+              danger
+              icon={<Trash2 size={17} />}
+              onClick={handleBulkDelete}
+              className="sm:ml-auto"
+            >
+              Hapus Terpilih ({selectedIds.length})
+            </AntButton>
+          )}
+        </Flex>
 
-      <AdminPageContent className="p-0">
-        <Card className="border-0 shadow-none sm:border sm:shadow-sm">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-slate-50/50 dark:bg-slate-900/50">
-                  <TableHead className="w-12 text-center">
-                    <Checkbox
-                      checked={shown.length > 0 && shown.every((p) => selectedIds.includes(p.id))}
-                      onCheckedChange={(checked) => setSelectedIds((ids) => {
-                        const pageIds = shown.map((p) => p.id);
-                        const rest = ids.filter((id) => !pageIds.includes(id));
-                        return checked ? [...rest, ...pageIds] : rest;
-                      })}
-                      aria-label="Pilih semua peserta pada halaman ini"
-                    />
-                  </TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Username</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Nama Lengkap</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300 text-center">Grup / Kelas</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300 text-center">Status</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300 text-center">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {shown.map((p) => (
-                  <TableRow key={p.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
-                    <TableCell className="text-center">
-                      <Checkbox
-                        checked={selectedIds.includes(p.id)}
-                        onCheckedChange={(checked) => setSelectedIds((ids) => checked ? [...ids, p.id] : ids.filter((id) => id !== p.id))}
-                        aria-label={`Pilih ${p.namaLengkap}`}
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium text-slate-900 dark:text-slate-100">{p.username}</TableCell>
-                    <TableCell className="text-slate-600 dark:text-slate-400">{p.namaLengkap}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className="bg-slate-50 dark:bg-slate-900 font-medium">
-                        {units.find((g) => g.id === p.unitId)?.nama ?? "-"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {p.aktif ? (
-                        <Badge variant="outline" className="font-medium shadow-none border-slate-200 dark:border-slate-800">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span>
-                          Aktif
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="font-medium text-slate-500 shadow-none border-slate-200 dark:border-slate-800">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2"></span>
-                          Nonaktif
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex justify-center items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={() => { setEditing(p); setOpen(true); }} className="h-8 w-8 p-0">
-                          <Pencil className="h-4 w-4 text-slate-500" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(p.id)} className="h-8 w-8 p-0 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:text-rose-600">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {shown.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-48 text-center">
-                      <div className="flex flex-col items-center justify-center text-slate-500">
-                        <FileX className="h-10 w-10 text-slate-300 dark:text-slate-600 mb-3" />
-                        <p>Tidak ada data peserta yang sesuai.</p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-            
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 dark:border-slate-800">
-                <div className="text-sm text-slate-500">
-                  Menampilkan {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filtered.length)} dari {filtered.length} peserta
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="h-8 w-8" 
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <div className="text-sm font-medium px-2">
-                    {currentPage} / {totalPages}
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="h-8 w-8" 
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </AdminPageContent>
-      
-      <PesertaDialog open={open} onOpenChange={setOpen} editing={editing} units={units} onSaved={refresh} />
+        <AdminPageContent className="p-0">
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <AntTable<User>
+              rowKey="id"
+              columns={columns}
+              dataSource={filtered}
+              size="middle"
+              scroll={{ x: 900 }}
+              rowSelection={{
+                selectedRowKeys: selectedIds,
+                preserveSelectedRowKeys: true,
+                onChange: (keys) => setSelectedIds(keys.map(String)),
+                getCheckboxProps: (peserta) => ({ "aria-label": `Pilih ${peserta.namaLengkap}` }),
+              }}
+              pagination={{
+                current: currentPage,
+                pageSize: itemsPerPage,
+                total: filtered.length,
+                showSizeChanger: false,
+                hideOnSinglePage: true,
+                showTotal: (total, range) =>
+                  `Menampilkan ${range[0]}–${range[1]} dari ${total} peserta`,
+              }}
+              onChange={(pagination) => setCurrentPage(pagination.current ?? 1)}
+              locale={{ emptyText: <Empty description="Tidak ada data peserta yang sesuai." /> }}
+            />
+          </div>
+        </AdminPageContent>
 
-      <Dialog open={!!deleteId} onOpenChange={(v) => !v && setDeleteId(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-rose-600 flex items-center gap-2">
-              <Trash2 className="h-5 w-5" />
-              Hapus Peserta
-            </DialogTitle>
-            <DialogDescription>
-              Apakah Anda yakin ingin menghapus data peserta ini? Tindakan ini tidak dapat dibatalkan.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setDeleteId(null)}>Batal</Button>
-            <Button variant="destructive" onClick={confirmDelete}>Hapus Permanen</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      {dialog}
-    </AdminPage>
+        <PesertaDialog
+          open={open}
+          onOpenChange={setOpen}
+          editing={editing}
+          units={units}
+          onSaved={refresh}
+        />
+
+        <Dialog open={!!deleteId} onOpenChange={(v) => !v && setDeleteId(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-rose-600 flex items-center gap-2">
+                <Trash2 className="h-5 w-5" />
+                Hapus Peserta
+              </DialogTitle>
+              <DialogDescription>
+                Apakah Anda yakin ingin menghapus data peserta ini? Tindakan ini tidak dapat
+                dibatalkan.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="mt-4">
+              <Button variant="outline" onClick={() => setDeleteId(null)}>
+                Batal
+              </Button>
+              <Button variant="destructive" onClick={confirmDelete}>
+                Hapus Permanen
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        {dialog}
+      </AdminPage>
+    </ConfigProvider>
   );
 }
 
@@ -440,10 +539,10 @@ function PesertaDialog({
         <div className="space-y-4 py-2">
           <div className="space-y-2">
             <Label>Username</Label>
-            <Input 
+            <Input
               placeholder="Misal: 19001234"
-              value={form.username} 
-              onChange={(e) => setForm({ ...form, username: e.target.value })} 
+              value={form.username}
+              onChange={(e) => setForm({ ...form, username: e.target.value })}
             />
           </div>
           <div className="space-y-2">
