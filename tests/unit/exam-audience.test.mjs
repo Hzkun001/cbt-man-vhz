@@ -49,3 +49,18 @@ test("malformed groups are rejected before querying", async () => {
   await assert.rejects(validate({ groupIds: null }, {}), /tidak valid/);
   await assert.rejects(validate({ groupIds: [42] }, {}), /tidak valid/);
 });
+
+test("save and publish both validate audience on the server", () => {
+  const publish = source.slice(source.indexOf("async function getPublishError("), source.indexOf("export const mutateUjianServer"));
+  assert.match(publish, /await validateExamAudience\(item, db\)/);
+  assert.match(source, /validateUjianForSave\(item\);\s*await validateExamAudience\(item, tx\)/);
+});
+
+test("editor blocks legacy mixed selections until a mode is chosen", () => {
+  const editor = readFileSync(new URL("../../src/routes/_authenticated/admin.ujian.$id.tsx", import.meta.url), "utf8");
+  assert.match(editor, /type="radio" name="audience-mode"/);
+  assert.match(editor, /checked=\{!invalidAudience && audienceMode === mode.value\}/);
+  assert.match(editor, /set\("groupIds", selectedGroups.filter/);
+  assert.equal((editor.match(/if \(invalidAudience\)/g) ?? []).length, 2);
+  assert.match(editor, /fieldset className="space-y-2" disabled=\{locked\}/);
+});
