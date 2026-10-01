@@ -1,5 +1,7 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Button as AntButton, Card as AntCard, ConfigProvider, Empty, Input as AntInput, Tag, theme as antdTheme } from "antd";
+import { AdminPage, AdminPageHeader } from "@/components/cbt/AdminPage";
 import { modulRepo, topikRepo, soalRepo } from "@/lib/cbt/repos";
 import { uid } from "@/lib/cbt/storage";
 import type { Topik } from "@/lib/cbt/types";
@@ -7,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Trash2, ChevronRight, Lock, BookOpen, Layers, Pencil } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ChevronRight, Lock, Layers, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/lib/cbt/auth-store";
 import { allowedTopikIdSet, isUnrestricted } from "@/lib/cbt/access";
@@ -31,6 +33,16 @@ function TopikPage() {
   const [editingTopik, setEditingTopik] = useState<Topik | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editNama, setEditNama] = useState("");
+
+  const [isDark, setIsDark] = useState(false);
+  useEffect(() => {
+    const root = document.documentElement;
+    const sync = () => setIsDark(root.classList.contains("dark"));
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
   if (!modul) return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -69,97 +81,51 @@ function TopikPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10 animate-in fade-in duration-500 pb-12 pt-4">
-      {/* Header Section */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between border-b border-slate-200 dark:border-white/10 pb-6">
-        <div className="space-y-1">
-          <Link to="/admin/modul" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 w-fit mb-3">
-            ← Kembali ke Bank Soal
-          </Link>
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-6 w-6 text-slate-400" />
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{modul.nama}</h1>
-          </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Kelola topik/bab untuk modul ini. Setiap topik dapat berisi puluhan hingga ratusan soal.
-          </p>
-        </div>
-      </div>
-
-      {/* Creation Row */}
-      {canEdit ? (
-        <form onSubmit={(e) => { e.preventDefault(); add(); }} className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center gap-3">
-          <Input 
-            placeholder="Ketik nama topik baru (misal: Bab 1: Pengantar)" 
-            value={nama} 
-            onChange={(e) => setNama(e.target.value)} 
-            className="flex-1 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800"
-          />
-          <Button type="submit" disabled={!nama.trim()} className="w-full sm:w-auto font-semibold">
-            <Plus className="mr-2 h-4 w-4" />Tambah Topik
+    <ConfigProvider theme={{ algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm, token: { colorPrimary: "#16a34a", borderRadius: 12, fontFamily: "inherit" } }}>
+      <AdminPage className="pb-12">
+        <div className="flex flex-wrap items-center gap-4">
+          <Button asChild variant="outline" className="w-fit gap-2">
+            <Link to="/admin/modul">
+              <ArrowLeft size={16} aria-hidden="true" /> Kembali ke Bank Soal
+            </Link>
           </Button>
-        </form>
-      ) : (
-        <div className="flex items-center gap-3 rounded-xl border border-amber-200/50 bg-amber-50/50 dark:bg-amber-950/20 p-4 text-sm text-amber-700 dark:text-amber-400">
-          <Lock className="h-4 w-4" />
-          Mode hanya-baca. Anda hanya dapat melihat topik yang ditugaskan kepada Anda.
         </div>
-      )}
-
-      {/* Sleek List Section */}
-      <section className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Daftar Topik ({topiks.length})</h2>
-        </div>
-        
-        <div className="flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
+        <AdminPageHeader title={modul.nama} description={`Kelola ${topiks.length} topik dan soal dalam modul ini.`} />
+        {canEdit ? (
+          <AntCard title="Tambah topik">
+            <form onSubmit={(e) => { e.preventDefault(); add(); }} className="flex flex-col gap-3 sm:flex-row">
+              <AntInput size="large" aria-label="Nama topik baru" placeholder="Contoh: Bab 1 — Pengantar" value={nama} onChange={(e) => setNama(e.target.value)} className="flex-1" />
+              <AntButton type="primary" size="large" htmlType="submit" disabled={!nama.trim()} icon={<Plus size={17} />}>Tambah Topik</AntButton>
+            </form>
+          </AntCard>
+        ) : (
+          <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-400"><Lock size={17} />Mode hanya-baca. Anda dapat melihat topik yang ditugaskan kepada Anda.</div>
+        )}
+        <div className="flex items-center gap-2 text-sm font-semibold">Daftar topik <Tag>{topiks.length}</Tag></div>
+        <div className="grid gap-4 lg:grid-cols-2">
           {topiks.map((t) => {
             const count = soalRepo.all().filter((s) => s.topikId === t.id).length;
             return (
-              <div key={t.id} className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:px-6 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors gap-4">
-                
-                <div className="flex-1 flex items-center gap-4">
-                  <div className="h-10 w-10 shrink-0 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700">
-                    <Layers className="h-4 w-4 text-slate-500" />
+              <AntCard key={t.id} className="h-full" styles={{ body: { padding: 20 } }}>
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30"><Layers size={21} /></div>
+                  <div className="min-w-0 flex-1">
+                    <Link to="/admin/topik/$id/soal" params={{ id: t.id }} className="block text-base font-semibold text-foreground hover:text-primary">{t.nama}</Link>
+                    <p className="mt-1 text-sm text-muted-foreground">{count} soal terdaftar</p>
                   </div>
-                  <div className="space-y-1">
-                    <Link to="/admin/topik/$id/soal" params={{ id: t.id }} className="text-base font-semibold text-slate-900 dark:text-slate-100 hover:text-primary transition-colors block">
-                      {t.nama}
-                    </Link>
-                    <div className="text-xs font-medium text-slate-500">
-                      {count} Soal Terdaftar
-                    </div>
-                  </div>
+                  {canEdit && <div className="flex gap-1">
+                    <AntButton type="text" aria-label={`Edit topik ${t.nama}`} icon={<Pencil size={17} />} onClick={() => openEdit(t)} />
+                    <AntButton type="text" danger aria-label={`Hapus topik ${t.nama}`} icon={<Trash2 size={17} />} onClick={() => remove(t.id)} />
+                  </div>}
                 </div>
-
-                <div className="flex items-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                  {canEdit && (
-                    <>
-                      <Button size="sm" variant="ghost" className="h-8 text-slate-500 hover:text-slate-900 dark:hover:text-white" onClick={() => openEdit(t)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="ghost" className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950" onClick={() => remove(t.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </>
-                  )}
-                  <Button size="sm" className="h-8 shadow-sm" asChild>
-                    <Link to="/admin/topik/$id/soal" params={{ id: t.id }}>
-                      Kelola Soal <ChevronRight className="ml-1 h-3.5 w-3.5" />
-                    </Link>
-                  </Button>
+                <div className="mt-4 flex justify-end border-t border-border pt-4">
+                  <Link to="/admin/topik/$id/soal" params={{ id: t.id }} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Kelola Soal <ChevronRight size={16} /></Link>
                 </div>
-              </div>
+              </AntCard>
             );
           })}
-          
-          {topiks.length === 0 && (
-            <div className="py-12 text-center text-slate-400">
-              Belum ada topik yang dibuat.
-            </div>
-          )}
+          {topiks.length === 0 && <AntCard className="lg:col-span-2"><Empty description="Belum ada topik dalam modul ini." /></AntCard>}
         </div>
-      </section>
 
       {/* Edit Topik Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
@@ -182,6 +148,7 @@ function TopikPage() {
         </DialogContent>
       </Dialog>
       {dialog}
-    </div>
+      </AdminPage>
+    </ConfigProvider>
   );
 }
