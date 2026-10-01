@@ -13,6 +13,8 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Changed
 
+- Perbarui kartu topik modul dan tombol kembali yang konsisten.
+
 - Perbarui filter dan tabel audit hanya-baca.
 
 - Perbarui tampilan dan warna alat pemeliharaan admin.
