@@ -5,7 +5,8 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Button as AntButton, Card as AntCard, Empty, Tag, ConfigProvider, Input as AntInput, Segmented, theme as antdTheme } from "antd";
 import { ujianRepo, sesiRepo, mataKuliahRepo, penawaranRepo } from "@/lib/cbt/repos";
 import { useAuthStore } from "@/lib/cbt/auth-store";
 import { uid } from "@/lib/cbt/storage";
@@ -17,14 +18,11 @@ import {
   Clock,
   CheckCircle2,
   Users,
-  FileText,
+  ArrowUpRight,
   Search,
 } from "lucide-react";
 import { toast } from "sonner";
 import { visibleUjians } from "@/lib/cbt/access";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-
 import { AdminPage, AdminPageHeader } from "@/components/cbt/AdminPage";
 
 export const Route = createFileRoute("/_authenticated/admin/ujian")({
@@ -47,6 +45,16 @@ function UjianList() {
   const [activeTab, setActiveTab] = useState<"semua" | "persiapan" | "berlangsung" | "selesai">("semua");
   const [search, setSearch] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const syncColorScheme = () => setIsDark(root.classList.contains("dark"));
+    const observer = new MutationObserver(syncColorScheme);
+    syncColorScheme();
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
   async function add() {
     if (isAdding) return;
@@ -109,74 +117,40 @@ function UjianList() {
     const kelas = u.penawaranId ? penawaranRepo.byId(u.penawaranId) : undefined;
 
     return (
-      <div
-        key={u.id}
-        className="group flex flex-col gap-3 p-3 transition-colors bg-card border-b border-border/80 last:border-b-0 hover:bg-muted/40 sm:flex-row sm:items-center sm:justify-between sm:p-4"
-      >
-        <Link
-          to="/admin/ujian/$id"
-          params={{ id: u.id }}
-          className="flex items-center gap-4 flex-1 min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
-        >
-          <div
-            className="hidden sm:flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 group-hover:border-slate-300 dark:group-hover:border-slate-700 transition-colors"
-            title="Edit ujian"
-          >
-            {type === "persiapan" && <Clock className="h-5 w-5 text-slate-400 group-hover:text-primary transition-colors" />}
-            {type === "berlangsung" && (
-              <span className="relative flex h-5 w-5 items-center justify-center">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-20"></span>
-                <PlayCircle className="h-5 w-5 text-emerald-500 relative" />
-              </span>
-            )}
-            {type === "selesai" && <CheckCircle2 className="h-5 w-5 text-slate-400 group-hover:text-primary transition-colors" />}
+      <AntCard key={u.id} className="h-full overflow-hidden" styles={{ body: { padding: 20 } }}>
+        <Link to="/admin/ujian/$id" params={{ id: u.id }} className="group block rounded-lg text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <div className="flex items-start justify-between gap-3">
+          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${type === "berlangsung" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40" : type === "persiapan" ? "bg-amber-50 text-amber-600 dark:bg-amber-950/40" : "bg-slate-100 text-slate-500 dark:bg-slate-800"}`}>
+            {type === "persiapan" ? <Clock size={22} /> : type === "berlangsung" ? <PlayCircle size={22} /> : <CheckCircle2 size={22} />}
           </div>
-          
-          <div className="flex flex-col min-w-0">
-            <span className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate group-hover:text-primary transition-colors">
-              {u.nama}
-            </span>
-            <div className="flex items-center gap-2 mt-1">
-              {mk && <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 truncate max-w-[150px]">{mk.nama}</span>}
-              {kelas && <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300">Kelas {kelas.kodeKelas || "-"} · {kelas.pesertaIds.length} peserta</span>}
-              <span className={u.status === "published" ? "text-[11px] text-emerald-600" : "text-[11px] text-amber-600"}>{u.status === "published" ? "Published" : "Draft"}</span>
-              <span className="text-[11px] text-slate-500">{soalCount} Soal • {u.durasiMenit} Menit</span>
-              {sesiCount > 0 && <span className="text-[11px] font-medium text-slate-700 dark:text-slate-300">• {sesiCount} Peserta</span>}
-            </div>
+          <div className="flex flex-wrap justify-end gap-1">
+            <Tag color={type === "berlangsung" ? "green" : type === "persiapan" ? "gold" : "default"}>{type === "persiapan" ? "Persiapan" : type === "berlangsung" ? "Berlangsung" : "Selesai"}</Tag>
+            <Tag>{u.status === "published" ? "Dipublikasikan" : "Draft"}</Tag>
           </div>
-        </Link>
-
-        <div
-          className="flex flex-wrap items-center gap-2 shrink-0 sm:ml-4"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {type === "berlangsung" && (
-            <Link
-              to="/admin/peserta/online"
-              search={{ ujianId: u.id }}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 dark:bg-emerald-500 text-white rounded-md text-xs font-medium shadow-sm hover:shadow-md hover:bg-emerald-700 dark:hover:bg-emerald-600 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 [&_svg]:transition-transform [&_svg]:duration-200 hover:[&_svg]:scale-110"
-            >
-              <PlayCircle className="h-3.5 w-3.5" /> Pantau
-            </Link>
-          )}
-          {type === "selesai" && (
-            <Link
-              to="/admin/analitik/$id"
-              params={{ id: u.id }}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs font-medium text-slate-700 dark:text-slate-300 shadow-sm hover:shadow-md hover:border-primary/50 dark:hover:border-primary/50 hover:text-primary dark:hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 [&_svg]:transition-transform [&_svg]:duration-200 hover:[&_svg]:scale-110"
-            >
-              <BarChart3 className="h-3.5 w-3.5" /> Analitik
-            </Link>
-          )}
-          <Link
-            to="/admin/ujian/$id/peserta"
-            params={{ id: u.id }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs font-medium text-slate-700 dark:text-slate-300 shadow-sm hover:shadow-md hover:border-primary/50 dark:hover:border-primary/50 hover:text-primary dark:hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 [&_svg]:transition-transform [&_svg]:duration-200 hover:[&_svg]:scale-110"
-          >
-            <Users className="h-3.5 w-3.5" /> Peserta {sesiCount > 0 ? `(${sesiCount})` : ""}
-          </Link>
         </div>
-      </div>
+        <div className="mt-4">
+          <h2 className="text-base font-semibold leading-snug group-hover:text-primary">{u.nama}</h2>
+          <div className="mt-2 flex min-h-5 flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
+            {mk && <span>{mk.nama}</span>}
+            {kelas && <span>Kelas {kelas.kodeKelas || "-"} · {kelas.pesertaIds.length} peserta terdaftar</span>}
+            {!mk && !kelas && <span>Paket ujian umum</span>}
+          </div>
+        </div>
+        <div className="my-4 grid grid-cols-3 divide-x divide-border rounded-lg bg-muted/40 py-3 text-sm">
+          <div className="flex flex-col items-center gap-1"><span className="font-semibold">{soalCount}</span><span className="text-xs text-muted-foreground">Soal</span></div>
+          <div className="flex flex-col items-center gap-1"><span className="font-semibold">{u.durasiMenit} menit</span><span className="text-xs text-muted-foreground">Durasi</span></div>
+          <div className="flex flex-col items-center gap-1"><span className="font-semibold">{sesiCount}</span><span className="text-xs text-muted-foreground">Sesi peserta</span></div>
+        </div>
+        </Link>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+          <Link to="/admin/ujian/$id" params={{ id: u.id }} className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">Buka Paket <ArrowUpRight size={16} /></Link>
+          <div className="flex flex-wrap gap-2">
+            {type === "berlangsung" && <Link to="/admin/peserta/online" search={{ ujianId: u.id }} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:opacity-90"><PlayCircle size={15} />Pantau</Link>}
+            {type === "selesai" && <Link to="/admin/analitik/$id" params={{ id: u.id }} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-muted"><BarChart3 size={15} />Analitik</Link>}
+            <Link to="/admin/ujian/$id/peserta" params={{ id: u.id }} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-muted"><Users size={15} />Peserta</Link>
+          </div>
+        </div>
+      </AntCard>
     );
   };
 
@@ -193,66 +167,70 @@ function UjianList() {
     activeTab === "selesai" ? selesai : filteredList;
 
   return (
-    <AdminPage className="">
+    <ConfigProvider
+      theme={{
+        algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
+        token: { colorPrimary: "#16a34a", borderRadius: 12, fontFamily: "inherit" },
+        components: {
+          Segmented: {
+            itemHoverBg: isDark ? "rgba(74, 222, 128, 0.1)" : "rgba(22, 163, 74, 0.08)",
+            itemHoverColor: isDark ? "#86efac" : "#15803d",
+            itemActiveBg: isDark ? "rgba(74, 222, 128, 0.16)" : "rgba(22, 163, 74, 0.14)",
+            itemSelectedBg: isDark ? "rgba(22, 163, 74, 0.22)" : "#dcfce7",
+            itemSelectedColor: isDark ? "#86efac" : "#166534",
+          },
+        },
+      }}
+    >
+    <AdminPage className="flex flex-col gap-6 space-y-0 pb-8">
       
       <AdminPageHeader
         title="Manajemen Paket Ujian"
         description="Kelola pembuatan ujian, soal, dan akses peserta."
         action={
-          <Button onClick={add} disabled={isAdding} size="sm" className="shadow-sm h-9">
-            <Plus className="mr-2 h-4 w-4" /> Paket Baru
-          </Button>
+          <AntButton type="primary" onClick={add} loading={isAdding} size="large" icon={<Plus size={17} aria-hidden="true" />}>Paket Baru</AntButton>
         }
       />
 
       {/* Toolbar & Filters */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-950 p-1.5 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
-        <div className="flex w-full md:w-auto overflow-x-auto hide-scrollbar">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              type="button"
-              aria-label={tab.label}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
-                activeTab === tab.id 
-                  ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100" 
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-50 dark:hover:bg-slate-900"
-              }`}
-            >
-              {tab.label}
-              <span className={cn(
-                "px-1.5 py-0.5 text-[10px] rounded",
-                activeTab === tab.id ? "bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300" : "bg-slate-100 dark:bg-slate-800 text-slate-500"
-              )}>
-                {tab.count}
-              </span>
-            </button>
-          ))}
-        </div>
+      <AntCard styles={{ body: { padding: 16 } }}>
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <Segmented
+          value={activeTab}
+          onChange={(value) => setActiveTab(value as typeof activeTab)}
+          options={tabs.map((tab) => ({
+            value: tab.id,
+            label: <span className="inline-flex items-center gap-2 whitespace-nowrap">{tab.label}<span className="inline-flex h-5 min-w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 px-1.5 text-[10px] leading-none dark:bg-slate-700">{tab.count}</span></span>,
+          }))}
+          className="max-w-full overflow-x-auto"
+          size="large"
+        />
         
-        <div className="relative w-full md:w-64 px-1.5 md:px-0 pb-1.5 md:pb-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input 
-            type="text" 
-            placeholder="Cari ujian..." 
+        <div className="w-full md:w-72 px-1.5 md:px-0 pb-1.5 md:pb-0">
+          <AntInput
+            allowClear
+            aria-label="Cari ujian"
+            prefix={<Search size={17} aria-hidden="true" className="text-slate-500" />}
+            placeholder="Cari ujian..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-1.5 text-sm transition-colors focus:outline-none bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500"
+            size="large"
           />
         </div>
       </div>
 
-      {/* Data List (Compact Table/Row Style) */}
-      <div className="overflow-hidden bg-card border border-border/80 rounded-lg shadow-sm">
+      </AntCard>
+
+      <div className="flex items-center justify-between text-sm">
+        <h2 className="font-semibold">Daftar Paket Ujian</h2>
+        <span className="text-muted-foreground">{currentList.length} paket ditampilkan</span>
+      </div>
+      {/* Daftar paket */}
+      <div>
         {currentList.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <FileText className="h-10 w-10 mb-3 text-slate-300 dark:text-slate-700" />
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Data Kosong</h3>
-            <p className="text-sm mt-1 text-slate-500 dark:text-slate-400">Tidak ada paket ujian yang ditemukan di kategori ini.</p>
-          </div>
+          <AntCard><Empty description="Tidak ada paket ujian yang sesuai pencarian atau kategori ini." /></AntCard>
         ) : (
-          <div className="flex flex-col">
+          <div className="grid gap-4 lg:grid-cols-2">
             {currentList.map(u => {
               const status = u.status === "draft" || !u.beginAt || !u.endAt || u.beginAt > now
                 ? "persiapan"
@@ -265,5 +243,6 @@ function UjianList() {
         )}
       </div>
     </AdminPage>
+    </ConfigProvider>
   );
 }

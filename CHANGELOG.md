@@ -13,6 +13,8 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Changed
 
+- Rombak kartu paket ujian, ringkasan status, dan filter; area utama tetap link editor dengan aksi sekunder terpisah.
+
 - Tambahkan Ant Design dan ikon Tabler sebagai dependency untuk migrasi bertahap halaman admin.
 
 - Penyederhanaan interaksi daftar paket ujian (`/admin/ujian`): seluruh area baris/kartu paket ujian kini dapat diklik langsung untuk membuka editor (`/admin/ujian/$id`), mendukung pembukaan di tab baru (klik tengah atau Cmd/Ctrl+klik), dengan efek sorot hover pada judul dan ikon, serta tombol aksi sekunder yang tetap terlindungi.
