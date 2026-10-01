@@ -13,6 +13,8 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Changed
 
+- Perbarui tampilan dan warna alat pemeliharaan admin.
+
 - Perbarui kontrol dan warna pengaturan admin.
 
 - Perbarui daftar leaderboard dan tabel peringkat dengan pencarian, ringkasan, serta lebar penuh.
