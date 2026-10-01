@@ -1,8 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Button as AntButton, Card as AntCard, ConfigProvider, Input as AntInput, Pagination, Table as AntTable, Typography, theme as antdTheme, type TableColumnsType } from "antd";
 import { AdminPage, AdminPageHeader } from "@/components/cbt/AdminPage";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { getAuditLogsServer } from "@/lib/server/audit/functions";
 
 type AuditRow = {
@@ -28,6 +27,16 @@ function AuditPage() {
   const [action, setAction] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const syncColorScheme = () => setIsDark(root.classList.contains("dark"));
+    const observer = new MutationObserver(syncColorScheme);
+    syncColorScheme();
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -54,59 +63,77 @@ function AuditPage() {
   }, [action, entity, page]);
 
   const pageCount = Math.max(1, Math.ceil(total / 50));
+  const columns: TableColumnsType<AuditRow> = [
+    {
+      title: "WAKTU",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      width: 220,
+      render: (value: AuditRow["createdAt"]) => <Typography.Text type="secondary" className="whitespace-nowrap">{new Date(value).toLocaleString()}</Typography.Text>,
+    },
+    {
+      title: "AKTOR",
+      key: "actor",
+      width: 220,
+      render: (_: unknown, row: AuditRow) => <div><Typography.Text>{row.userId}</Typography.Text><Typography.Text type="secondary" className="block text-xs">{row.userRole}</Typography.Text></div>,
+    },
+    { title: "AKSI", dataIndex: "action", key: "action", width: 200, render: (value: string) => <Typography.Text strong>{value}</Typography.Text> },
+    {
+      title: "ENTITAS",
+      key: "entity",
+      width: 260,
+      render: (_: unknown, row: AuditRow) => <span>{row.entity}{row.entityId ? <Typography.Text type="secondary" className="ml-1 text-xs">({row.entityId})</Typography.Text> : null}</span>,
+    },
+    {
+      title: "DETAIL",
+      dataIndex: "details",
+      key: "details",
+      ellipsis: true,
+      render: (value: string | null) => <Typography.Text type="secondary" code ellipsis={{ tooltip: value ?? "—" }}>{value ?? "—"}</Typography.Text>,
+    },
+  ];
 
   return (
+    <ConfigProvider
+      theme={{
+        algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
+        token: { colorPrimary: "#16a34a", borderRadius: 12, fontFamily: "inherit" },
+      }}
+    >
     <AdminPage className="mx-auto w-full max-w-[1600px] pb-12">
       <AdminPageHeader
         title="Audit Trail"
         description="Riwayat tindakan penting sistem. Halaman ini hanya-baca untuk penelusuran perubahan."
       />
-      <div className="mb-4 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-        <label className="grid gap-1 text-sm font-medium">
-          Entitas
-          <Input value={entity} onChange={(event) => { setEntity(event.target.value); setPage(1); }} placeholder="contoh: ujian" />
-        </label>
-        <label className="grid gap-1 text-sm font-medium">
-          Aksi
-          <Input value={action} onChange={(event) => { setAction(event.target.value); setPage(1); }} placeholder="contoh: backup.restore" />
-        </label>
-        <Button variant="outline" onClick={() => { setEntity(""); setAction(""); setPage(1); }}>
-          Bersihkan filter
-        </Button>
-      </div>
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        {loading ? <p role="status" className="p-8 text-center text-sm text-muted-foreground">Memuat audit log...</p> : null}
-        {error ? <p role="alert" className="p-8 text-center text-sm text-destructive">{error}</p> : null}
-        {!loading && !error && rows.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">Belum ada catatan audit.</p> : null}
-        {!loading && !error && rows.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
-                <tr><th className="p-3">Waktu</th><th className="p-3">Aktor</th><th className="p-3">Aksi</th><th className="p-3">Entitas</th><th className="p-3">Detail</th></tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => (
-                  <tr key={row.id} className="border-b last:border-0 hover:bg-muted/30">
-                    <td className="whitespace-nowrap p-3 text-muted-foreground">{new Date(row.createdAt).toLocaleString()}</td>
-                    <td className="p-3"><div>{row.userId}</div><div className="text-xs text-muted-foreground">{row.userRole}</div></td>
-                    <td className="p-3 font-medium">{row.action}</td>
-                    <td className="p-3">{row.entity}{row.entityId ? <span className="ml-1 text-xs text-muted-foreground">({row.entityId})</span> : null}</td>
-                    <td className="max-w-[24rem] truncate p-3 font-mono text-xs text-muted-foreground">{row.details ?? "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
-        <div className="flex items-center justify-between border-t p-3 text-sm text-muted-foreground">
-          <span>{total} catatan</span>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>Sebelumnya</Button>
-            <span>Halaman {page} / {pageCount}</span>
-            <Button variant="outline" size="sm" disabled={page >= pageCount} onClick={() => setPage((value) => value + 1)}>Berikutnya</Button>
-          </div>
+      <AntCard className="mb-4" styles={{ body: { padding: 20 } }}>
+        <div className="grid gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+          <label className="grid gap-2 text-sm font-medium">Entitas
+            <AntInput allowClear aria-label="Filter entitas" size="large" value={entity} onChange={(event) => { setEntity(event.target.value); setPage(1); }} placeholder="contoh: ujian" />
+          </label>
+          <label className="grid gap-2 text-sm font-medium">Aksi
+            <AntInput allowClear aria-label="Filter aksi" size="large" value={action} onChange={(event) => { setAction(event.target.value); setPage(1); }} placeholder="contoh: backup.restore" />
+          </label>
+          <AntButton htmlType="button" size="large" onClick={() => { setEntity(""); setAction(""); setPage(1); }}>Bersihkan filter</AntButton>
+        </div>
+      </AntCard>
+      {error ? <p role="alert" className="mb-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">{error}</p> : null}
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <AntTable<AuditRow>
+          rowKey="id"
+          columns={columns}
+          dataSource={rows}
+          loading={loading}
+          pagination={false}
+          size="middle"
+          scroll={{ x: 1000 }}
+          locale={{ emptyText: error ? " " : "Belum ada catatan audit." }}
+        />
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 p-4 dark:border-slate-800">
+          <Typography.Text type="secondary">{total} catatan · Halaman {page} / {pageCount}</Typography.Text>
+          <Pagination current={page} pageSize={50} total={total} showSizeChanger={false} showLessItems onChange={setPage} />
         </div>
       </div>
     </AdminPage>
+    </ConfigProvider>
   );
 }
