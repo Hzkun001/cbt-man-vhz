@@ -13,6 +13,8 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Changed
 
+- Rapikan formulir modul, kesejajaran input, dan jarak antarkartu.
+
 - Perbarui toolbar dan tabel pengelolaan akun peserta.
 
 - Rapikan kartu kelas mata kuliah dan pemilihan peserta dengan pencarian serta seleksi massal.
