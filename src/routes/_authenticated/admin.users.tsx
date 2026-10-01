@@ -4,17 +4,28 @@ import { revokeUserSessionsServer, upsertUserServer, getUsersList, mutateUserSer
 import { getUnitAkademikList } from "@/lib/server/akademik/functions";
 import { uid } from "@/lib/cbt/storage";
 import type { Role, User, UnitAkademik } from "@/lib/cbt/types";
+import {
+  Button as AntButton,
+  ConfigProvider,
+  Flex,
+  Input as AntInput,
+  Select as AntSelect,
+  Space,
+  Table as AntTable,
+  Tag,
+  Tooltip,
+  Typography,
+  theme as antdTheme,
+  type TableColumnsType,
+} from "antd";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { AdminPage, AdminPageHeader, AdminPageContent } from "@/components/cbt/AdminPage";
-import { Pencil, Trash2, Plus, LogOut, Search, FileX, Loader2, ChevronLeft, ChevronRight, ShieldCheck } from "lucide-react";
+import { Pencil, Trash2, Plus, LogOut, Search, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/users")({
@@ -42,31 +53,120 @@ function UsersPage() {
   
   const [query, setQuery] = useState("");
   const [filterRole, setFilterRole] = useState("all");
+  const [isDark, setIsDark] = useState(false);
 
-  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const syncColorScheme = () => setIsDark(root.classList.contains("dark"));
+    const observer = new MutationObserver(syncColorScheme);
+    syncColorScheme();
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
   function refresh() {
     router.invalidate();
   }
 
-  const filtered = users.filter((u) => 
+  const filtered = users.filter((u) =>
     (filterRole === "all" || u.role === filterRole) &&
     (query === "" || u.namaLengkap.toLowerCase().includes(query.toLowerCase()) || u.username.toLowerCase().includes(query.toLowerCase()))
   );
-
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const shown = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   // Reset page when filter changes
   useEffect(() => {
     setCurrentPage(1);
   }, [query, filterRole]);
 
-  useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(Math.max(1, totalPages));
-  }, [currentPage, totalPages]);
+
+  const columns: TableColumnsType<User> = [
+    {
+      title: "Username",
+      dataIndex: "username",
+      key: "username",
+      onCell: () => ({ style: { paddingInlineStart: 20 } }),
+      onHeaderCell: () => ({ style: { paddingInlineStart: 20 } }),
+      render: (username: string) => <Typography.Text strong>{username}</Typography.Text>,
+    },
+    {
+      title: "Nama Lengkap",
+      dataIndex: "namaLengkap",
+      key: "namaLengkap",
+      render: (name: string) => <Typography.Text type="secondary">{name}</Typography.Text>,
+    },
+    {
+      title: "Peran",
+      dataIndex: "role",
+      key: "role",
+      align: "center",
+      render: (role: Role) => (
+        <Tag bordered color="default" className="rounded-full px-3">
+          {role === "super_admin" ? "Super Admin" : role === "admin_prodi" ? "Admin Jurusan" : "Evaluator"}
+        </Tag>
+      ),
+    },
+    {
+      title: "Unit / Jurusan",
+      key: "unit",
+      render: (_: unknown, user: User) => (
+        <Typography.Text type="secondary">
+          {user.role === "super_admin" ? "Semua Unit (Global)" : units.find((unit) => unit.id === user.unitId)?.nama ?? "Tanpa Unit"}
+        </Typography.Text>
+      ),
+    },
+    {
+      title: "Status",
+      key: "status",
+      align: "center",
+      render: (_: unknown, user: User) => (
+        <Tag
+          bordered
+          color={user.aktif ? "success" : "default"}
+          className="min-w-20 rounded-full px-3"
+          icon={<span className={`mr-1 inline-block size-1.5 rounded-full ${user.aktif ? "bg-emerald-500" : "bg-slate-400"}`} />}
+        >
+          {user.aktif ? "Aktif" : "Nonaktif"}
+        </Tag>
+      ),
+    },
+    {
+      title: "Aksi",
+      key: "actions",
+      align: "center",
+      render: (_: unknown, user: User) => (
+        <Space size={4}>
+          <Tooltip title="Edit pengguna">
+            <AntButton
+              aria-label={`Edit ${user.username}`}
+              icon={<Pencil size={17} aria-hidden="true" />}
+              onClick={() => { setEditing(user); setOpen(true); }}
+            />
+          </Tooltip>
+          <Tooltip title="Hentikan sesi">
+            <AntButton
+              aria-label={`Hentikan sesi ${user.username}`}
+              type="text"
+              className="!text-amber-600"
+              icon={<LogOut size={17} aria-hidden="true" />}
+              onClick={() => setLogoutId(user.id)}
+            />
+          </Tooltip>
+          <Tooltip title="Hapus pengguna">
+            <AntButton
+              aria-label={`Hapus ${user.username}`}
+              type="text"
+              danger
+              icon={<Trash2 size={17} aria-hidden="true" />}
+              onClick={() => setDeleteId(user.id)}
+            />
+          </Tooltip>
+        </Space>
+      ),
+    },
+  ];
 
   async function confirmDelete() {
     if (!deleteId) return;
@@ -97,149 +197,80 @@ function UsersPage() {
   }
 
   return (
-    <AdminPage>
-      <AdminPageHeader
-        title="Pengguna Sistem"
-        description="Kelola akses akun admin, admin jurusan, dan evaluator."
-        action={
-          <div className="flex gap-2">
-            <Button asChild variant="outline" size="sm" className="h-9">
+    <ConfigProvider
+      theme={{
+        algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
+        token: { colorPrimary: "#16a34a", borderRadius: 12, fontFamily: "inherit" },
+      }}
+    >
+      <AdminPage>
+        <AdminPageHeader
+          title="Pengguna Sistem"
+          description="Kelola akses akun admin, admin jurusan, dan evaluator."
+          action={
+            <div className="flex flex-wrap gap-2">
               <Link to="/admin/users/roles">
-                <ShieldCheck className="mr-2 h-4 w-4" /> Hak Akses Role
+                <AntButton size="large" icon={<ShieldCheck size={17} aria-hidden="true" />}>
+                  Hak Akses Role
+                </AntButton>
               </Link>
-            </Button>
-            <Button onClick={() => { setEditing(null); setOpen(true); }} size="sm" className="h-9">
-              <Plus className="mr-2 h-4 w-4" /> Tambah Akun
-            </Button>
-          </div>
-        }
-      />
+              <AntButton
+                type="primary"
+                size="large"
+                icon={<Plus size={17} aria-hidden="true" />}
+                onClick={() => { setEditing(null); setOpen(true); }}
+              >
+                Tambah Akun
+              </AntButton>
+            </div>
+          }
+        />
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="relative max-w-xs w-full">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
-          <Input 
-            placeholder="Cari nama atau username..." 
-            value={query} 
-            onChange={(e) => setQuery(e.target.value)} 
-            className="pl-9" 
+        <Flex wrap="wrap" gap={12} style={{ marginBottom: 24 }}>
+          <AntInput
+            allowClear
+            aria-label="Cari nama atau username"
+            placeholder="Cari nama atau username..."
+            prefix={<Search size={17} aria-hidden="true" className="text-slate-500" />}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            className="!h-12 w-full sm:!w-[27rem]"
           />
-        </div>
-        <Select value={filterRole} onValueChange={setFilterRole}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="Semua Peran" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Semua Peran</SelectItem>
-            <SelectItem value="super_admin">Super Admin</SelectItem>
-            <SelectItem value="admin_prodi">Admin Jurusan</SelectItem>
-            <SelectItem value="evaluator">Evaluator</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+          <AntSelect
+            aria-label="Filter peran"
+            value={filterRole}
+            onChange={setFilterRole}
+            size="large"
+            className="w-full sm:w-56"
+            options={[
+              { value: "all", label: "Semua Peran" },
+              { value: "super_admin", label: "Super Admin" },
+              { value: "admin_prodi", label: "Admin Jurusan" },
+              { value: "evaluator", label: "Evaluator" },
+            ]}
+          />
+        </Flex>
 
-      <AdminPageContent className="p-0">
-        <Card className="border-0 shadow-none sm:border sm:shadow-sm">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-slate-50/50 dark:bg-slate-900/50">
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Username</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Nama Lengkap</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300 text-center">Peran</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Unit / Jurusan</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300 text-center">Status</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300 text-center">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {shown.map((u) => (
-                  <TableRow key={u.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
-                    <TableCell className="font-medium text-slate-900 dark:text-slate-100">{u.username}</TableCell>
-                    <TableCell className="text-slate-600 dark:text-slate-400">{u.namaLengkap}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className="bg-slate-50 dark:bg-slate-900 font-medium">
-                        {u.role === "super_admin" ? "Super Admin" : u.role === "admin_prodi" ? "Admin Jurusan" : u.role === "evaluator" ? "Evaluator" : u.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-slate-600 dark:text-slate-400">
-                      {u.role === "super_admin" ? "Semua Unit (Global)" : units.find((unit) => unit.id === u.unitId)?.nama ?? "Tanpa Unit"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {u.aktif ? (
-                        <Badge variant="outline" className="font-medium shadow-none border-slate-200 dark:border-slate-800">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span>
-                          Aktif
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="font-medium text-slate-500 shadow-none border-slate-200 dark:border-slate-800">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2"></span>
-                          Nonaktif
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex justify-center items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={() => { setEditing(u); setOpen(true); }} className="h-8 w-8 p-0">
-                          <Pencil className="h-4 w-4 text-slate-500" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setLogoutId(u.id)} className="h-8 w-8 p-0 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/50 hover:text-amber-600">
-                          <LogOut className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(u.id)} className="h-8 w-8 p-0 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:text-rose-600">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {shown.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-48 text-center">
-                      <div className="flex flex-col items-center justify-center text-slate-500">
-                        <FileX className="h-10 w-10 text-slate-300 dark:text-slate-600 mb-3" />
-                        <p>Tidak ada data pengguna yang sesuai.</p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-            
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 dark:border-slate-800">
-                <div className="text-sm text-slate-500">
-                  Menampilkan {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filtered.length)} dari {filtered.length} admin
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="h-8 w-8" 
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <div className="text-sm font-medium px-2">
-                    {currentPage} / {totalPages}
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="h-8 w-8" 
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </AdminPageContent>
+        <AdminPageContent className="p-0">
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <AntTable<User>
+              rowKey="id"
+              columns={columns}
+              dataSource={filtered}
+              size="middle"
+              scroll={{ x: 900 }}
+              pagination={{
+                current: currentPage,
+                pageSize: itemsPerPage,
+                total: filtered.length,
+                showSizeChanger: false,
+                showTotal: (total, range) => `Menampilkan ${range[0]}–${range[1]} dari ${total} admin`,
+              }}
+              onChange={(pagination) => setCurrentPage(pagination.current ?? 1)}
+              locale={{ emptyText: "Tidak ada data pengguna yang sesuai." }}
+            />
+          </div>
+        </AdminPageContent>
 
       <UserDialog open={open} onOpenChange={setOpen} editing={editing} onSaved={refresh} units={units} />
 
@@ -281,7 +312,8 @@ function UsersPage() {
         </DialogContent>
       </Dialog>
 
-    </AdminPage>
+      </AdminPage>
+    </ConfigProvider>
   );
 }
 
