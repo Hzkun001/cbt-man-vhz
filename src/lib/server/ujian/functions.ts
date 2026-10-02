@@ -153,6 +153,9 @@ export const mutateUjianServer = createServerFn({ method: "POST" })
 				} else if (action === "remove")
 					await tx.ujian.delete({ where: { id: String(payload.id) } });
 				else if (action === "bulkSet") {
+					for (const item of payload as Ujian[]) {
+						await validateExamAudience(item, tx);
+					}
 					await tx.ujian.deleteMany();
 					for (const item of payload as Ujian[]) {
 						await tx.ujian.create({
