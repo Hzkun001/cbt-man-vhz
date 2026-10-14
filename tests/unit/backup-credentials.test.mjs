@@ -25,6 +25,7 @@ test("privileged backup preserves current credentials and rejects unsafe restore
     "@tanstack/react-start": { createServerFn }, "../db/prisma": { prisma: db.prisma },
     "../db/auth": r.auth, "../db/audit": r.audit, "../db/json": r.json,
     "../repos/snapshot": snapshot, "../repos/mappers": r.mappers,
+    "@/lib/cbt/types": r.types,
     "../files/functions": { fileBackupSchema: z.any(), exportFilesServer: async () => files },
   });
   try {
