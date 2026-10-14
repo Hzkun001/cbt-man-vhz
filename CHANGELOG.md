@@ -12,6 +12,8 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Fixed
 
+- Backup memakai kredensial pengguna terbaru dari server khusus super admin; restore menolak backup lama dengan kredensial kosong/tidak valid sebelum mengganti data.
+
 ### Security
 
 ### Deprecated
@@ -53,8 +55,6 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 - Integrasi kalkulator ilmiah pada layar pengerjaan ujian peserta (`/peserta/ujian/$id/kerjakan`): memindahkan kalkulator dari modal popup dialog menjadi tab tersemat (*embedded*) di panel kanan (*right sidebar*) berdampingan dengan navigasi nomor soal, memungkinkan peserta menghitung sambil tetap membaca soal dan memilih jawaban tanpa terhalang backdrop modal.
 
 ### Fixed
-
-- Backup memakai kredensial pengguna terbaru dari server khusus super admin; restore menolak backup lama dengan kredensial kosong/tidak valid sebelum mengganti data.
 
 - Validasi integritas impor Excel soal bank soal (`parseExcelSoalRows`): pencegahan silent error skor 0 permanen akibat kunci jawaban tidak cocok dengan opsi yang tersedia, pencocokan kunci jawaban teks multi-kata terhadap teks opsi, klasifikasi tipe soal esai yang ketat untuk mencegah baris beropsi tanpa kunci menjadi esai, dukungan resolusi semantik kunci jawaban teks/dwibahasa untuk tipe Benar/Salah, ekstraksi kolom `Pembahasan` ke data soal, serta penanganan asynchronous save dengan `soalRepo.flush()` dan state loading pada tombol simpan impor.
 - Resolusi status aktif navigasi sidebar admin yang tumpang tindih antara "Struktur Akademik" dan "Kelas Mata Kuliah" (`/admin/akademik/kelas-mata-kuliah`), serta antara "Mahasiswa / Peserta" dan "Pantau Ujian Live" (`/admin/peserta/online`) menggunakan algoritma pencocokan rute paling spesifik (*longest match precedence*) dan status aktif terkontrol pada `SidebarLink`.
