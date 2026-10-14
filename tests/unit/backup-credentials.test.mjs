@@ -51,6 +51,9 @@ test("privileged backup preserves current credentials and rejects unsafe restore
     for (const id of ["operator", "evaluator", "student", "missing-session-user"]) {
       caller = id;
       await assert.rejects(server.exportBackupServer(), /Forbidden/);
+      const deniedRestore = await server.importBackupServer({ data: { ...backup, files: undefined } });
+      assert.equal(deniedRestore.ok, false);
+      assert.equal((await db.prisma.user.findUnique({ where: { id: "admin" } })).passwordHash, newHash);
     }
     caller = "admin";
     for (const bad of ["", "plain-password", "pbkdf2$0$c2FsdA==$aGFzaA==", "pbkdf2$100000$bad$bad"]) {
