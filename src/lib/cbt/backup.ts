@@ -3,17 +3,6 @@
 import { z } from "zod";
 import { toast } from "sonner";
 import {
-  usersRepo,
-  unitAkademikRepo,
-  mataKuliahRepo,
-  penawaranRepo,
-  modulRepo,
-  topikRepo,
-  soalRepo,
-  ujianRepo,
-  tokenRepo,
-  sesiRepo,
-  configRepo,
   hydrateRepos,
   invalidateReposCache,
 } from "./repos";
@@ -31,8 +20,7 @@ import {
   SesiUjianSchema,
   ConfigSchema,
 } from "./types";
-import { exportTokenClaimsServer, importBackupServer, resetAllDataServer } from "@/lib/server/backup/functions";
-import { exportFilesServer } from "@/lib/server/files/functions";
+import { exportBackupServer, importBackupServer, resetAllDataServer } from "@/lib/server/backup/functions";
 
 const FileBackupSchema = z.object({
   id: z.string(),
@@ -67,26 +55,7 @@ export const BackupSchema = z.object({
 export type Backup = z.infer<typeof BackupSchema>;
 
 export async function exportBackup(): Promise<Backup> {
-  const files = await exportFilesServer();
-  const tokenClaims = await exportTokenClaimsServer();
-  return {
-    app: "cbtman",
-    version: 1,
-    exportedAt: Date.now(),
-    users: usersRepo.all(),
-    unitAkademik: unitAkademikRepo.all(),
-    mataKuliah: mataKuliahRepo.all(),
-    penawaran: penawaranRepo.all(),
-    modul: modulRepo.all(),
-    topik: topikRepo.all(),
-    soal: soalRepo.all(),
-    ujian: ujianRepo.all(),
-    token: tokenRepo.all(),
-    tokenClaims: tokenClaims.map((item) => ({ ...item, claimedAt: Number(item.claimedAt) })),
-    sesi: sesiRepo.all(),
-    config: configRepo.get(),
-    files,
-  };
+  return exportBackupServer();
 }
 
 export async function downloadBackup(): Promise<void> {
