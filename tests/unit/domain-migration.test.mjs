@@ -57,7 +57,8 @@ test("backup includes course classes and exams lock after a session exists", () 
   const backup = read("src/lib/cbt/backup.ts");
   const server = read("src/lib/server/backup/functions.ts");
   const exam = read("src/lib/server/ujian/functions.ts");
-  assert.match(backup, /penawaran: penawaranRepo\.all\(\)/);
+  assert.match(backup, /return exportBackupServer\(\)/);
+  assert.match(read("src/lib/server/repos/snapshot.ts"), /penawaran: rows\.penawaran/);
   assert.match(server, /penawaranMataKuliah\.createMany/);
   assert.match(exam, /Paket tidak dapat diubah karena sudah memiliki sesi peserta/);
 });

@@ -70,6 +70,8 @@ test("restore and reset roll back when their completion audit fails", async () =
         return { ok: false, error: "Audit failed" };
       } },
       "../db/json": { stringifyJson: JSON.stringify },
+      "../repos/snapshot": {},
+      "../repos/mappers": {},
       "../files/functions": {
         fileBackupSchema: z.object({}),
         withFileOperationLock: (run) => run(),

@@ -12,6 +12,8 @@ Format ini mengikuti prinsip [Keep a Changelog](https://keepachangelog.com/id/1.
 
 ### Fixed
 
+- Backup memakai kredensial pengguna terbaru dari server khusus super admin; restore menolak backup lama dengan kredensial kosong/tidak valid sebelum mengganti data.
+
 ### Security
 
 ### Deprecated

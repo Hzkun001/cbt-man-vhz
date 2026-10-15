@@ -5,6 +5,7 @@ import { requireAdminResult, requireCaller } from "../db/auth";
 import { writeAuditLog } from "../db/audit";
 import {
 	fileBackupSchema,
+	exportFilesServer,
 	finalizeFileRestore,
 	promoteFileRestore,
 	rollbackFileRestore,
@@ -14,6 +15,27 @@ import {
 import type { User, UnitAkademik, MataKuliah, PenawaranMataKuliah, Modul, Topik, Soal, Ujian, TokenUjian, TokenClaim, SesiUjian, AppConfig } from "@/lib/cbt/types";
 
 import { stringifyJson, toBigInt } from "../db/json";
+import { adminSnapshot, loadSnapshotRows } from "../repos/snapshot";
+import { mapUser } from "../repos/mappers";
+
+// Current and historical hashPassword use 100,000 iterations; accept lower legacy counts without unbounded verification work.
+const credentialSchema = z.string().regex(/^pbkdf2\$[1-9][0-9]*\$[A-Za-z0-9+/]{22}==\$[A-Za-z0-9+/]{43}=$/)
+	.refine((value) => Number.isSafeInteger(Number(value.split("$")[1])) && Number(value.split("$")[1]) <= 100_000);
+
+export const exportBackupServer = createServerFn({ method: "GET" }).handler(async () => {
+	const auth = await requireAdminResult();
+	if (!auth.ok) throw new Error(auth.error);
+	const [rows, files, claims] = await Promise.all([
+		loadSnapshotRows(), exportFilesServer(), prisma.tokenClaim.findMany(),
+	]);
+	const snapshot = adminSnapshot(rows);
+	return {
+		app: "cbtman" as const, version: 1 as const, exportedAt: Date.now(),
+		...snapshot, users: rows.users.map(mapUser), files,
+		tokenClaims: claims.map((item) => ({ ...item, claimedAt: Number(item.claimedAt) })),
+	};
+});
+
 
 export const importBackupServer = createServerFn({ method: "POST" })
 	.validator(
@@ -38,6 +60,9 @@ export const importBackupServer = createServerFn({ method: "POST" })
 		if (!auth.ok) return { ok: false as const, error: auth.error };
 		const caller = await requireCaller();
 		if (!caller) return { ok: false as const, error: "Forbidden" };
+		if (data.users.some((user) => !credentialSchema.safeParse(user?.passwordHash).success)) {
+			return { ok: false as const, error: "Backup berisi kredensial pengguna kosong atau tidak valid. Ekspor ulang dari server sumber; data saat ini tidak diubah." };
+		}
 		const audit = await writeAuditLog({
 			userId: caller.id,
 			userRole: caller.role,
