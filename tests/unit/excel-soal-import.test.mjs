@@ -121,7 +121,7 @@ test("rejects an option-bearing row with no answer key", () => {
 });
 
 test("rejects explicit PG and Multi rows without options instead of converting them to essay", () => {
-  for (const tipe of ["PG", "Multi"]) {
+  for (const tipe of ["PG", "Multi", "Pilihan Ganda", "Multi Jawaban"]) {
     const [result] = parseExcelSoalRows([{
       Soal: "Pilihan tanpa opsi", "Tipe Soal": tipe, "Kunci Jawaban": "A",
     }], "topik_1");
